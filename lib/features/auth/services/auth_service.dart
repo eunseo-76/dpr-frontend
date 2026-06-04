@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dpr_frontend/core/constants/api_constants.dart';
 import 'package:dpr_frontend/core/network/api_client.dart';
 import 'package:dpr_frontend/core/utils/token_storage.dart';
+import 'package:dpr_frontend/core/utils/user_storage.dart';
 import 'package:dpr_frontend/features/auth/models/login_request.dart';
 import 'package:dpr_frontend/features/auth/models/login_response.dart';
 
@@ -19,6 +20,13 @@ class AuthService {
         body['data'] as Map<String, dynamic>,
       );
       await TokenStorage.saveToken(loginResponse.accessToken);
+      await UserStorage.saveUserInfo(
+        loginResponse.role,
+        loginResponse.name,
+        loginResponse.position,
+        loginResponse.companyId,
+        loginResponse.factoryId,
+      );
       return loginResponse;
     }
     throw Exception('로그인 실패: ${response.statusCode}');
