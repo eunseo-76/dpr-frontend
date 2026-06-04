@@ -33,7 +33,8 @@ class _LoginScreenState extends State<LoginScreen> {
       print('로그인 성공');
     } catch (e) {
       setState(() {
-        _errorMessage = '로그인 실패';
+        _errorMessage = e.toString();
+        print('예외 발생: $e');
       });
     } finally {
       setState(() => _isLoading = false);

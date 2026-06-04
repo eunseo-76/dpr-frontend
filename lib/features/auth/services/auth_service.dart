@@ -14,7 +14,10 @@ class AuthService {
 
     if (response.statusCode == 200) {
       // json String 타입의 response.body(accesstoken)을 map 으로 변환 -> LonginResponse 객체로 변환
-      final loginResponse = LoginResponse.fromJson(jsonDecode(response.body));
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      final loginResponse = LoginResponse.fromJson(
+        body['data'] as Map<String, dynamic>,
+      );
       await TokenStorage.saveToken(loginResponse.accessToken);
       return loginResponse;
     }
