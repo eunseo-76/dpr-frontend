@@ -51,10 +51,13 @@ class UserStorage {
 
   static Future<void> clearUserInfo() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_role);
-    await prefs.remove(_name);
-    await prefs.remove(_position);
-    await prefs.remove(_companyId);
-    await prefs.remove(_factoryId);
+    // 성능 차이는 없다는데 await 여러 개는 다 병렬로 묶기로
+    await Future.wait({
+      prefs.remove(_role),
+      prefs.remove(_name),
+      prefs.remove(_position),
+      prefs.remove(_companyId),
+      prefs.remove(_factoryId),
+    });
   }
 }
