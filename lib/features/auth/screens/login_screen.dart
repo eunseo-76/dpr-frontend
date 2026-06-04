@@ -1,5 +1,6 @@
 import 'package:dpr_frontend/features/auth/models/login_request.dart';
 import 'package:dpr_frontend/features/auth/services/auth_service.dart';
+import 'package:dpr_frontend/main_screen.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -30,7 +31,13 @@ class _LoginScreenState extends State<LoginScreen> {
           password: _passwordController.text,
         ),
       );
-      print('로그인 성공');
+
+      if (!mounted) return;
+      // 로그인 후 뒤로가기 못하게 pushReplacement
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const MainScreen()),
+      );
     } catch (e) {
       setState(() {
         _errorMessage = e.toString();
