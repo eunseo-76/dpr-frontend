@@ -7,8 +7,14 @@ import 'package:dpr_frontend/features/production/models/production.dart';
 class ProductionService {
   final _client = ApiClient();
 
-  Future<List<Production>> getProductionList() async {
-    final response = await _client.get(ApiConstants.production);
+  Future<List<Production>> getProductionList({
+    required String date,
+    required String periodType,
+  }) async {
+    final response = await _client.get(
+      ApiConstants.production,
+      queryParams: {'date': date, 'periodType': periodType},
+    );
 
     if (response.statusCode == 200) {
       final body = jsonDecode(response.body) as Map<String, dynamic>;

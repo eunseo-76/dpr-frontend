@@ -23,7 +23,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
   String? _error;
   bool _isProcessView = true;
   String _selectedPeriod = '일';
-  String _selectedDate = '2026.05.01';
+  String _selectedDate = '2024-01-01';
 
   final _unitService = UnitService();
   final _productionService = ProductionService();
@@ -34,13 +34,23 @@ class _ProductionScreenState extends State<ProductionScreen> {
     _loadData();
   }
 
+  static const _periodTypeMap = {
+    '일': 'DAY',
+    '주': 'WEEK',
+    '월': 'MONTH',
+    '년': 'YEAR',
+  };
+
   Future<void> _loadData() async {
     try {
       final factoryId = await UserStorage.getFactoryId();
 
       final results = await Future.wait([
         _unitService.getUnitList(factoryId: factoryId),
-        _productionService.getProductionList(),
+        _productionService.getProductionList(
+          date: _selectedDate,
+          periodType: _periodTypeMap[_selectedPeriod]!,
+        ),
       ]);
 
       setState(() {
@@ -65,7 +75,10 @@ class _ProductionScreenState extends State<ProductionScreen> {
         children: [
           PeriodSelector(
             selectedPeriod: _selectedPeriod,
-            onPeriodChanged: (period) => setState(() => _selectedPeriod = period),
+            onPeriodChanged: (period) {
+              setState(() => _selectedPeriod = period);
+              _loadData();
+            },
           ),
           DateNavigation(
             date: _selectedDate,
@@ -77,11 +90,14 @@ class _ProductionScreenState extends State<ProductionScreen> {
             isProcessView: _isProcessView,
             onChanged: (value) => setState(() => _isProcessView = value),
           ),
+          // production_table에 넘겨주기
           Expanded(
             child: ProductionTable(
               units: _units,
               productions: _productions,
               isProcessView: _isProcessView,
+              selectedPeriod: _selectedPeriod,
+              selectedDate: _selectedDate,
             ),
           ),
         ],
