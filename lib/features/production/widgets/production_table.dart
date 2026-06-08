@@ -90,7 +90,24 @@ class ProductionTable extends StatelessWidget {
           _headerCell('주/야', _colShift, height: singleHeight),
           ...weekRanges.asMap().entries.map((e) => Column(
             children: [
-              _headerCell('${e.key + 1}주', units.length * _colUnit, height: _headerRowHeight, isGroup: true),
+              _headerCell(_weekRangeLabel(e.key + 1, e.value), units.length * _colUnit, height: _headerRowHeight, isGroup: true),
+              Row(children: units.map((u) => _headerCell(u.name, _colUnit, height: _headerRowHeight)).toList()),
+            ],
+          )),
+        ],
+      );
+    }
+    // 연 보기: 월 × 단위 2단 헤더
+    if (selectedPeriod == '년') {
+      final monthRanges = _yearMonthRanges();
+      return Row(
+        children: [
+          _headerCell('공정', _colProcess, height: singleHeight),
+          _headerCell('업체', _colClient, height: singleHeight),
+          _headerCell('주/야', _colShift, height: singleHeight),
+          ...monthRanges.asMap().entries.map((e) => Column(
+            children: [
+              _headerCell('${e.key + 1}월', units.length * _colUnit, height: _headerRowHeight, isGroup: true),
               Row(children: units.map((u) => _headerCell(u.name, _colUnit, height: _headerRowHeight)).toList()),
             ],
           )),
@@ -162,7 +179,7 @@ class ProductionTable extends StatelessWidget {
       final ranges = _monthWeekRanges();
       final weeklySums = {
         for (final u in units)
-          u.id: ranges.map((r) => _calcWeekSum(processId, u.id, r)).toList()
+          u.id: ranges.map((r) => _calcRangeSum(processId, u.id, r)).toList()
       };
       final cumulativeWeek = {
         for (final u in units)
@@ -179,6 +196,32 @@ class ProductionTable extends StatelessWidget {
           _subtotalCell('누적실적', labelWidth),
           ...ranges.asMap().entries.expand((e) => units.map((u) =>
               _dataCell(fmt(cumulativeWeek[u.id]![e.key]), _colUnit, height: _dataRowHeight, bgColor: bgGreen))),
+        ]),
+      ];
+    }
+
+    // 연 보기: 월 × 단위
+    if (selectedPeriod == '년') {
+      final ranges = _yearMonthRanges();
+      final monthlySums = {
+        for (final u in units)
+          u.id: ranges.map((r) => _calcRangeSum(processId, u.id, r)).toList()
+      };
+      final cumulativeMonth = {
+        for (final u in units)
+          u.id: _calcCumulative(monthlySums[u.id]!)
+      };
+
+      return [
+        Row(children: [
+          _subtotalCell('월간실적', labelWidth),
+          ...ranges.asMap().entries.expand((e) => units.map((u) =>
+              _dataCell(fmt(monthlySums[u.id]![e.key]), _colUnit, height: _dataRowHeight, bgColor: bgGreen))),
+        ]),
+        Row(children: [
+          _subtotalCell('누적실적', labelWidth),
+          ...ranges.asMap().entries.expand((e) => units.map((u) =>
+              _dataCell(fmt(cumulativeMonth[u.id]![e.key]), _colUnit, height: _dataRowHeight, bgColor: bgGreen))),
         ]),
       ];
     }
@@ -218,7 +261,7 @@ class ProductionTable extends StatelessWidget {
         .fold(0.0, (sum, p) => sum + (p.result ?? 0));
   }
 
-  double _calcWeekSum(int processId, int unitId, List<DateTime> range) {
+  double _calcRangeSum(int processId, int unitId, List<DateTime> range) {
     double sum = 0;
     for (var d = range[0]; !d.isAfter(range[1]); d = d.add(const Duration(days: 1))) {
       sum += _calcDaySum(processId, unitId, _dateStr(d));
@@ -301,6 +344,34 @@ class ProductionTable extends StatelessWidget {
     return result;
   }
 
+  // TODO(human): selectedDate가 속한 연도의 12개월 범위 목록을 반환하세요.
+  // 각 월 범위는 [monthStart, monthEnd] 형태의 List<DateTime>입니다.
+  //
+  // 힌트:
+  //   final d = DateTime.parse(selectedDate);
+  //   1월(month=1)부터 12월(month=12)까지 반복하면서
+  //     monthStart = DateTime(d.year, month, 1)
+  //     monthEnd   = DateTime(d.year, month + 1, 0)   // 그 달의 마지막 날
+  //   를 구해 [monthStart, monthEnd]를 리스트에 추가하세요.
+  //   (참고: _monthWeekRanges()의 firstDay/lastDay 계산 방식과 동일한 패턴입니다)
+  List<List<DateTime>> _yearMonthRanges() {
+    final d = DateTime.parse(selectedDate);
+    final result = <List<DateTime>>[];
+
+    for (int month = 1; month <= 12; month++) {
+      final monthStart = DateTime(d.year, month, 1);
+      final monthEnd = DateTime(d.year, month + 1, 0);
+      result.add([monthStart, monthEnd]);
+    }
+
+    return result;
+  }
+
+  String _weekRangeLabel(int weekNumber, List<DateTime> range) {
+
+    return '$weekNumber주(${range[0].month}/${range[0].day}~${range[1].month}/${range[1].day})';
+  }
+
   Row _buildShiftRow(String shift, Map<int, List<Production>> unitMap,
       {required bool isDayShift}) {
 
@@ -324,6 +395,37 @@ class ProductionTable extends StatelessWidget {
       return Row(children: [
         _dataCell(shift, _colShift, height: _dataRowHeight),
         ..._monthWeekRanges().expand((range) {
+          return units.map((u) {
+            double total = 0;
+            for (var d = range[0]; !d.isAfter(range[1]); d = d.add(const Duration(days: 1))) {
+              for (final p in (unitMap[u.id] ?? []).where((p) => p.date == _dateStr(d))) {
+                total += (isDayShift ? p.dayShift : p.nightShift) ?? 0;
+              }
+            }
+            return _dataCell(
+              total == 0 ? '-' : (total == total.truncateToDouble() ? total.toInt().toString() : total.toString()),
+              _colUnit,
+              height: _dataRowHeight,
+            );
+          });
+        }),
+      ]);
+    }
+
+    // 연 보기 - 주차별 합산
+    // TODO(human): 연 보기 — 월별 합산
+    // 바로 위 '월' 보기 분기와 구조가 완전히 동일합니다. 차이는 단 하나,
+    // 주차 범위(_monthWeekRanges) 대신 월별 범위(_yearMonthRanges)를 순회한다는 점입니다.
+    //
+    // 힌트:
+    //   - 반환 형태: Row(children: [라벨 셀, ...각 월 × 단위 셀들])
+    //   - _yearMonthRanges()로 12개 [monthStart, monthEnd] 범위를 얻고
+    //   - 각 범위에 대해 day(또는 night) shift 값을 날짜별로 순회하며 합산
+    //   - 0이면 '-', 정수면 정수로, 아니면 그대로 표시 (위 '월' 분기의 포맷 로직 재사용 가능)
+    if (selectedPeriod == '년') {
+      return Row(children: [
+        _dataCell(shift, _colShift, height: _dataRowHeight),
+        ..._yearMonthRanges().expand((range) {
           return units.map((u) {
             double total = 0;
             for (var d = range[0]; !d.isAfter(range[1]); d = d.add(const Duration(days: 1))) {
