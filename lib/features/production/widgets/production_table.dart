@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:dpr_frontend/features/production/models/production.dart';
 import 'package:dpr_frontend/features/unit/models/unit.dart';
@@ -78,7 +80,23 @@ class ProductionTable extends StatelessWidget {
         ],
       );
     }
-    // 월/년 보기: Step 5~6에서 구현
+    // 월 보기: 주차 × 단위 2단 헤더
+    if (selectedPeriod == '월') {
+      final weekRanges = _monthWeekRanges();
+      return Row(
+        children: [
+          _headerCell('공정', _colProcess, height: singleHeight),
+          _headerCell('업체', _colClient, height: singleHeight),
+          _headerCell('주/야', _colShift, height: singleHeight),
+          ...weekRanges.asMap().entries.map((e) => Column(
+            children: [
+              _headerCell('${e.key + 1}주', units.length * _colUnit, height: _headerRowHeight, isGroup: true),
+              Row(children: units.map((u) => _headerCell(u.name, _colUnit, height: _headerRowHeight)).toList()),
+            ],
+          )),
+        ],
+      );
+    }
     return const SizedBox.shrink();
   }
 
@@ -139,6 +157,32 @@ class ProductionTable extends StatelessWidget {
       ];
     }
 
+    // 월 보기: 주차 × 단위
+    if (selectedPeriod == '월') {
+      final ranges = _monthWeekRanges();
+      final weeklySums = {
+        for (final u in units)
+          u.id: ranges.map((r) => _calcWeekSum(processId, u.id, r)).toList()
+      };
+      final cumulativeWeek = {
+        for (final u in units)
+          u.id: _calcCumulative(weeklySums[u.id]!)
+      };
+
+      return [
+        Row(children: [
+          _subtotalCell('주간실적', labelWidth),
+          ...ranges.asMap().entries.expand((e) => units.map((u) =>
+              _dataCell(fmt(weeklySums[u.id]![e.key]), _colUnit, height: _dataRowHeight, bgColor: bgGreen))),
+        ]),
+        Row(children: [
+          _subtotalCell('누적실적', labelWidth),
+          ...ranges.asMap().entries.expand((e) => units.map((u) =>
+              _dataCell(fmt(cumulativeWeek[u.id]![e.key]), _colUnit, height: _dataRowHeight, bgColor: bgGreen))),
+        ]),
+      ];
+    }
+
     // 주 보기: 요일 × 단위
     final dates = _weekDates();
 
@@ -172,6 +216,14 @@ class ProductionTable extends StatelessWidget {
     return productions
         .where((p) => p.processId == processId && p.unitId == unitId && p.date == date)
         .fold(0.0, (sum, p) => sum + (p.result ?? 0));
+  }
+
+  double _calcWeekSum(int processId, int unitId, List<DateTime> range) {
+    double sum = 0;
+    for (var d = range[0]; !d.isAfter(range[1]); d = d.add(const Duration(days: 1))) {
+      sum += _calcDaySum(processId, unitId, _dateStr(d));
+    }
+    return sum;
   }
 
   // 일일 합계 목록 → running sum (값이 0이면 이전 값 유지)
@@ -231,7 +283,22 @@ class ProductionTable extends StatelessWidget {
   //   while (!weekStart.isAfter(lastDay)) { ... weekStart = weekStart.add(Duration(days: 7)); }
   //   각 주의 start = max(weekStart, firstDay), end = min(weekStart+6, lastDay)
   List<List<DateTime>> _monthWeekRanges() {
-    return []; // TODO(human) 구현
+    final d = DateTime.parse(selectedDate);
+    final firstDay = DateTime(d.year, d.month, 1);  // 이번달 1일
+    final lastDay = DateTime(d.year, d.month + 1, 0); // 이번달 마지막 날
+    final firstMonday = firstDay.subtract(Duration(days: firstDay.weekday - 1));  // 첫주 월요일
+
+    final result = <List<DateTime>>[];
+    var weekStart = firstMonday;
+
+    while (!weekStart.isAfter(lastDay)) {
+      final start = weekStart.isBefore(firstDay) ? firstDay: weekStart;
+      final weekEnd = weekStart.add(const Duration(days: 6));
+      final end = weekEnd.isAfter(lastDay) ? lastDay : weekEnd;
+      result.add([start, end]);
+      weekStart = weekStart.add(Duration(days: 7)); // 다음 주로
+    }
+    return result;
   }
 
   Row _buildShiftRow(String shift, Map<int, List<Production>> unitMap,
@@ -249,6 +316,28 @@ class ProductionTable extends StatelessWidget {
       return Row(children: [
         _dataCell(shift, _colShift, height: _dataRowHeight),
         ...units.map((u) => _dataCell(val(find(u.id, selectedDate)), _colUnit, height: _dataRowHeight)),
+      ]);
+    }
+
+    // 월 보기: 주차별 합산
+    if (selectedPeriod == '월') {
+      return Row(children: [
+        _dataCell(shift, _colShift, height: _dataRowHeight),
+        ..._monthWeekRanges().expand((range) {
+          return units.map((u) {
+            double total = 0;
+            for (var d = range[0]; !d.isAfter(range[1]); d = d.add(const Duration(days: 1))) {
+              for (final p in (unitMap[u.id] ?? []).where((p) => p.date == _dateStr(d))) {
+                total += (isDayShift ? p.dayShift : p.nightShift) ?? 0;
+              }
+            }
+            return _dataCell(
+              total == 0 ? '-' : (total == total.truncateToDouble() ? total.toInt().toString() : total.toString()),
+              _colUnit,
+              height: _dataRowHeight,
+            );
+          });
+        }),
       ]);
     }
 
