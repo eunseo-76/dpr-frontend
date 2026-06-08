@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:dpr_frontend/features/production/models/production.dart';
 import 'package:dpr_frontend/features/unit/models/unit.dart';
@@ -413,15 +411,6 @@ class ProductionTable extends StatelessWidget {
     }
 
     // 연 보기 - 주차별 합산
-    // TODO(human): 연 보기 — 월별 합산
-    // 바로 위 '월' 보기 분기와 구조가 완전히 동일합니다. 차이는 단 하나,
-    // 주차 범위(_monthWeekRanges) 대신 월별 범위(_yearMonthRanges)를 순회한다는 점입니다.
-    //
-    // 힌트:
-    //   - 반환 형태: Row(children: [라벨 셀, ...각 월 × 단위 셀들])
-    //   - _yearMonthRanges()로 12개 [monthStart, monthEnd] 범위를 얻고
-    //   - 각 범위에 대해 day(또는 night) shift 값을 날짜별로 순회하며 합산
-    //   - 0이면 '-', 정수면 정수로, 아니면 그대로 표시 (위 '월' 분기의 포맷 로직 재사용 가능)
     if (selectedPeriod == '년') {
       return Row(children: [
         _dataCell(shift, _colShift, height: _dataRowHeight),
