@@ -116,42 +116,45 @@ class ProductionTable extends StatelessWidget {
   }
 
   Widget _buildDataRows() {
-    // processId → clientId → unitId → List<Production> (날짜별 여러 개)
+    // 공정별 보기: 공정 → 업체 → 단위 / 업체별 보기: 업체 → 공정 → 단위
     final Map<int, Map<int, Map<int, List<Production>>>> grouped = {};
     for (final p in productions) {
-      grouped.putIfAbsent(p.processId, () => {});
-      grouped[p.processId]!.putIfAbsent(p.clientId, () => {});
-      grouped[p.processId]![p.clientId]!.putIfAbsent(p.unitId, () => []);
-      grouped[p.processId]![p.clientId]![p.unitId]!.add(p);
+      final outerId = isProcessView ? p.processId : p.clientId;
+      final innerId = isProcessView ? p.clientId : p.processId;
+      grouped.putIfAbsent(outerId, () => {});
+      grouped[outerId]!.putIfAbsent(innerId, () => {});
+      grouped[outerId]![innerId]!.putIfAbsent(p.unitId, () => []);
+      grouped[outerId]![innerId]![p.unitId]!.add(p);
     }
 
     return Column(
-      children: grouped.entries.map((processEntry) {
-        final clients = processEntry.value;
-        final processName = productions
-            .firstWhere((p) => p.processId == processEntry.key)
-            .processName;
-        final processHeight = clients.length * 2 * _dataRowHeight;
+      children: grouped.entries.map((outerEntry) {
+        final innerGroups = outerEntry.value;
+        final outerName = isProcessView
+            ? productions.firstWhere((p) => p.processId == outerEntry.key).processName
+            : productions.firstWhere((p) => p.clientId == outerEntry.key).clientName;
+        final outerWidth = isProcessView ? _colProcess : _colClient;
+        final outerHeight = innerGroups.length * 2 * _dataRowHeight;
 
         return Column(
           children: [
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _dataCell(processName, _colProcess, height: processHeight),
+                _dataCell(outerName, outerWidth, height: outerHeight),
                 Column(
-                  children: clients.entries.map(_buildClientGroup).toList(),
+                  children: innerGroups.entries.map(_buildInnerGroup).toList(),
                 ),
               ],
             ),
-            ..._buildSubtotalRows(processEntry.key),
+            ..._buildSubtotalRows(outerEntry.key),
           ],
         );
       }).toList(),
     );
   }
 
-  List<Widget> _buildSubtotalRows(int processId) {
+  List<Widget> _buildSubtotalRows(int groupId) {
     const double labelWidth = _colProcess + _colClient + _colShift;
     const bgGreen = Color(0xFFE8F5E9);
 
@@ -163,11 +166,11 @@ class ProductionTable extends StatelessWidget {
       return [
         Row(children: [
           _subtotalCell('일일실적', labelWidth),
-          ...units.map((u) => _dataCell(fmt(_calcGroupSum(processId, u.id)), _colUnit, height: _dataRowHeight, bgColor: bgGreen)),
+          ...units.map((u) => _dataCell(fmt(_calcGroupSum(groupId, u.id)), _colUnit, height: _dataRowHeight, bgColor: bgGreen)),
         ]),
         Row(children: [
           _subtotalCell('누적실적', labelWidth),
-          ...units.map((u) => _dataCell(fmt(_calcGroupSum(processId, u.id, cumulative: true)), _colUnit, height: _dataRowHeight, bgColor: bgGreen)),
+          ...units.map((u) => _dataCell(fmt(_calcGroupSum(groupId, u.id, cumulative: true)), _colUnit, height: _dataRowHeight, bgColor: bgGreen)),
         ]),
       ];
     }
@@ -177,7 +180,7 @@ class ProductionTable extends StatelessWidget {
       final ranges = _monthWeekRanges();
       final weeklySums = {
         for (final u in units)
-          u.id: ranges.map((r) => _calcRangeSum(processId, u.id, r)).toList()
+          u.id: ranges.map((r) => _calcRangeSum(groupId, u.id, r)).toList()
       };
       final cumulativeWeek = {
         for (final u in units)
@@ -203,7 +206,7 @@ class ProductionTable extends StatelessWidget {
       final ranges = _yearMonthRanges();
       final monthlySums = {
         for (final u in units)
-          u.id: ranges.map((r) => _calcRangeSum(processId, u.id, r)).toList()
+          u.id: ranges.map((r) => _calcRangeSum(groupId, u.id, r)).toList()
       };
       final cumulativeMonth = {
         for (final u in units)
@@ -230,7 +233,7 @@ class ProductionTable extends StatelessWidget {
     // 단위별 요일별 일일 합계
     final dailySums = {
       for (final u in units)
-        u.id: dates.map((d) => _calcDaySum(processId, u.id, _dateStr(d))).toList()
+        u.id: dates.map((d) => _calcDaySum(groupId, u.id, _dateStr(d))).toList()
     };
     // 단위별 누적 (running sum, 0이면 이전 값 유지)
     final cumulative = {
@@ -252,17 +255,20 @@ class ProductionTable extends StatelessWidget {
     ];
   }
 
-  // 특정 날짜의 공정+단위 소계
-  double _calcDaySum(int processId, int unitId, String date) {
+  // 특정 날짜의 그룹(공정 또는 업체)+단위 소계
+  double _calcDaySum(int groupId, int unitId, String date) {
     return productions
-        .where((p) => p.processId == processId && p.unitId == unitId && p.date == date)
+        .where((p) =>
+            (isProcessView ? p.processId : p.clientId) == groupId &&
+            p.unitId == unitId &&
+            p.date == date)
         .fold(0.0, (sum, p) => sum + (p.result ?? 0));
   }
 
-  double _calcRangeSum(int processId, int unitId, List<DateTime> range) {
+  double _calcRangeSum(int groupId, int unitId, List<DateTime> range) {
     double sum = 0;
     for (var d = range[0]; !d.isAfter(range[1]); d = d.add(const Duration(days: 1))) {
-      sum += _calcDaySum(processId, unitId, _dateStr(d));
+      sum += _calcDaySum(groupId, unitId, _dateStr(d));
     }
     return sum;
   }
@@ -292,15 +298,17 @@ class ProductionTable extends StatelessWidget {
     );
   }
 
-  Widget _buildClientGroup(MapEntry<int, Map<int, List<Production>>> entry) {
-    final clientName = productions
-        .firstWhere((p) => p.clientId == entry.key)
-        .clientName;
+  Widget _buildInnerGroup(MapEntry<int, Map<int, List<Production>>> entry) {
+    // 공정별 보기에서는 안쪽 그룹이 업체, 업체별 보기에서는 안쪽 그룹이 공정
+    final innerName = isProcessView
+        ? productions.firstWhere((p) => p.clientId == entry.key).clientName
+        : productions.firstWhere((p) => p.processId == entry.key).processName;
+    final innerWidth = isProcessView ? _colClient : _colProcess;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _dataCell(clientName, _colClient, height: 2 * _dataRowHeight),
+        _dataCell(innerName, innerWidth, height: 2 * _dataRowHeight),
         Column(
           children: [
             _buildShiftRow('주간', entry.value, isDayShift: true),
@@ -469,10 +477,10 @@ class ProductionTable extends StatelessWidget {
 
   // cumulative = false -> 일일실적
   // cumulative = true -> 누적실적
-  double _calcGroupSum(int processId, int unitId, {bool cumulative = false}) {
+  double _calcGroupSum(int groupId, int unitId, {bool cumulative = false}) {
 
     return productions
-        .where((p) => p.processId == processId && p.unitId == unitId)
+        .where((p) => (isProcessView ? p.processId : p.clientId) == groupId && p.unitId == unitId)
         .fold(0.0, (sum, p) => sum + ((cumulative ? p.cumulativeResult : p.result) ?? 0));
   }
 
