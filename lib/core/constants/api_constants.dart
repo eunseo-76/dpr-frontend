@@ -4,4 +4,5 @@ class ApiConstants {
   static const String login = '/api/auth/login';
   static const String production = '/api/productions';
   static const String unit = '/api/units';
+  static const String utility = '/api/utilities';
 }

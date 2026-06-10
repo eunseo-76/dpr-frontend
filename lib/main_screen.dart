@@ -1,5 +1,6 @@
 import 'package:dpr_frontend/features/home/screens/home_screen.dart';
 import 'package:dpr_frontend/features/production/screens/production_screen.dart';
+import 'package:dpr_frontend/features/utility/screens/utility_screen.dart';
 import 'package:flutter/material.dart';
 
 class MainScreen extends StatefulWidget {
@@ -12,11 +13,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 1;
 
-  final _screens = const [
-    ProductionScreen(),
-    HomeScreen(),
-    Center(child: Text('미정')),
-  ];
+  final _screens = const [ProductionScreen(), HomeScreen(), UtilityScreen()];
 
   @override
   Widget build(BuildContext context) {
