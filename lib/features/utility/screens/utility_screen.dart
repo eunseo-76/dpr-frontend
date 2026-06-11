@@ -1,7 +1,9 @@
 import 'package:dpr_frontend/features/utility/models/utility.dart';
 import 'package:dpr_frontend/features/utility/services/utility_service.dart';
+import 'package:dpr_frontend/features/utility/utils/utility_grouping.dart';
 import 'package:dpr_frontend/features/utility/widgets/date_navigator.dart';
 import 'package:dpr_frontend/features/utility/widgets/segmented_toggle.dart';
+import 'package:dpr_frontend/features/utility/widgets/utility_card.dart';
 import 'package:flutter/material.dart';
 
 class UtilityScreen extends StatefulWidget {
@@ -118,7 +120,11 @@ class _UtilityScreenState extends State<UtilityScreen> {
     } else if (_error != null) {
       content = Center(child: Text('오류: $_error'));
     } else {
-      content = Center(child: Text('${_utilities.length}건 조회됨'));
+      final groups = groupUtilities(_utilities, _groupBy);
+      content = ListView(
+        padding: const EdgeInsets.all(8),
+        children: groups.map((group) => UtilityCard(group: group)).toList(),
+      );
     }
 
     return Scaffold(
@@ -144,8 +150,19 @@ class _UtilityScreenState extends State<UtilityScreen> {
               label: _displayLabel,
               onPrevious: () => _navigateDate(-1),
               onNext: () => _navigateDate(1),
-              onCalendarTap: () {
-                // TODO(human): showDatePicker로 날짜를 선택해서 _selectedDate를 갱신하세요.
+              onCalendarTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _selectedDateTime,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime(2100),
+                );
+                if (picked != null) {
+                  setState(() {
+                    _selectedDate = picked.toIso8601String().substring(0, 10);
+                  });
+                  _loadData();
+                }
               },
             ),
             Expanded(child: content),
