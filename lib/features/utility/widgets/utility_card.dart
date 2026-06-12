@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:dpr_frontend/core/utils/number_format.dart';
 import 'package:dpr_frontend/core/widgets/section_card.dart';
-import 'package:dpr_frontend/core/widgets/simple_data_table.dart';
-import 'package:dpr_frontend/features/utility/utils/utility_grouping.dart';
 
-// 전기&용수의 공장별/공정별 카드
+// 전기&용수의 공장별/공정별 카드 - 제목 + 표(일/주/월/년에 따라 다름) + 누적합계 footer
 class UtilityCard extends StatelessWidget {
-  final UtilityGroup group;
+  final String title;
+  final Widget table;
 
   // TODO: 누적 합계 아직 없음... 일단 null
   final double? cumulativeElectricity;
@@ -14,19 +13,14 @@ class UtilityCard extends StatelessWidget {
 
   const UtilityCard({
     super.key,
-    required this.group,
+    required this.title,
+    required this.table,
     this.cumulativeElectricity,
     this.cumulativeWater,
   });
 
   @override
   Widget build(BuildContext context) {
-
-    final headers = <String>['구분', '전기(Kwh)', '용수(t)'];
-    final rows = group.rows
-        .map((r) => [r.label, formatNumber(r.electricity), formatNumber(r.water)])
-        .toList();
-
     final electricityText = cumulativeElectricity == null
         ? '준비중'
         : '${formatNumber(cumulativeElectricity!)} Kwh';
@@ -35,7 +29,7 @@ class UtilityCard extends StatelessWidget {
         : '${formatNumber(cumulativeWater!)} t';
 
     return SectionCard(
-      title: group.groupName,
+      title: title,
       footer: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -49,7 +43,7 @@ class UtilityCard extends StatelessWidget {
           ),
         ],
       ),
-      child: SimpleDataTable(headers: headers, rows: rows),
+      child: table,
     );
   }
 }

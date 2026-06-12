@@ -1,5 +1,7 @@
 import 'package:dpr_frontend/features/utility/models/utility.dart';
 
+// 일별 보기
+
 // UtilityCard의 표 한 줄
 // 공장별 뷰 - '공정'
 // 공정별 뷰 - '공장'

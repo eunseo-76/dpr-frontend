@@ -1,9 +1,13 @@
+import 'package:dpr_frontend/core/utils/number_format.dart';
+import 'package:dpr_frontend/core/widgets/simple_data_table.dart';
 import 'package:dpr_frontend/features/utility/models/utility.dart';
 import 'package:dpr_frontend/features/utility/services/utility_service.dart';
 import 'package:dpr_frontend/features/utility/utils/utility_grouping.dart';
+import 'package:dpr_frontend/features/utility/utils/utility_period_grouping.dart';
 import 'package:dpr_frontend/features/utility/widgets/date_navigator.dart';
 import 'package:dpr_frontend/features/utility/widgets/segmented_toggle.dart';
 import 'package:dpr_frontend/features/utility/widgets/utility_card.dart';
+import 'package:dpr_frontend/features/utility/widgets/utility_period_table.dart';
 import 'package:flutter/material.dart';
 
 class UtilityScreen extends StatefulWidget {
@@ -59,6 +63,17 @@ class _UtilityScreenState extends State<UtilityScreen> {
   }
 
   DateTime get _selectedDateTime => DateTime.parse(_selectedDate);
+
+  // 주 보기에서 사용할 월~일 7개 날짜('yyyy-MM-dd')
+  List<String> _weekDateColumns() {
+    final monday = _selectedDateTime.subtract(
+      Duration(days: _selectedDateTime.weekday - 1),
+    );
+    return List.generate(7, (i) {
+      final date = monday.add(Duration(days: i));
+      return date.toIso8601String().substring(0, 10);
+    });
+  }
 
   String get _displayLabel {
     final date = _selectedDateTime;
@@ -119,11 +134,43 @@ class _UtilityScreenState extends State<UtilityScreen> {
       content = const Center(child: CircularProgressIndicator());
     } else if (_error != null) {
       content = Center(child: Text('오류: $_error'));
+    } else if (_selectedPeriod == '주') {
+      final dateColumns = _weekDateColumns();
+      final groups = groupUtilitiesByPeriod(_utilities, _groupBy, dateColumns);
+      final rowLabelHeader = _groupBy == '공장별' ? '공정' : '공장';
+      content = ListView(
+        padding: const EdgeInsets.all(8),
+        children: groups
+            .map((group) => UtilityCard(
+                  title: group.groupName,
+                  table: UtilityPeriodTable(
+                    rowLabelHeader: rowLabelHeader,
+                    dateColumns: dateColumns,
+                    electricityRows: group.electricityRows,
+                    waterRows: group.waterRows,
+                  ),
+                ))
+            .toList(),
+      );
     } else {
       final groups = groupUtilities(_utilities, _groupBy);
       content = ListView(
         padding: const EdgeInsets.all(8),
-        children: groups.map((group) => UtilityCard(group: group)).toList(),
+        children: groups
+            .map((group) => UtilityCard(
+                  title: group.groupName,
+                  table: SimpleDataTable(
+                    headers: const ['구분', '전기(Kwh)', '용수(t)'],
+                    rows: group.rows
+                        .map((r) => [
+                              r.label,
+                              formatNumber(r.electricity),
+                              formatNumber(r.water),
+                            ])
+                        .toList(),
+                  ),
+                ))
+            .toList(),
       );
     }
 

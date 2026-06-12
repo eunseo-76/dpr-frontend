@@ -1,0 +1,139 @@
+import 'package:flutter/material.dart';
+import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
+import 'package:dpr_frontend/core/utils/number_format.dart';
+import 'package:dpr_frontend/features/utility/utils/utility_period_grouping.dart';
+
+// 주/월/년 보기 표
+// 컬럼: 구분 | 공정(또는 공장) | 날짜1...N | 합계
+// 행: 헤더 1행 + 전기 행들 + 용수 행들
+// sticky(고정 컬럼)는 아직 없음 - 전체가 가로로만 스크롤됨
+class UtilityPeriodTable extends StatelessWidget {
+  final String rowLabelHeader; // 공장별 뷰 -> '공정', 공정별 뷰 -> '공장'
+  final List<String> dateColumns;
+  final List<UtilityPeriodRowData> electricityRows;
+  final List<UtilityPeriodRowData> waterRows;
+
+  static const _categoryColumnWidth = 48.0;
+  static const _labelColumnWidth = 64.0;
+  static const _dateColumnWidth = 56.0;
+  static const _totalColumnWidth = 64.0;
+  static const _rowHeight = 40.0;
+  static const _borderColor = Color(0xFFE0E0E0);
+  static const _headerColor = Color(0xFFF5F5F5);
+
+  const UtilityPeriodTable({
+    super.key,
+    required this.rowLabelHeader,
+    required this.dateColumns,
+    required this.electricityRows,
+    required this.waterRows,
+  });
+
+  int get _columnCount => 2 + dateColumns.length + 1;
+  int get _rowCount => 1 + electricityRows.length + waterRows.length;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: _rowCount * _rowHeight,
+      child: TableView.builder(
+        columnCount: _columnCount,
+        rowCount: _rowCount,
+        verticalDetails: const ScrollableDetails.vertical(
+          physics: NeverScrollableScrollPhysics(),
+        ),
+        columnBuilder: _buildColumnSpan,
+        rowBuilder: _buildRowSpan,
+        cellBuilder: (context, vicinity) =>
+            TableViewCell(child: _cell(vicinity)),
+      ),
+    );
+  }
+
+  TableSpan _buildColumnSpan(int column) {
+    final double width;
+    if (column == 0) {
+      width = _categoryColumnWidth;
+    } else if (column == 1) {
+      width = _labelColumnWidth;
+    } else if (column == _columnCount - 1) {
+      width = _totalColumnWidth;
+    } else {
+      width = _dateColumnWidth;
+    }
+
+    return TableSpan(
+      extent: FixedTableSpanExtent(width),
+      foregroundDecoration: const TableSpanDecoration(
+        border: TableSpanBorder(trailing: BorderSide(color: _borderColor)),
+      ),
+    );
+  }
+
+  TableSpan _buildRowSpan(int row) {
+    return TableSpan(
+      extent: const FixedTableSpanExtent(_rowHeight),
+      backgroundDecoration: row == 0
+          ? const TableSpanDecoration(color: _headerColor)
+          : null,
+      foregroundDecoration: const TableSpanDecoration(
+        border: TableSpanBorder(trailing: BorderSide(color: _borderColor)),
+      ),
+    );
+  }
+
+  // "구분"(전기/용수) + "공정/공장" + 날짜별 값 + 합계 중 하나를 그리는 셀
+  Widget _cell(TableVicinity vicinity) {
+    final row = vicinity.row;
+    final column = vicinity.column;
+    final isHeader = row == 0;
+    final dataRowIndex = row - 1;
+
+    String text;
+    if (column == 0) {
+      if (isHeader) {
+        text = '구분';
+      } else if (dataRowIndex == 0 && electricityRows.isNotEmpty) {
+        text = '전기';
+      } else if (dataRowIndex == electricityRows.length &&
+          waterRows.isNotEmpty) {
+        text = '용수';
+      } else {
+        text = '';
+      }
+    } else if (column == 1) {
+      text = isHeader ? rowLabelHeader : _rowFor(dataRowIndex).label;
+    } else if (column == _columnCount - 1) {
+      text = isHeader ? '합계' : formatNumber(_rowFor(dataRowIndex).total);
+    } else {
+      final dateIndex = column - 2;
+      text = isHeader
+          ? _formatDateLabel(dateColumns[dateIndex])
+          : formatNumber(_rowFor(dataRowIndex).values[dateIndex]);
+    }
+
+    return Container(
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+    );
+  }
+
+  // 'yyyy-MM-dd' -> 헤더에 표시할 'dd' (좁은 컬럼에 맞춰 일(day)만 표시)
+  String _formatDateLabel(String isoDate) {
+    return DateTime.parse(isoDate).day.toString().padLeft(2, '0');
+  }
+
+  // row 0은 헤더이므로, dataRowIndex(row - 1)를 electricityRows/waterRows로 매핑
+  UtilityPeriodRowData _rowFor(int dataRowIndex) {
+    if (dataRowIndex < electricityRows.length) {
+      return electricityRows[dataRowIndex];
+    }
+    return waterRows[dataRowIndex - electricityRows.length];
+  }
+}
