@@ -6,7 +6,11 @@ import 'package:dpr_frontend/features/utility/utils/utility_period_grouping.dart
 // 주/월/년 보기 표
 // 컬럼: 구분 | 공정(또는 공장) | 기간열1...N | 합계
 // 행: 헤더 1행 + 전기 행들 + 용수 행들
-// sticky(고정 컬럼)는 아직 없음 - 전체가 가로로만 스크롤됨
+// 구분+공정/공장 컬럼은 TableView의 pinnedColumnCount로 왼쪽 고정
+// 합계 컬럼만 따로 TableView 밖에 별도 위젯으로 그려 오른쪽에 고정
+// (trailingPinnedColumnCount는 주/월/년 전환 시 columnCount가 바뀌면서
+//  two_dimensional_scrollables가 뭔가 잘 안 됨...)
+// 가운데 기간 컬럼들만 가로 스크롤됨
 // columnLabels: 헤더에 표시할 문자열 (주 뷰: '08' 같은 일자, 월 뷰: '5/4~5/10' 같은 주간 범위)
 class UtilityPeriodTable extends StatelessWidget {
   final String rowLabelHeader; // 공장별 뷰 -> '공정', 공정별 뷰 -> '공장'
@@ -30,23 +34,32 @@ class UtilityPeriodTable extends StatelessWidget {
     required this.waterRows,
   });
 
-  int get _columnCount => 2 + columnLabels.length + 1;
+  int get _columnCount => 2 + columnLabels.length;
   int get _rowCount => 1 + electricityRows.length + waterRows.length;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: _rowCount * _rowHeight,
-      child: TableView.builder(
-        columnCount: _columnCount,
-        rowCount: _rowCount,
-        verticalDetails: const ScrollableDetails.vertical(
-          physics: NeverScrollableScrollPhysics(),
-        ),
-        columnBuilder: _buildColumnSpan,
-        rowBuilder: _buildRowSpan,
-        cellBuilder: (context, vicinity) =>
-            TableViewCell(child: _cell(vicinity)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: TableView.builder(
+              columnCount: _columnCount,
+              rowCount: _rowCount,
+              pinnedColumnCount: 2,
+              verticalDetails: const ScrollableDetails.vertical(
+                physics: NeverScrollableScrollPhysics(),
+              ),
+              columnBuilder: _buildColumnSpan,
+              rowBuilder: _buildRowSpan,
+              cellBuilder: (context, vicinity) =>
+                  TableViewCell(child: _cell(vicinity)),
+            ),
+          ),
+          _buildTotalColumn(),
+        ],
       ),
     );
   }
@@ -57,8 +70,6 @@ class UtilityPeriodTable extends StatelessWidget {
       width = _categoryColumnWidth;
     } else if (column == 1) {
       width = _labelColumnWidth;
-    } else if (column == _columnCount - 1) {
-      width = _totalColumnWidth;
     } else {
       width = _periodColumnWidth;
     }
@@ -104,8 +115,6 @@ class UtilityPeriodTable extends StatelessWidget {
       }
     } else if (column == 1) {
       text = isHeader ? rowLabelHeader : _rowFor(dataRowIndex).label;
-    } else if (column == _columnCount - 1) {
-      text = isHeader ? '합계' : formatNumber(_rowFor(dataRowIndex).total);
     } else {
       final dateIndex = column - 2;
       if (isHeader) {
@@ -124,6 +133,40 @@ class UtilityPeriodTable extends StatelessWidget {
         style: TextStyle(
           fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
         ),
+      ),
+    );
+  }
+
+  // "합계" 컬럼. TableView 밖에서 별도로 그려 오른쪽에 고정시킨다
+  Widget _buildTotalColumn() {
+    return Container(
+      width: _totalColumnWidth,
+      decoration: const BoxDecoration(
+        border: Border(left: BorderSide(color: _borderColor)),
+      ),
+      child: Column(
+        children: List.generate(_rowCount, (row) {
+          final isHeader = row == 0;
+          final dataRowIndex = row - 1;
+          final text =
+              isHeader ? '합계' : formatNumber(_rowFor(dataRowIndex).total);
+
+          return Container(
+            height: _rowHeight,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: isHeader ? _headerColor : null,
+              border: const Border(bottom: BorderSide(color: _borderColor)),
+            ),
+            child: Text(
+              text,
+              style: TextStyle(
+                fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          );
+        }),
       ),
     );
   }
