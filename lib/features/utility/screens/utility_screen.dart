@@ -3,6 +3,7 @@ import 'package:dpr_frontend/core/widgets/simple_data_table.dart';
 import 'package:dpr_frontend/features/utility/models/utility.dart';
 import 'package:dpr_frontend/features/utility/services/utility_service.dart';
 import 'package:dpr_frontend/features/utility/utils/utility_grouping.dart';
+import 'package:dpr_frontend/features/utility/utils/utility_period_columns.dart';
 import 'package:dpr_frontend/features/utility/utils/utility_period_grouping.dart';
 import 'package:dpr_frontend/features/utility/widgets/date_navigator.dart';
 import 'package:dpr_frontend/features/utility/widgets/segmented_toggle.dart';
@@ -136,6 +137,9 @@ class _UtilityScreenState extends State<UtilityScreen> {
       content = Center(child: Text('오류: $_error'));
     } else if (_selectedPeriod == '주') {
       final dateColumns = _weekDateColumns();
+      final columnLabels = dateColumns
+          .map((date) => DateTime.parse(date).day.toString().padLeft(2, '0'))
+          .toList();
       final groups = groupUtilitiesByPeriod(_utilities, _groupBy, dateColumns);
       final rowLabelHeader = _groupBy == '공장별' ? '공정' : '공장';
       content = ListView(
@@ -145,7 +149,46 @@ class _UtilityScreenState extends State<UtilityScreen> {
                   title: group.groupName,
                   table: UtilityPeriodTable(
                     rowLabelHeader: rowLabelHeader,
-                    dateColumns: dateColumns,
+                    columnLabels: columnLabels,
+                    electricityRows: group.electricityRows,
+                    waterRows: group.waterRows,
+                  ),
+                ))
+            .toList(),
+      );
+    } else if (_selectedPeriod == '월') {
+      final date = _selectedDateTime;
+      final columns = monthPeriodColumns(date.year, date.month);
+      final columnLabels = columns.map((c) => c.label).toList();
+      final groups = groupUtilitiesByColumns(_utilities, _groupBy, columns);
+      final rowLabelHeader = _groupBy == '공장별' ? '공정' : '공장';
+      content = ListView(
+        padding: const EdgeInsets.all(8),
+        children: groups
+            .map((group) => UtilityCard(
+                  title: group.groupName,
+                  table: UtilityPeriodTable(
+                    rowLabelHeader: rowLabelHeader,
+                    columnLabels: columnLabels,
+                    electricityRows: group.electricityRows,
+                    waterRows: group.waterRows,
+                  ),
+                ))
+            .toList(),
+      );
+    } else if (_selectedPeriod == '년') {
+      final columns = yearPeriodColumns(_selectedDateTime.year);
+      final columnLabels = columns.map((c) => c.label).toList();
+      final groups = groupUtilitiesByColumns(_utilities, _groupBy, columns);
+      final rowLabelHeader = _groupBy == '공장별' ? '공정' : '공장';
+      content = ListView(
+        padding: const EdgeInsets.all(8),
+        children: groups
+            .map((group) => UtilityCard(
+                  title: group.groupName,
+                  table: UtilityPeriodTable(
+                    rowLabelHeader: rowLabelHeader,
+                    columnLabels: columnLabels,
                     electricityRows: group.electricityRows,
                     waterRows: group.waterRows,
                   ),

@@ -4,18 +4,19 @@ import 'package:dpr_frontend/core/utils/number_format.dart';
 import 'package:dpr_frontend/features/utility/utils/utility_period_grouping.dart';
 
 // 주/월/년 보기 표
-// 컬럼: 구분 | 공정(또는 공장) | 날짜1...N | 합계
+// 컬럼: 구분 | 공정(또는 공장) | 기간열1...N | 합계
 // 행: 헤더 1행 + 전기 행들 + 용수 행들
 // sticky(고정 컬럼)는 아직 없음 - 전체가 가로로만 스크롤됨
+// columnLabels: 헤더에 표시할 문자열 (주 뷰: '08' 같은 일자, 월 뷰: '5/4~5/10' 같은 주간 범위)
 class UtilityPeriodTable extends StatelessWidget {
   final String rowLabelHeader; // 공장별 뷰 -> '공정', 공정별 뷰 -> '공장'
-  final List<String> dateColumns;
+  final List<String> columnLabels;
   final List<UtilityPeriodRowData> electricityRows;
   final List<UtilityPeriodRowData> waterRows;
 
   static const _categoryColumnWidth = 48.0;
   static const _labelColumnWidth = 64.0;
-  static const _dateColumnWidth = 56.0;
+  static const _periodColumnWidth = 56.0;
   static const _totalColumnWidth = 64.0;
   static const _rowHeight = 40.0;
   static const _borderColor = Color(0xFFE0E0E0);
@@ -24,12 +25,12 @@ class UtilityPeriodTable extends StatelessWidget {
   const UtilityPeriodTable({
     super.key,
     required this.rowLabelHeader,
-    required this.dateColumns,
+    required this.columnLabels,
     required this.electricityRows,
     required this.waterRows,
   });
 
-  int get _columnCount => 2 + dateColumns.length + 1;
+  int get _columnCount => 2 + columnLabels.length + 1;
   int get _rowCount => 1 + electricityRows.length + waterRows.length;
 
   @override
@@ -59,7 +60,7 @@ class UtilityPeriodTable extends StatelessWidget {
     } else if (column == _columnCount - 1) {
       width = _totalColumnWidth;
     } else {
-      width = _dateColumnWidth;
+      width = _periodColumnWidth;
     }
 
     return TableSpan(
@@ -108,7 +109,7 @@ class UtilityPeriodTable extends StatelessWidget {
     } else {
       final dateIndex = column - 2;
       if (isHeader) {
-        text = _formatDateLabel(dateColumns[dateIndex]);
+        text = columnLabels[dateIndex];
       } else {
         final value = _rowFor(dataRowIndex).values[dateIndex];
         text = value == null ? '-' : formatNumber(value);
@@ -125,11 +126,6 @@ class UtilityPeriodTable extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  // 'yyyy-MM-dd' -> 헤더에 표시할 'dd' (좁은 컬럼에 맞춰 일(day)만 표시)
-  String _formatDateLabel(String isoDate) {
-    return DateTime.parse(isoDate).day.toString().padLeft(2, '0');
   }
 
   // row 0은 헤더이므로, dataRowIndex(row - 1)를 electricityRows/waterRows로 매핑
