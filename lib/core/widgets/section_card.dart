@@ -32,7 +32,6 @@ class SectionCard extends StatelessWidget {
             if (footer != null) ...[  //  if-spread: if 충족하면 채움
               const SizedBox(height: 8),
               const SizedBox(height: 8),
-              const Divider(height: 1),
               const SizedBox(height: 4),
               footer!,
             ],

@@ -23,7 +23,7 @@ class SimpleDataTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Table(
-      border: TableBorder.all(color: const Color(0xFFE0E0E0), width: 0.5),
+      border: TableBorder.all(color: const Color(0xFFE0E0E0), width: 1),
       columnWidths: {
         for (int i=0; i < headers.length; i++)
           i : const FlexColumnWidth(),

@@ -37,12 +37,16 @@ class UtilityCard extends StatelessWidget {
     return SectionCard(
       title: group.groupName,
       footer: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text('누적합계'),
-          const SizedBox(width: 12),
-          Text('전기 $electricityText'),
-          const SizedBox(width: 12),
-          Text('용수 $waterText'),
+          Row(
+            children: [
+              Text('전기 $electricityText'),
+              const SizedBox(width: 16),
+              Text('용수 $waterText'),
+            ],
+          ),
         ],
       ),
       child: SimpleDataTable(headers: headers, rows: rows),
