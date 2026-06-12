@@ -4,11 +4,11 @@ import 'package:dpr_frontend/features/utility/models/utility.dart';
 
 // UtilityCard의 표 한 줄
 // label: 공장별 뷰 - '공정' , 공정별 뷰 - '공장'
-// values: dateColumns 순서에 맞춘 기간별 값 (e.g. 월~일 7개)
-// total: values의 합계
+// values: dateColumns 순서에 맞춘 기간별 값 (e.g. 월~일 7개). null = 해당 날짜 데이터 없음
+// total: values의 합계 (null은 0으로 취급)
 class UtilityPeriodRowData {
   final String label;
-  final List<double> values;
+  final List<double?> values;
   final double total;
 
   UtilityPeriodRowData({
@@ -83,22 +83,20 @@ List<UtilityPeriodGroup> groupUtilitiesByPeriod(
     for (final rowLabel in rowLabelsByGroup[groupId]!) {
       final records = recordsByKey['$groupId|$rowLabel']!;
 
-      final electricityValues = dateColumns
-          .map((date) => records[date]?.electricity ?? 0.0)
-          .toList();
-      final waterValues = dateColumns
-          .map((date) => records[date]?.water ?? 0.0)
-          .toList();
+      final electricityValues =
+          dateColumns.map((date) => records[date]?.electricity).toList();
+      final waterValues =
+          dateColumns.map((date) => records[date]?.water).toList();
 
       electricityRows.add(UtilityPeriodRowData(
         label: rowLabel,
         values: electricityValues,
-        total: electricityValues.fold(0.0, (a, b) => a + b),
+        total: electricityValues.fold(0.0, (a, b) => a + (b ?? 0.0)),
       ));
       waterRows.add(UtilityPeriodRowData(
         label: rowLabel,
         values: waterValues,
-        total: waterValues.fold(0.0, (a, b) => a + b),
+        total: waterValues.fold(0.0, (a, b) => a + (b ?? 0.0)),
       ));
     }
 

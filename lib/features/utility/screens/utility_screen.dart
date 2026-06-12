@@ -164,8 +164,10 @@ class _UtilityScreenState extends State<UtilityScreen> {
                     rows: group.rows
                         .map((r) => [
                               r.label,
-                              formatNumber(r.electricity),
-                              formatNumber(r.water),
+                              r.electricity == null
+                                  ? '-'
+                                  : formatNumber(r.electricity!),
+                              r.water == null ? '-' : formatNumber(r.water!),
                             ])
                         .toList(),
                   ),

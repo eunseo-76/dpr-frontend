@@ -5,10 +5,11 @@ import 'package:dpr_frontend/features/utility/models/utility.dart';
 // UtilityCard의 표 한 줄
 // 공장별 뷰 - '공정'
 // 공정별 뷰 - '공장'
+// electricity/water: null = 미입력 ("-"로 표시)
 class UtilityRowData {
   final String label;
-  final double electricity;
-  final double water;
+  final double? electricity;
+  final double? water;
 
   UtilityRowData({
     required this.label,
@@ -57,8 +58,8 @@ List<UtilityGroup> groupUtilities(List<Utility> utilities, String groupBy) {
     groupRows.putIfAbsent(groupId, () => []);
     groupRows[groupId]!.add(UtilityRowData(
       label: rowLabel,
-      electricity: u.electricity ?? 0,
-      water: u.water ?? 0,
+      electricity: u.electricity,
+      water: u.water,
     ));
   }
 

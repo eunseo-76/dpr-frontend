@@ -107,9 +107,12 @@ class UtilityPeriodTable extends StatelessWidget {
       text = isHeader ? '합계' : formatNumber(_rowFor(dataRowIndex).total);
     } else {
       final dateIndex = column - 2;
-      text = isHeader
-          ? _formatDateLabel(dateColumns[dateIndex])
-          : formatNumber(_rowFor(dataRowIndex).values[dateIndex]);
+      if (isHeader) {
+        text = _formatDateLabel(dateColumns[dateIndex]);
+      } else {
+        final value = _rowFor(dataRowIndex).values[dateIndex];
+        text = value == null ? '-' : formatNumber(value);
+      }
     }
 
     return Container(
