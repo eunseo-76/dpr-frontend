@@ -54,8 +54,14 @@ class UtilityPeriodTable extends StatelessWidget {
               ),
               columnBuilder: _buildColumnSpan,
               rowBuilder: _buildRowSpan,
-              cellBuilder: (context, vicinity) =>
-                  TableViewCell(child: _cell(vicinity)),
+              cellBuilder: (context, vicinity) {
+                final merge = _categoryMerge(vicinity);
+                return TableViewCell(
+                  rowMergeStart: merge?.$1,
+                  rowMergeSpan: merge?.$2,
+                  child: _cell(vicinity),
+                );
+              },
             ),
           ),
           _buildTotalColumn(),
@@ -94,6 +100,16 @@ class UtilityPeriodTable extends StatelessWidget {
     );
   }
 
+  // "구분" 컬럼(전기/용수)의 행 병합 정보. (rowMergeStart, rowMergeSpan)
+  // 헤더 행이거나 구분 컬럼이 아니면 null (병합 없음)
+  (int, int)? _categoryMerge(TableVicinity vicinity) {
+    if (vicinity.column != 0 || vicinity.row == 0) return null;
+    final dataRowIndex = vicinity.row - 1;
+    return dataRowIndex < electricityRows.length
+        ? (1, electricityRows.length)
+        : (1 + electricityRows.length, waterRows.length);
+  }
+
   // "구분"(전기/용수) + "공정/공장" + 날짜별 값 + 합계 중 하나를 그리는 셀
   Widget _cell(TableVicinity vicinity) {
     final row = vicinity.row;
@@ -105,13 +121,10 @@ class UtilityPeriodTable extends StatelessWidget {
     if (column == 0) {
       if (isHeader) {
         text = '구분';
-      } else if (dataRowIndex == 0 && electricityRows.isNotEmpty) {
+      } else if (dataRowIndex < electricityRows.length) {
         text = '전기';
-      } else if (dataRowIndex == electricityRows.length &&
-          waterRows.isNotEmpty) {
-        text = '용수';
       } else {
-        text = '';
+        text = '용수';
       }
     } else if (column == 1) {
       text = isHeader ? rowLabelHeader : _rowFor(dataRowIndex).label;
