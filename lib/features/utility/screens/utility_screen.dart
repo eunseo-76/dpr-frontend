@@ -12,6 +12,7 @@ import 'package:dpr_frontend/features/utility/widgets/date_navigator.dart';
 import 'package:dpr_frontend/features/utility/widgets/segmented_toggle.dart';
 import 'package:dpr_frontend/features/utility/widgets/utility_card.dart';
 import 'package:dpr_frontend/features/utility/widgets/utility_period_table.dart';
+import 'package:dpr_frontend/features/utility/widgets/utility_upsert_dialog.dart';
 import 'package:flutter/material.dart';
 
 class UtilityScreen extends StatefulWidget {
@@ -164,6 +165,51 @@ class _UtilityScreenState extends State<UtilityScreen> {
     _loadData();
   }
 
+  // 카드 편집 아이콘 -> 팝업. group(실적 데이터)과 groupScaffold(factoryId/processId)를
+  // 같은 순서로 묶어 UtilityUpsertRow 목록을 만든다.
+  void _openUpsertDialog({
+    required UtilityGroup group,
+    required GroupScaffold groupScaffold,
+    required String rowLabelHeader,
+  }) {
+    final rows = List.generate(group.rows.length, (i) {
+      final data = group.rows[i];
+      final rowScaffold = groupScaffold.rows[i];
+      return UtilityUpsertRow(
+        factoryId: rowScaffold.factoryId,
+        processId: rowScaffold.processId,
+        label: data.label,
+        electricity: data.electricity,
+        water: data.water,
+      );
+    });
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => UtilityUpsertDialog(
+        title: '${group.groupName} 편집',
+        date: _selectedDate.replaceAll('-', '.'),
+        rowLabelHeader: rowLabelHeader,
+        rows: rows,
+        onSave: (entries) async {
+          try {
+            await _utilityService.upsertUtilities(
+              date: _selectedDate,
+              entries: entries,
+            );
+            if (dialogContext.mounted) Navigator.pop(dialogContext);
+            _loadData();
+          } catch (e) {
+            if (dialogContext.mounted) {
+              ScaffoldMessenger.of(dialogContext)
+                  .showSnackBar(SnackBar(content: Text('저장 실패: $e')));
+            }
+          }
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scaffold = buildScaffold(_factoryProcesses, _groupBy);
@@ -244,6 +290,7 @@ class _UtilityScreenState extends State<UtilityScreen> {
       );
     } else {
       final groups = groupUtilities(_utilities, scaffold);
+      final rowLabelHeader = _groupBy == '공장별' ? '공정' : '공장';
       content = ListView(
         padding: const EdgeInsets.all(8),
         children: groups
@@ -252,6 +299,12 @@ class _UtilityScreenState extends State<UtilityScreen> {
                   cumulativeElectricity:
                       _summaryFor(group.groupId)?.electricitySum ?? 0,
                   cumulativeWater: _summaryFor(group.groupId)?.waterSum ?? 0,
+                  onEditTap: () => _openUpsertDialog(
+                    group: group,
+                    groupScaffold:
+                        scaffold.firstWhere((g) => g.groupId == group.groupId),
+                    rowLabelHeader: rowLabelHeader,
+                  ),
                   table: SimpleDataTable(
                     headers: const ['구분', '전기(Kwh)', '용수(t)'],
                     rows: group.rows

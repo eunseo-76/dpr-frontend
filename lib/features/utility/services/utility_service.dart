@@ -5,6 +5,7 @@ import 'package:dpr_frontend/core/network/api_client.dart';
 import 'package:dpr_frontend/features/utility/models/factory_process.dart';
 import 'package:dpr_frontend/features/utility/models/utility.dart';
 import 'package:dpr_frontend/features/utility/models/utility_summary.dart';
+import 'package:dpr_frontend/features/utility/models/utility_upsert_entry.dart';
 
 class UtilityService {
   final _client = ApiClient();
@@ -61,5 +62,22 @@ class UtilityService {
           .toList();
     }
     throw Exception('공장-공정 매핑 조회 실패: ${response.statusCode}');
+  }
+
+  // 전기/용수 입력/수정 (bulk upsert). data = 처리된 entry 개수
+  Future<int> upsertUtilities({
+    required String date,
+    required List<UtilityUpsertEntry> entries,
+  }) async {
+    final response = await _client.post(ApiConstants.utility, {
+      'date': date,
+      'entries': entries.map((e) => e.toJson()).toList(),
+    });
+
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      return body['data'] as int;
+    }
+    throw Exception('전기/용수 저장 실패: ${response.statusCode}');
   }
 }
