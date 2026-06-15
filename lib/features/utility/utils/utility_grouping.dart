@@ -7,15 +7,18 @@ import 'package:dpr_frontend/features/utility/utils/factory_process_scaffold.dar
 // 공장별 뷰 - '공정'
 // 공정별 뷰 - '공장'
 // electricity/water: null = 미입력 ("-"로 표시)
+// utilityId: 삭제 API에 필요한 식별자. null = 미입력 행(삭제 대상 아님)
 class UtilityRowData {
   final String label;
   final double? electricity;
   final double? water;
+  final int? utilityId;
 
   UtilityRowData({
     required this.label,
     required this.electricity,
     required this.water,
+    required this.utilityId,
   });
 }
 
@@ -56,6 +59,7 @@ List<UtilityGroup> groupUtilities(
                     label: row.label,
                     electricity: u?.electricity,
                     water: u?.water,
+                    utilityId: u?.utilityId,
                   );
                 })
                 .toList(),

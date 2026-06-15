@@ -18,6 +18,19 @@ class ApiClient {
     );
   }
 
+  Future<http.Response> delete(String endpoint, Map<String, dynamic> body) async {
+    final token = await TokenStorage.getToken();
+    final uri = Uri.parse('${ApiConstants.baseUrl}$endpoint');
+    return http.delete(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
+    );
+  }
+
   Future<http.Response> get(String endpoint,
       {Map<String, String>? queryParams}) async {
     final token = await TokenStorage.getToken();

@@ -80,4 +80,15 @@ class UtilityService {
     }
     throw Exception('전기/용수 저장 실패: ${response.statusCode}');
   }
+
+  // 다중 선택 삭제 (soft delete). all-or-nothing
+  Future<void> deleteUtilities(List<int> utilityIds) async {
+    final response = await _client.delete(ApiConstants.utility, {
+      'utilityIds': utilityIds,
+    });
+
+    if (response.statusCode != 200) {
+      throw Exception('전기/용수 삭제 실패: ${response.statusCode}');
+    }
+  }
 }

@@ -31,6 +31,8 @@ class _UtilityScreenState extends State<UtilityScreen> {
   String _groupBy = '공장별';
   String _selectedPeriod = '일';
   String _selectedDate = DateTime.now().toIso8601String().substring(0, 10);
+  bool _isSelectionMode = false;
+  Set<int> _selectedIds = {};
 
   final _utilityService = UtilityService();
 
@@ -163,6 +165,66 @@ class _UtilityScreenState extends State<UtilityScreen> {
       _selectedDate = newDate.toIso8601String().substring(0, 10);
     });
     _loadData();
+  }
+
+  // long-press: 선택 모드 진입 + 첫 항목 선택
+  void _enterSelectionMode(int utilityId) {
+    setState(() {
+      _isSelectionMode = true;
+      _selectedIds = {utilityId};
+    });
+  }
+
+  // 선택 모드 중 행 탭: 선택 토글. 마지막 항목을 해제하면 선택 모드 종료
+  void _toggleSelection(int utilityId) {
+    setState(() {
+      if (_selectedIds.contains(utilityId)) {
+        _selectedIds.remove(utilityId);
+      } else {
+        _selectedIds.add(utilityId);
+      }
+      if (_selectedIds.isEmpty) _isSelectionMode = false;
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _isSelectionMode = false;
+      _selectedIds = {};
+    });
+  }
+
+  // 휴지통 아이콘 -> 확인 다이얼로그 -> 삭제
+  Future<void> _confirmDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('삭제'),
+        content: Text('선택한 ${_selectedIds.length}개 항목을 삭제할까요?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await _utilityService.deleteUtilities(_selectedIds.toList());
+      _exitSelectionMode();
+      _loadData();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
+      }
+    }
   }
 
   // 카드 편집 아이콘 -> 팝업. group(실적 데이터)과 groupScaffold(factoryId/processId)를
@@ -307,12 +369,14 @@ class _UtilityScreenState extends State<UtilityScreen> {
                   cumulativeElectricity:
                       _summaryFor(group.groupId)?.electricitySum ?? 0,
                   cumulativeWater: _summaryFor(group.groupId)?.waterSum ?? 0,
-                  onEditTap: () => _openUpsertDialog(
-                    group: group,
-                    groupScaffold:
-                        scaffold.firstWhere((g) => g.groupId == group.groupId),
-                    rowLabelHeader: rowLabelHeader,
-                  ),
+                  onEditTap: _isSelectionMode
+                      ? null
+                      : () => _openUpsertDialog(
+                            group: group,
+                            groupScaffold: scaffold
+                                .firstWhere((g) => g.groupId == group.groupId),
+                            rowLabelHeader: rowLabelHeader,
+                          ),
                   table: SimpleDataTable(
                     headers: const ['구분', '전기(Kwh)', '용수(t)'],
                     rows: group.rows
@@ -324,6 +388,11 @@ class _UtilityScreenState extends State<UtilityScreen> {
                               r.water == null ? '-' : formatNumber(r.water!),
                             ])
                         .toList(),
+                    rowIds: group.rows.map((r) => r.utilityId).toList(),
+                    selectionMode: _isSelectionMode,
+                    selectedIds: _selectedIds,
+                    onRowLongPress: _enterSelectionMode,
+                    onRowTap: _toggleSelection,
                   ),
                 ))
             .toList(),
@@ -331,6 +400,23 @@ class _UtilityScreenState extends State<UtilityScreen> {
     }
 
     return Scaffold(
+      appBar: _isSelectionMode
+          ? AppBar(
+              backgroundColor: Colors.deepPurple,
+              foregroundColor: Colors.white,
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: _exitSelectionMode,
+              ),
+              title: Text('${_selectedIds.length}개 선택됨'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: _confirmDelete,
+                ),
+              ],
+            )
+          : null,
       body: SafeArea(
         child: Column(
           children: [
@@ -338,6 +424,7 @@ class _UtilityScreenState extends State<UtilityScreen> {
               options: const ['공장별', '공정별'],
               selected: _groupBy,
               onChanged: (value) {
+                _exitSelectionMode();
                 setState(() => _groupBy = value);
                 _loadData();
               },
@@ -346,6 +433,7 @@ class _UtilityScreenState extends State<UtilityScreen> {
               options: const ['일', '주', '월', '년'],
               selected: _selectedPeriod,
               onChanged: (value) {
+                _exitSelectionMode();
                 setState(() => _selectedPeriod = value);
                 _loadData();
               },
