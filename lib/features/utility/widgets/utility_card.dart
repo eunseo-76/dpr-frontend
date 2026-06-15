@@ -6,27 +6,21 @@ import 'package:dpr_frontend/core/widgets/section_card.dart';
 class UtilityCard extends StatelessWidget {
   final String title;
   final Widget table;
-
-  // TODO: 누적 합계 아직 없음... 일단 null
-  final double? cumulativeElectricity;
-  final double? cumulativeWater;
+  final double cumulativeElectricity;
+  final double cumulativeWater;
 
   const UtilityCard({
     super.key,
     required this.title,
     required this.table,
-    this.cumulativeElectricity,
-    this.cumulativeWater,
+    required this.cumulativeElectricity,
+    required this.cumulativeWater,
   });
 
   @override
   Widget build(BuildContext context) {
-    final electricityText = cumulativeElectricity == null
-        ? '준비중'
-        : '${formatNumber(cumulativeElectricity!)} Kwh';
-    final waterText = cumulativeWater == null
-        ? '준비중'
-        : '${formatNumber(cumulativeWater!)} t';
+    final electricityText = '${formatNumber(cumulativeElectricity)} Kwh';
+    final waterText = '${formatNumber(cumulativeWater)} t';
 
     return SectionCard(
       title: title,

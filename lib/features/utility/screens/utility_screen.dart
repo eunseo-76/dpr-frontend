@@ -1,6 +1,7 @@
 import 'package:dpr_frontend/core/utils/number_format.dart';
 import 'package:dpr_frontend/core/widgets/simple_data_table.dart';
 import 'package:dpr_frontend/features/utility/models/utility.dart';
+import 'package:dpr_frontend/features/utility/models/utility_summary.dart';
 import 'package:dpr_frontend/features/utility/services/utility_service.dart';
 import 'package:dpr_frontend/features/utility/utils/utility_grouping.dart';
 import 'package:dpr_frontend/features/utility/utils/utility_period_columns.dart';
@@ -20,6 +21,7 @@ class UtilityScreen extends StatefulWidget {
 
 class _UtilityScreenState extends State<UtilityScreen> {
   List<Utility> _utilities = [];
+  List<UtilitySummary> _summaries = [];
   bool _isLoading = true;
   String? _error;
   String _groupBy = '공장별';
@@ -35,6 +37,11 @@ class _UtilityScreenState extends State<UtilityScreen> {
     '년': 'YEAR',
   };
 
+  static const _groupByMap = {
+    '공장별': 'FACTORY',
+    '공정별': 'PROCESS',
+  };
+
   @override
   void initState() {
     super.initState();
@@ -48,19 +55,34 @@ class _UtilityScreenState extends State<UtilityScreen> {
     });
 
     try {
-      final results = await _utilityService.getUtilityList(
-        date: _selectedDate,
-        periodType: _periodTypeMap[_selectedPeriod]!,
-      );
+      final results = await Future.wait([
+        _utilityService.getUtilityList(
+          date: _selectedDate,
+          periodType: _periodTypeMap[_selectedPeriod]!,
+        ),
+        _utilityService.getUtilitySummary(
+          groupBy: _groupByMap[_groupBy]!,
+          date: _selectedDate,
+        ),
+      ]);
 
       setState(() {
-        _utilities = results;
+        _utilities = results[0] as List<Utility>;
+        _summaries = results[1] as List<UtilitySummary>;
       });
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  // groupId로 누적합계를 찾는다. 없으면 0 (데이터 없는 그룹)
+  UtilitySummary? _summaryFor(int groupId) {
+    for (final summary in _summaries) {
+      if (summary.groupId == groupId) return summary;
+    }
+    return null;
   }
 
   DateTime get _selectedDateTime => DateTime.parse(_selectedDate);
@@ -147,6 +169,9 @@ class _UtilityScreenState extends State<UtilityScreen> {
         children: groups
             .map((group) => UtilityCard(
                   title: group.groupName,
+                  cumulativeElectricity:
+                      _summaryFor(group.groupId)?.electricitySum ?? 0,
+                  cumulativeWater: _summaryFor(group.groupId)?.waterSum ?? 0,
                   table: UtilityPeriodTable(
                     rowLabelHeader: rowLabelHeader,
                     columnLabels: columnLabels,
@@ -167,6 +192,9 @@ class _UtilityScreenState extends State<UtilityScreen> {
         children: groups
             .map((group) => UtilityCard(
                   title: group.groupName,
+                  cumulativeElectricity:
+                      _summaryFor(group.groupId)?.electricitySum ?? 0,
+                  cumulativeWater: _summaryFor(group.groupId)?.waterSum ?? 0,
                   table: UtilityPeriodTable(
                     rowLabelHeader: rowLabelHeader,
                     columnLabels: columnLabels,
@@ -186,6 +214,9 @@ class _UtilityScreenState extends State<UtilityScreen> {
         children: groups
             .map((group) => UtilityCard(
                   title: group.groupName,
+                  cumulativeElectricity:
+                      _summaryFor(group.groupId)?.electricitySum ?? 0,
+                  cumulativeWater: _summaryFor(group.groupId)?.waterSum ?? 0,
                   table: UtilityPeriodTable(
                     rowLabelHeader: rowLabelHeader,
                     columnLabels: columnLabels,
@@ -202,6 +233,9 @@ class _UtilityScreenState extends State<UtilityScreen> {
         children: groups
             .map((group) => UtilityCard(
                   title: group.groupName,
+                  cumulativeElectricity:
+                      _summaryFor(group.groupId)?.electricitySum ?? 0,
+                  cumulativeWater: _summaryFor(group.groupId)?.waterSum ?? 0,
                   table: SimpleDataTable(
                     headers: const ['구분', '전기(Kwh)', '용수(t)'],
                     rows: group.rows
@@ -228,6 +262,7 @@ class _UtilityScreenState extends State<UtilityScreen> {
               selected: _groupBy,
               onChanged: (value) {
                 setState(() => _groupBy = value);
+                _loadData();
               },
             ),
             SegmentedToggle(

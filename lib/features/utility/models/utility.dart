@@ -33,6 +33,5 @@ class Utility {
         water: (json['water'] as num?)?.toDouble(),
         status: json['status'] as String,
     );
-
   }
 }
