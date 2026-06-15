@@ -239,6 +239,14 @@ class _UtilityScreenState extends State<UtilityScreen> {
                     columnLabels: columnLabels,
                     electricityRows: group.electricityRows,
                     waterRows: group.waterRows,
+                    columnDates: dateColumns,
+                    onDateTap: (date) {
+                      setState(() {
+                        _selectedDate = date;
+                        _selectedPeriod = '일';
+                      });
+                      _loadData();
+                    },
                   ),
                 ))
             .toList(),

@@ -18,6 +18,11 @@ class UtilityPeriodTable extends StatelessWidget {
   final List<UtilityPeriodRowData> electricityRows;
   final List<UtilityPeriodRowData> waterRows;
 
+  // 주 뷰에서만 사용: 각 열에 대응하는 날짜('yyyy-MM-dd') + 날짜 헤더 탭 콜백
+  // 둘 다 null이면(월/년 뷰) 헤더 날짜 셀은 탭 불가
+  final List<String>? columnDates;
+  final void Function(String date)? onDateTap;
+
   static const _categoryColumnWidth = 48.0;
   static const _labelColumnWidth = 64.0;
   static const _periodColumnWidth = 56.0;
@@ -32,6 +37,8 @@ class UtilityPeriodTable extends StatelessWidget {
     required this.columnLabels,
     required this.electricityRows,
     required this.waterRows,
+    this.columnDates,
+    this.onDateTap,
   });
 
   int get _columnCount => 2 + columnLabels.length;
@@ -138,15 +145,28 @@ class UtilityPeriodTable extends StatelessWidget {
       }
     }
 
-    return Container(
+    // 주 뷰: 헤더의 날짜 셀을 탭하면 해당 날짜의 일 뷰로 이동
+    final isDateHeader = isHeader && column >= 2;
+    final isTappable =
+        isDateHeader && columnDates != null && onDateTap != null;
+
+    final cell = Container(
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Text(
         text,
         style: TextStyle(
           fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+          color: isTappable ? Colors.blue : null,
         ),
       ),
+    );
+
+    if (!isTappable) return cell;
+
+    return InkWell(
+      onTap: () => onDateTap!(columnDates![column - 2]),
+      child: cell,
     );
   }
 
