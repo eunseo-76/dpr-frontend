@@ -1,8 +1,10 @@
 import 'package:dpr_frontend/core/utils/number_format.dart';
 import 'package:dpr_frontend/core/widgets/simple_data_table.dart';
+import 'package:dpr_frontend/features/utility/models/factory_process.dart';
 import 'package:dpr_frontend/features/utility/models/utility.dart';
 import 'package:dpr_frontend/features/utility/models/utility_summary.dart';
 import 'package:dpr_frontend/features/utility/services/utility_service.dart';
+import 'package:dpr_frontend/features/utility/utils/factory_process_scaffold.dart';
 import 'package:dpr_frontend/features/utility/utils/utility_grouping.dart';
 import 'package:dpr_frontend/features/utility/utils/utility_period_columns.dart';
 import 'package:dpr_frontend/features/utility/utils/utility_period_grouping.dart';
@@ -22,6 +24,7 @@ class UtilityScreen extends StatefulWidget {
 class _UtilityScreenState extends State<UtilityScreen> {
   List<Utility> _utilities = [];
   List<UtilitySummary> _summaries = [];
+  List<FactoryProcess> _factoryProcesses = [];
   bool _isLoading = true;
   String? _error;
   String _groupBy = '공장별';
@@ -45,7 +48,18 @@ class _UtilityScreenState extends State<UtilityScreen> {
   @override
   void initState() {
     super.initState();
+    _loadFactoryProcesses();
     _loadData();
+  }
+
+  // 공장-공정 매핑 (날짜와 무관, 한 번만 불러오면 됨)
+  Future<void> _loadFactoryProcesses() async {
+    try {
+      final factoryProcesses = await _utilityService.getFactoryProcesses();
+      setState(() => _factoryProcesses = factoryProcesses);
+    } catch (e) {
+      setState(() => _error = e.toString());
+    }
   }
 
   Future<void> _loadData() async {
@@ -152,6 +166,8 @@ class _UtilityScreenState extends State<UtilityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scaffold = buildScaffold(_factoryProcesses, _groupBy);
+
     Widget content;
     if (_isLoading) {
       content = const Center(child: CircularProgressIndicator());
@@ -162,7 +178,7 @@ class _UtilityScreenState extends State<UtilityScreen> {
       final columnLabels = dateColumns
           .map((date) => DateTime.parse(date).day.toString().padLeft(2, '0'))
           .toList();
-      final groups = groupUtilitiesByPeriod(_utilities, _groupBy, dateColumns);
+      final groups = groupUtilitiesByPeriod(_utilities, scaffold, dateColumns);
       final rowLabelHeader = _groupBy == '공장별' ? '공정' : '공장';
       content = ListView(
         padding: const EdgeInsets.all(8),
@@ -185,7 +201,7 @@ class _UtilityScreenState extends State<UtilityScreen> {
       final date = _selectedDateTime;
       final columns = monthPeriodColumns(date.year, date.month);
       final columnLabels = columns.map((c) => c.label).toList();
-      final groups = groupUtilitiesByColumns(_utilities, _groupBy, columns);
+      final groups = groupUtilitiesByColumns(_utilities, scaffold, columns);
       final rowLabelHeader = _groupBy == '공장별' ? '공정' : '공장';
       content = ListView(
         padding: const EdgeInsets.all(8),
@@ -207,7 +223,7 @@ class _UtilityScreenState extends State<UtilityScreen> {
     } else if (_selectedPeriod == '년') {
       final columns = yearPeriodColumns(_selectedDateTime.year);
       final columnLabels = columns.map((c) => c.label).toList();
-      final groups = groupUtilitiesByColumns(_utilities, _groupBy, columns);
+      final groups = groupUtilitiesByColumns(_utilities, scaffold, columns);
       final rowLabelHeader = _groupBy == '공장별' ? '공정' : '공장';
       content = ListView(
         padding: const EdgeInsets.all(8),
@@ -227,7 +243,7 @@ class _UtilityScreenState extends State<UtilityScreen> {
             .toList(),
       );
     } else {
-      final groups = groupUtilities(_utilities, _groupBy);
+      final groups = groupUtilities(_utilities, scaffold);
       content = ListView(
         padding: const EdgeInsets.all(8),
         children: groups

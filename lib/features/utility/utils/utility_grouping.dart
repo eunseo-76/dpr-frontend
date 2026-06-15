@@ -1,4 +1,5 @@
 import 'package:dpr_frontend/features/utility/models/utility.dart';
+import 'package:dpr_frontend/features/utility/utils/factory_process_scaffold.dart';
 
 // 일별 보기
 
@@ -33,42 +34,31 @@ class UtilityGroup {
   });
 }
 
-// List<Utility> 를 List<UtilityGroup> 카드로
-List<UtilityGroup> groupUtilities(List<Utility> utilities, String groupBy) {
-  final Map<int, String> groupNames = {}; // groupId -> 카드 제목
-  final Map<int, List<UtilityRowData>> groupRows = {}; // groupId -> 행 목록
+// scaffold(공장-공정 매핑으로 만든 카드+행 뼈대)를 기준으로 List<UtilityGroup> 카드를 만든다.
+// utilities는 (factoryId, processId) -> Utility 조회용 데이터로만 사용한다.
+// scaffold에는 있지만 utilities에 없는 행은 electricity/water가 null("-")로 표시된다.
+List<UtilityGroup> groupUtilities(
+  List<Utility> utilities,
+  List<GroupScaffold> scaffold,
+) {
+  final Map<String, Utility> byKey = {
+    for (final u in utilities) '${u.factoryId}|${u.processId}': u,
+  };
 
-  for (final u in utilities) {
-    late final int groupId;
-    late final String groupName;
-    late final String rowLabel;
-
-    // groupBy에 따라 groupId / groupName / rowLabel 결정
-    if (groupBy == '공장별') {
-      groupId = u.factoryId;
-      groupName = u.factoryName;  // 카드는 공장
-      rowLabel = u.processName; // 행은 공정
-    } else {
-      groupId = u.processId;
-      groupName = u.processName;  // 카드는 공정
-      rowLabel = u.factoryName; // 행은 공장
-    }
-
-    groupNames.putIfAbsent(groupId, () => groupName); // groupId를 카드 제목으로 (같은 groupId는 무시)
-    groupRows.putIfAbsent(groupId, () => []);
-    groupRows[groupId]!.add(UtilityRowData(
-      label: rowLabel,
-      electricity: u.electricity,
-      water: u.water,
-    ));
-  }
-
-  // [UtilityGroup(1,"공장A",[3개행]), UtilityGroup(2,"공장B",[2개행])]
-  return groupNames.entries
-      .map((e) => UtilityGroup(
-            groupId: e.key,
-            groupName: e.value,
-            rows: groupRows[e.key]!,
+  return scaffold
+      .map((group) => UtilityGroup(
+            groupId: group.groupId,
+            groupName: group.groupName,
+            rows: group.rows
+                .map((row) {
+                  final u = byKey['${row.factoryId}|${row.processId}'];
+                  return UtilityRowData(
+                    label: row.label,
+                    electricity: u?.electricity,
+                    water: u?.water,
+                  );
+                })
+                .toList(),
           ))
       .toList();
 }
