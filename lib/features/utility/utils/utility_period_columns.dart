@@ -1,4 +1,5 @@
 import 'package:dpr_frontend/features/utility/models/utility.dart';
+import 'package:dpr_frontend/features/utility/utils/factory_process_scaffold.dart';
 import 'package:dpr_frontend/features/utility/utils/utility_period_grouping.dart';
 
 // 주/월/년 보기에서 표의 한 열(컬럼)
@@ -48,87 +49,54 @@ List<PeriodColumn> yearPeriodColumns(int year) {
   });
 }
 
-// utilities를 columns 기준으로 피벗 + 합산
+// scaffold(공장-공정 매핑으로 만든 카드+행 뼈대)를 columns 기준으로 피벗 + 합산.
+// utilities는 (factoryId, processId, date) -> Utility 조회용 데이터로만 사용한다.
 // 출력 모양은 groupUtilitiesByPeriod와 동일 (UtilityPeriodGroup/UtilityPeriodRowData 재사용)
 List<UtilityPeriodGroup> groupUtilitiesByColumns(
   List<Utility> utilities,
-  String groupBy,
+  List<GroupScaffold> scaffold,
   List<PeriodColumn> columns,
 ) {
-  final Map<int, String> groupNames = {}; // groupId -> 카드 제목
-  final Map<int, List<String>> rowLabelsByGroup = {}; // groupId -> 행 라벨 순서
-  final Map<String, Map<String, Utility>> recordsByKey = {}; // '$groupId|$rowLabel' -> {date: Utility}
+  final Map<String, Utility> byKey = {
+    for (final u in utilities) '${u.factoryId}|${u.processId}|${u.date}': u,
+  };
 
-  for (final u in utilities) {
-    late final int groupId;
-    late final String groupName;
-    late final String rowLabel;
-
-    // groupBy에 따라 groupId / groupName / rowLabel 결정 (groupUtilitiesByPeriod와 동일)
-    if (groupBy == '공장별') {
-      groupId = u.factoryId;
-      groupName = u.factoryName;
-      rowLabel = u.processName;
-    } else {
-      groupId = u.processId;
-      groupName = u.processName;
-      rowLabel = u.factoryName;
-    }
-
-    groupNames.putIfAbsent(groupId, () => groupName);
-
-    final labels = rowLabelsByGroup.putIfAbsent(groupId, () => []);
-    if (!labels.contains(rowLabel)) labels.add(rowLabel);
-
-    final key = '$groupId|$rowLabel';
-    recordsByKey.putIfAbsent(key, () => {})[u.date] = u;
-  }
-
-  final groups = <UtilityPeriodGroup>[];
-
-  for (final entry in groupNames.entries) {
-    final groupId = entry.key;
-    final groupName = entry.value;
-
+  return scaffold.map((group) {
     final electricityRows = <UtilityPeriodRowData>[];
     final waterRows = <UtilityPeriodRowData>[];
 
-    for (final rowLabel in rowLabelsByGroup[groupId]!) {
-      final records = recordsByKey['$groupId|$rowLabel']!;
-
+    for (final row in group.rows) {
       // 컬럼별로 그 안의 날짜들을 합산. 전부 레코드 없으면 null, 하나라도 있으면 합산
       final electricityValues = columns
-          .map((column) => _sumOrNull(
-                column.dates.map((date) => records[date]?.electricity),
-              ))
+          .map((column) => _sumOrNull(column.dates.map(
+                (date) => byKey['${row.factoryId}|${row.processId}|$date']?.electricity,
+              )))
           .toList();
       final waterValues = columns
-          .map((column) => _sumOrNull(
-                column.dates.map((date) => records[date]?.water),
-              ))
+          .map((column) => _sumOrNull(column.dates.map(
+                (date) => byKey['${row.factoryId}|${row.processId}|$date']?.water,
+              )))
           .toList();
 
       electricityRows.add(UtilityPeriodRowData(
-        label: rowLabel,
+        label: row.label,
         values: electricityValues,
         total: electricityValues.fold(0.0, (a, b) => a + (b ?? 0.0)),
       ));
       waterRows.add(UtilityPeriodRowData(
-        label: rowLabel,
+        label: row.label,
         values: waterValues,
         total: waterValues.fold(0.0, (a, b) => a + (b ?? 0.0)),
       ));
     }
 
-    groups.add(UtilityPeriodGroup(
-      groupId: groupId,
-      groupName: groupName,
+    return UtilityPeriodGroup(
+      groupId: group.groupId,
+      groupName: group.groupName,
       electricityRows: electricityRows,
       waterRows: waterRows,
-    ));
-  }
-
-  return groups;
+    );
+  }).toList();
 }
 
 // 모든 값이 null이면 null, 하나라도 있으면 null을 0으로 취급해 합산

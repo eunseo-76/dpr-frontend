@@ -34,9 +34,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
       // 로그인 후 뒤로가기 못하게 pushReplacement
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (_) => const MainScreen()),
+        (route) => false,
       );
     } catch (e) {
       setState(() {

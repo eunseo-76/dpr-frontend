@@ -5,21 +5,27 @@ class UserStorage {
   static const _name = 'user_name';
   static const _position = 'user_position';
   static const _companyId = 'user_company_id';
+  static const _companyName = 'user_company_name';
   static const _factoryId = 'user_factory_id';
+  static const _factoryName = 'user_factory_name';
 
   static Future<void> saveUserInfo(
     String role,
     String name,
     String position,
     int companyId,
+    String companyName,
     int? factoryId,
+    String? factoryName,
   ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_role, role);
     await prefs.setString(_name, name);
     await prefs.setString(_position, position);
     await prefs.setInt(_companyId, companyId);
+    await prefs.setString(_companyName, companyName);
     if (factoryId != null) await prefs.setInt(_factoryId, factoryId);
+    if (factoryName != null) await prefs.setString(_factoryName, factoryName);
   }
 
   // 한 번도 로그인 안 한 경우 sharedPreferences가 비어있음.
@@ -44,9 +50,24 @@ class UserStorage {
     return prefs.getInt(_companyId);
   }
 
+  static Future<String?> getCompanyName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_companyName);
+  }
+
   static Future<int?> getFactoryId() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getInt(_factoryId);
+  }
+
+  static Future<String?> getFactoryName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_factoryName);
+  }
+
+  static Future<void> updateName(String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_name, name);
   }
 
   static Future<void> clearUserInfo() async {

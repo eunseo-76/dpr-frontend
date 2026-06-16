@@ -6,11 +6,41 @@ import 'package:http/http.dart' as http;
 
 class ApiClient {
   Future<http.Response> post(String endpoint, Map<String, dynamic> body) async {
+    final token = await TokenStorage.getToken();
     final uri = Uri.parse('${ApiConstants.baseUrl}$endpoint');
     return http.post(
       uri,
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
       body: jsonEncode(body), // body의 Map 객체를 json string으로 변환
+    );
+  }
+
+  Future<http.Response> delete(String endpoint, Map<String, dynamic> body) async {
+    final token = await TokenStorage.getToken();
+    final uri = Uri.parse('${ApiConstants.baseUrl}$endpoint');
+    return http.delete(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
+    );
+  }
+
+  Future<http.Response> patch(String endpoint, Map<String, dynamic> body) async {
+    final token = await TokenStorage.getToken();
+    final uri = Uri.parse('${ApiConstants.baseUrl}$endpoint');
+    return http.patch(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode(body),
     );
   }
 

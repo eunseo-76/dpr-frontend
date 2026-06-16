@@ -25,7 +25,9 @@ class AuthService {
         loginResponse.name,
         loginResponse.position,
         loginResponse.companyId,
+        loginResponse.companyName,
         loginResponse.factoryId,
+        loginResponse.factoryName,
       );
       return loginResponse;
     }

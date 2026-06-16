@@ -5,7 +5,9 @@ class LoginResponse {
   final String position;
   final String role;
   final int companyId;
-  final int? factoryId; // OWNER는 nullable
+  final String companyName;
+  final int? factoryId;
+  final String? factoryName;
 
   LoginResponse({
     required this.accessToken,
@@ -13,7 +15,9 @@ class LoginResponse {
     required this.position,
     required this.role,
     required this.companyId,
+    required this.companyName,
     this.factoryId,
+    this.factoryName,
   });
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
@@ -23,7 +27,9 @@ class LoginResponse {
       position: json['position'] as String,
       role: json['role'] as String,
       companyId: json['companyId'] as int,
+      companyName: json['companyName'] as String,
       factoryId: json['factoryId'] as int?,
+      factoryName: json['factoryName'] as String?,
     );
   }
 }

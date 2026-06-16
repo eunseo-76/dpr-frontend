@@ -5,4 +5,6 @@ class ApiConstants {
   static const String production = '/api/productions';
   static const String unit = '/api/units';
   static const String utility = '/api/utilities';
+  static const String factoryProcess = '/api/factory-processes';
+  static const String updateMe = '/api/users/me';
 }

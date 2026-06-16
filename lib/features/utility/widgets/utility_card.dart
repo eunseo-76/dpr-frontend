@@ -8,6 +8,7 @@ class UtilityCard extends StatelessWidget {
   final Widget table;
   final double cumulativeElectricity;
   final double cumulativeWater;
+  final VoidCallback? onEditTap;
 
   const UtilityCard({
     super.key,
@@ -15,6 +16,7 @@ class UtilityCard extends StatelessWidget {
     required this.table,
     required this.cumulativeElectricity,
     required this.cumulativeWater,
+    this.onEditTap,
   });
 
   @override
@@ -24,6 +26,7 @@ class UtilityCard extends StatelessWidget {
 
     return SectionCard(
       title: title,
+      onEditTap: onEditTap,
       footer: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
