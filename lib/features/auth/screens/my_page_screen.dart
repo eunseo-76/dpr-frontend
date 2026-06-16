@@ -14,6 +14,9 @@ class MyPageScreen extends StatefulWidget {
 class _MyPageScreenState extends State<MyPageScreen> {
   String _name = '';
   String _position = '';
+  String _role = '';
+  String _companyName = '';
+  String? _factoryName;
 
   @override
   void initState() {
@@ -22,14 +25,30 @@ class _MyPageScreenState extends State<MyPageScreen> {
   }
 
   Future<void> _loadUserInfo() async {
-    final name = await UserStorage.getName();
-    final position = await UserStorage.getPosition();
+    final results = await Future.wait([
+      UserStorage.getName(),
+      UserStorage.getPosition(),
+      UserStorage.getRole(),
+      UserStorage.getCompanyName(),
+      UserStorage.getFactoryName(),
+    ]);
     if (mounted) {
       setState(() {
-        _name = name ?? '';
-        _position = position ?? '';
+        _name = results[0] ?? '';
+        _position = results[1] ?? '';
+        _role = results[2] ?? '';
+        _companyName = results[3] ?? '';
+        _factoryName = results[4];
       });
     }
+  }
+
+  Widget _infoTile(IconData icon, String label, String value) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.grey[600]),
+      title: Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+      subtitle: Text(value, style: const TextStyle(fontSize: 15, color: Colors.black87)),
+    );
   }
 
   Future<void> _logout() async {
@@ -83,7 +102,23 @@ class _MyPageScreenState extends State<MyPageScreen> {
               style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                if (_role == 'OWNER')
+                  _infoTile(Icons.business_outlined, '회사', _companyName),
+                if (_factoryName != null)
+                  _infoTile(Icons.factory_outlined, '소속', _factoryName!),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 20),
             decoration: BoxDecoration(
