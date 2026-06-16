@@ -5,6 +5,6 @@ class Unit {
   Unit({required this.id, required this.name});
 
   factory Unit.fromJson(Map<String, dynamic> json) {
-    return Unit(id: json['id'] as int, name: json['name'] as String);
+    return Unit(id: json['unitId'] as int, name: json['name'] as String);
   }
 }
