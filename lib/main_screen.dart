@@ -13,8 +13,18 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  late final List<Widget> _screens;
 
-  final _screens = const [HomeScreen(), ProductionScreen(), WipScreen(), UtilityScreen()];
+  @override
+  void initState() {
+    super.initState();
+    _screens = [
+      HomeScreen(onTabChange: (index) => setState(() => _currentIndex = index)),
+      const ProductionScreen(),
+      const WipScreen(),
+      const UtilityScreen(),
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {

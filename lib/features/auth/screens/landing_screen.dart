@@ -40,7 +40,7 @@ class LandingScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  '생산일보 시스템',
+                  '생산일보',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 28,
@@ -50,7 +50,7 @@ class LandingScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'PCB 생산 실적 통합 관리',
+                  'PCB 생산실적 통합 관리',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.6),
                     fontSize: 14,

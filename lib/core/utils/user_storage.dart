@@ -49,6 +49,11 @@ class UserStorage {
     return prefs.getInt(_factoryId);
   }
 
+  static Future<void> updateName(String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_name, name);
+  }
+
   static Future<void> clearUserInfo() async {
     final prefs = await SharedPreferences.getInstance();
     // 성능 차이는 없다는데 await 여러 개는 다 병렬로 묶기로

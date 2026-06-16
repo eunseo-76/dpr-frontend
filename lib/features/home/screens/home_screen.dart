@@ -1,13 +1,12 @@
 import 'package:dpr_frontend/core/utils/user_storage.dart';
 import 'package:dpr_frontend/features/auth/screens/my_page_screen.dart';
-import 'package:dpr_frontend/features/production/screens/production_screen.dart';
 import 'package:dpr_frontend/features/settings/screens/settings_screen.dart';
-import 'package:dpr_frontend/features/utility/screens/utility_screen.dart';
-import 'package:dpr_frontend/features/wip/screens/wip_screen.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final void Function(int) onTabChange;
+
+  const HomeScreen({super.key, required this.onTabChange});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -103,10 +102,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildMenuSection(BuildContext context) {
     final items = [
-      (Icons.precision_manufacturing, '생산실적', const ProductionScreen()),
-      (Icons.layers, '재공현황', const WipScreen()),
-      (Icons.electric_bolt, '전기&용수', const UtilityScreen()),
-      (Icons.settings, '설정', const SettingsScreen()),
+      (Icons.precision_manufacturing, '생산실적', () => widget.onTabChange(1)),
+      (Icons.layers, '재공현황', () => widget.onTabChange(2)),
+      (Icons.electric_bolt, '전기&용수', () => widget.onTabChange(3)),
+      (Icons.settings, '설정', () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SettingsScreen()),
+          )),
     ];
 
     return Container(
@@ -117,17 +119,14 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         children: items.asMap().entries.map((entry) {
           final i = entry.key;
-          final (icon, label, screen) = entry.value;
+          final (icon, label, onTap) = entry.value;
           return Column(
             children: [
               ListTile(
                 leading: Icon(icon, color: const Color(0xFF1E3A5F)),
                 title: Text(label),
                 trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => screen),
-                ),
+                onTap: onTap,
               ),
               if (i < items.length - 1)
                 const Divider(height: 1, indent: 56),
