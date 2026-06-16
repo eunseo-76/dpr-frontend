@@ -12,9 +12,9 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 1;
+  int _currentIndex = 0;
 
-  final _screens = const [ProductionScreen(), HomeScreen(), UtilityScreen(), WipScreen()];
+  final _screens = const [HomeScreen(), ProductionScreen(), WipScreen(), UtilityScreen()];
 
   @override
   Widget build(BuildContext context) {
@@ -27,18 +27,18 @@ class _MainScreenState extends State<MainScreen> {
         selectedItemColor: const Color(0xFF1E3A5F),
         unselectedItemColor: Colors.grey[500],
         items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
           BottomNavigationBarItem(
             icon: Icon(Icons.precision_manufacturing),
             label: '생산실적',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: '홈'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.electric_bolt),
-            label: '전력수도사용량',
-          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.layers),
-            label: '재공',
+            label: '재공현황',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.electric_bolt),
+            label: '전기&용수',
           ),
         ],
       ),
