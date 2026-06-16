@@ -1,6 +1,7 @@
 import 'package:dpr_frontend/features/home/screens/home_screen.dart';
 import 'package:dpr_frontend/features/production/screens/production_screen.dart';
 import 'package:dpr_frontend/features/utility/screens/utility_screen.dart';
+import 'package:dpr_frontend/features/wip/screens/wip_screen.dart';
 import 'package:flutter/material.dart';
 
 class MainScreen extends StatefulWidget {
@@ -13,7 +14,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 1;
 
-  final _screens = const [ProductionScreen(), HomeScreen(), UtilityScreen()];
+  final _screens = const [ProductionScreen(), HomeScreen(), UtilityScreen(), WipScreen()];
 
   @override
   Widget build(BuildContext context) {
@@ -22,6 +23,9 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: const Color(0xFF1E3A5F),
+        unselectedItemColor: Colors.grey[500],
         items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.precision_manufacturing),
@@ -31,6 +35,10 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.electric_bolt),
             label: '전력수도사용량',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.layers),
+            label: '재공',
           ),
         ],
       ),
