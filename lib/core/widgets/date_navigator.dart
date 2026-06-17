@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
-class DateNavigation extends StatelessWidget {
-  final String date;
+class DateNavigator extends StatelessWidget {
+  final String label;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
   final VoidCallback onCalendarTap;
 
-  const DateNavigation({
+  const DateNavigator({
     super.key,
-    required this.date,
+    required this.label,
     required this.onPrevious,
     required this.onNext,
     required this.onCalendarTap,
@@ -20,18 +20,12 @@ class DateNavigation extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         IconButton(
-          icon: const Icon(Icons.chevron_left),
           onPressed: onPrevious,
+          icon: const Icon(Icons.chevron_left_rounded),
         ),
-        Text(date, style: const TextStyle(fontSize: 16)),
-        IconButton(
-          icon: const Icon(Icons.chevron_right),
-          onPressed: onNext,
-        ),
-        IconButton(
-          icon: const Icon(Icons.calendar_today),
-          onPressed: onCalendarTap,
-        ),
+        Text(label, style: const TextStyle(fontSize: 15)),
+        IconButton(onPressed: onCalendarTap, icon: const Icon(Icons.calendar_today)),
+        IconButton(onPressed: onNext, icon: const Icon(Icons.chevron_right_rounded)),
       ],
     );
   }

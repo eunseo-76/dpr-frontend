@@ -13,6 +13,7 @@ class Production {
   final double? nightShift;
   final double? result;
   final double? cumulativeResult;
+  final double? unitPrice;
   final String createdName;
   final String? updatedAt;
   final String status;
@@ -32,6 +33,7 @@ class Production {
     this.nightShift,
     this.result,
     this.cumulativeResult,
+    this.unitPrice,
     required this.createdName,
     this.updatedAt,
     required this.status,
@@ -53,6 +55,7 @@ class Production {
       nightShift: (json['nightShift'] as num?)?.toDouble(),
       result: (json['result'] as num?)?.toDouble(),
       cumulativeResult: (json['cumulativeResult'] as num?)?.toDouble(),
+      unitPrice: (json['unitPrice'] as num?)?.toDouble(),
       createdName: json['createdName'] as String,
       updatedAt: json['updatedAt'] as String?,
       status: json['status'] as String,

@@ -7,4 +7,5 @@ class ApiConstants {
   static const String utility = '/api/utilities';
   static const String factoryProcess = '/api/factory-processes';
   static const String updateMe = '/api/users/me';
+  static const String factoryClient = '/api/factory-clients';
 }
