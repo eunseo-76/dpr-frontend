@@ -1,0 +1,211 @@
+import 'package:flutter/material.dart';
+import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
+import 'package:dpr_frontend/core/utils/number_format.dart';
+import 'package:dpr_frontend/features/production/utils/production_period_grouping.dart';
+
+class ProductionPeriodTable extends StatelessWidget {
+  final String rowLabelHeader;
+  final List<String> columnLabels;
+  final List<ProductionPeriodRow> rows;
+  final List<String>? columnDates;
+  final void Function(String date)? onDateTap;
+
+  const ProductionPeriodTable({
+    super.key,
+    required this.rowLabelHeader,
+    required this.columnLabels,
+    required this.rows,
+    this.columnDates,
+    this.onDateTap,
+  });
+
+  static const _colLabelWidth = 72.0;
+  static const _colShiftWidth = 36.0;
+  static const _colUnitWidth = 44.0;
+  static const _periodColWidth = 48.0;
+  static const _fixedColWidth = 56.0;
+  static const _rowHeight = 36.0;
+  static const _borderColor = Color(0xFFE0E0E0);
+  static const _headerColor = Color(0xFFF5F5F5);
+
+  int get _columnCount => 3 + columnLabels.length;
+  int get _rowCount => 1 + rows.length;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: _rowCount * _rowHeight,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: TableView.builder(
+              columnCount: _columnCount,
+              rowCount: _rowCount,
+              pinnedColumnCount: 3,
+              verticalDetails: const ScrollableDetails.vertical(
+                physics: NeverScrollableScrollPhysics(),
+              ),
+              columnBuilder: _buildColumnSpan,
+              rowBuilder: _buildRowSpan,
+              cellBuilder: (context, vicinity) {
+                final merge = _cellMerge(vicinity);
+                return TableViewCell(
+                  rowMergeStart: merge?.$1,
+                  rowMergeSpan: merge?.$2,
+                  child: _buildCell(vicinity),
+                );
+              },
+            ),
+          ),
+          _buildFixedRight(),
+        ],
+      ),
+    );
+  }
+
+  TableSpan _buildColumnSpan(int column) {
+    final double width;
+    if (column == 0) {
+      width = _colLabelWidth;
+    } else if (column == 1) {
+      width = _colShiftWidth;
+    } else if (column == 2) {
+      width = _colUnitWidth;
+    } else {
+      width = _periodColWidth;
+    }
+    return TableSpan(
+      extent: FixedTableSpanExtent(width),
+      foregroundDecoration: const TableSpanDecoration(
+        border: TableSpanBorder(trailing: BorderSide(color: _borderColor)),
+      ),
+    );
+  }
+
+  TableSpan _buildRowSpan(int row) {
+    return TableSpan(
+      extent: const FixedTableSpanExtent(_rowHeight),
+      backgroundDecoration: row == 0
+          ? const TableSpanDecoration(color: _headerColor)
+          : null,
+      foregroundDecoration: const TableSpanDecoration(
+        border: TableSpanBorder(trailing: BorderSide(color: _borderColor)),
+      ),
+    );
+  }
+
+  (int, int)? _cellMerge(TableVicinity vicinity) {
+    if (vicinity.row == 0) return null;
+    final row = rows[vicinity.row - 1];
+
+    if (vicinity.column == 0) {
+      final start = rows.indexWhere((r) => r.rowGroupId == row.rowGroupId);
+      final span = rows.where((r) => r.rowGroupId == row.rowGroupId).length;
+      return (start + 1, span);
+    }
+    if (vicinity.column == 1) {
+      final start = rows.indexWhere(
+          (r) => r.rowGroupId == row.rowGroupId && r.shift == row.shift);
+      final span = rows
+          .where(
+              (r) => r.rowGroupId == row.rowGroupId && r.shift == row.shift)
+          .length;
+      return (start + 1, span);
+    }
+    return null;
+  }
+
+  Widget _buildCell(TableVicinity vicinity) {
+    final isHeader = vicinity.row == 0;
+    final column = vicinity.column;
+
+    if (isHeader) {
+      if (column == 0) return _styledCell(rowLabelHeader, isHeader: true);
+      if (column == 1) return _styledCell('구분', isHeader: true);
+      if (column == 2) return _styledCell('단위', isHeader: true);
+      final dateIndex = column - 3;
+      final label = columnLabels[dateIndex];
+      if (columnDates != null && onDateTap != null) {
+        return InkWell(
+          onTap: () => onDateTap!(columnDates![dateIndex]),
+          child: _styledCell(label, isHeader: true, color: Colors.blue),
+        );
+      }
+      return _styledCell(label, isHeader: true);
+    }
+
+    final row = rows[vicinity.row - 1];
+    if (column == 0) return _styledCell(row.rowGroupName);
+    if (column == 1) return _styledCell(row.shift);
+    if (column == 2) return _styledCell(row.unitName);
+    return _styledCell(_fmt(row.values[column - 3]));
+  }
+
+  Widget _buildFixedRight() {
+    return Row(
+      children: [
+        _fixedColumn('금액', (r) => _fmtPrice(r.total, r.unitPrice)),
+        _fixedColumn('합계', (r) => _fmt(r.total)),
+      ],
+    );
+  }
+
+  Widget _fixedColumn(String header, String Function(ProductionPeriodRow) valueFn) {
+    return Container(
+      width: _fixedColWidth,
+      decoration: const BoxDecoration(
+        border: Border(left: BorderSide(color: _borderColor)),
+      ),
+      child: Column(
+        children: List.generate(_rowCount, (row) {
+          final isHeader = row == 0;
+          final text = isHeader ? header : valueFn(rows[row - 1]);
+          return Container(
+            height: _rowHeight,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: isHeader ? _headerColor : null,
+              border: const Border(bottom: BorderSide(color: _borderColor)),
+            ),
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _styledCell(String text, {bool isHeader = false, Color? color}) {
+    return Container(
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+          color: color,
+        ),
+      ),
+    );
+  }
+
+  String _fmt(double? v) =>
+      v == null || v == 0 ? '-' : formatNumber(v);
+
+  String _fmtPrice(double? total, double? price) {
+    if (total == null || total == 0 || price == null) return '-';
+    return formatNumber(total * price);
+  }
+}

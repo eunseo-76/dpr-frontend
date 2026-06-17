@@ -6,14 +6,16 @@ import 'package:dpr_frontend/features/client/services/client_service.dart';
 import 'package:dpr_frontend/features/production/models/production.dart';
 import 'package:dpr_frontend/features/production/services/production_service.dart';
 import 'package:dpr_frontend/features/production/utils/production_grouping.dart';
-import 'package:dpr_frontend/features/production/widgets/production_day_table.dart';
+import 'package:dpr_frontend/features/production/utils/production_period_grouping.dart';
 import 'package:dpr_frontend/features/production/utils/production_scaffold.dart';
 import 'package:dpr_frontend/features/production/widgets/production_card.dart';
-import 'package:dpr_frontend/features/production/widgets/production_table.dart';
+import 'package:dpr_frontend/features/production/widgets/production_day_table.dart';
+import 'package:dpr_frontend/features/production/widgets/production_period_table.dart';
 import 'package:dpr_frontend/features/unit/models/unit.dart';
 import 'package:dpr_frontend/features/unit/services/unit_service.dart';
 import 'package:dpr_frontend/features/utility/models/factory_process.dart';
 import 'package:dpr_frontend/features/utility/services/utility_service.dart';
+import 'package:dpr_frontend/features/utility/utils/utility_period_columns.dart';
 import 'package:flutter/material.dart';
 
 class ProductionScreen extends StatefulWidget {
@@ -157,13 +159,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
     if (_selectedPeriod == '일') {
       content = _buildDayView();
     } else {
-      content = ProductionTable(
-        units: _units,
-        productions: _productions,
-        isProcessView: _groupBy == '공정별',
-        selectedPeriod: _selectedPeriod,
-        selectedDate: _selectedDate,
-      );
+      content = _buildPeriodView();
     }
 
     return Scaffold(
@@ -192,6 +188,70 @@ class _ProductionScreenState extends State<ProductionScreen> {
           Expanded(child: content),
         ],
       ),
+    );
+  }
+
+  Widget _buildPeriodView() {
+    final scaffold = buildProductionScaffold(
+      factoryProcesses: _factoryProcesses,
+      factoryClients: _factoryClients,
+      units: _units,
+      groupBy: _groupBy,
+    );
+
+    final date = DateTime.parse(_selectedDate);
+    final List<PeriodColumn> columns;
+    switch (_selectedPeriod) {
+      case '주':
+        columns = weekPeriodColumns(_selectedDate);
+      case '월':
+        columns = monthPeriodColumns(date.year, date.month);
+      case '년':
+        columns = yearPeriodColumns(date.year);
+      default:
+        return const SizedBox.shrink();
+    }
+
+    final columnLabels = columns.map((c) => c.label).toList();
+    final periodGroups =
+        groupProductionsForPeriod(_productions, scaffold, columns, _groupBy);
+    final rowLabelHeader = _groupBy == '공정별' ? '업체' : '공정';
+
+    final columnDates = _selectedPeriod == '주'
+        ? columns.map((c) => c.dates.first).toList()
+        : null;
+
+    return ListView(
+      padding: const EdgeInsets.all(8),
+      children: periodGroups.map((group) {
+        final cardTitle = _groupBy == '공정별'
+            ? '${group.groupName} 공정'
+            : group.groupName;
+
+        return ProductionCard(
+          title: cardTitle,
+          units: _units,
+          footer: ProductionCardFooter(
+            dailyByUnit: group.dailySumByUnit,
+            cumulativeByUnit: group.cumulativeSumByUnit,
+          ),
+          table: ProductionPeriodTable(
+            rowLabelHeader: rowLabelHeader,
+            columnLabels: columnLabels,
+            rows: group.rows,
+            columnDates: columnDates,
+            onDateTap: columnDates != null
+                ? (date) {
+                    setState(() {
+                      _selectedDate = date;
+                      _selectedPeriod = '일';
+                    });
+                    _loadProductions();
+                  }
+                : null,
+          ),
+        );
+      }).toList(),
     );
   }
 
