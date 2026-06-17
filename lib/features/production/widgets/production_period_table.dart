@@ -143,12 +143,7 @@ class ProductionPeriodTable extends StatelessWidget {
   }
 
   Widget _buildFixedRight() {
-    return Row(
-      children: [
-        _fixedColumn('금액', (r) => _fmtPrice(r.total, r.unitPrice)),
-        _fixedColumn('합계', (r) => _fmt(r.total)),
-      ],
-    );
+    return _fixedColumn('합계', (r) => _fmt(r.total));
   }
 
   Widget _fixedColumn(String header, String Function(ProductionPeriodRow) valueFn) {
@@ -203,9 +198,4 @@ class ProductionPeriodTable extends StatelessWidget {
 
   String _fmt(double? v) =>
       v == null || v == 0 ? '-' : formatNumber(v);
-
-  String _fmtPrice(double? total, double? price) {
-    if (total == null || total == 0 || price == null) return '-';
-    return formatNumber(total * price);
-  }
 }

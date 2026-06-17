@@ -13,17 +13,16 @@ class ProductionDayTable extends StatelessWidget {
     required this.rows,
   });
 
-  static const _fracLabel = 0.22;
-  static const _fracShift = 0.11;
-  static const _fracUnit = 0.13;
-  static const _fracValue = 0.18;
-  static const _fracPrice = 0.18;
-  static const _fracTotal = 0.18;
+  static const _fracLabel = 0.24;
+  static const _fracShift = 0.12;
+  static const _fracUnit = 0.14;
+  static const _fracValue = 0.25;
+  static const _fracTotal = 0.25;
   static const _rowHeight = 36.0;
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
 
-  int get _columnCount => 6;
+  int get _columnCount => 5;
   int get _rowCount => 1 + rows.length;
 
   @override
@@ -57,8 +56,7 @@ class ProductionDayTable extends StatelessWidget {
       1 => _fracShift,
       2 => _fracUnit,
       3 => _fracValue,
-      4 => _fracPrice,
-      5 => _fracTotal,
+      4 => _fracTotal,
       _ => _fracValue,
     };
     return TableSpan(
@@ -113,7 +111,7 @@ class ProductionDayTable extends StatelessWidget {
     final column = vicinity.column;
 
     if (isHeader) {
-      final headers = [rowLabelHeader, '구분', '단위', '값', '금액', '합계'];
+      final headers = [rowLabelHeader, '구분', '단위', '값', '합계'];
       return _styledCell(headers[column], isHeader: true);
     }
 
@@ -123,8 +121,7 @@ class ProductionDayTable extends StatelessWidget {
       1 => row.shift,
       2 => row.unitName,
       3 => _fmt(row.value),
-      4 => _fmtPrice(row.value, row.unitPrice),
-      5 => _fmt(row.value),
+      4 => _fmt(row.value),
       _ => '',
     };
 
@@ -149,9 +146,4 @@ class ProductionDayTable extends StatelessWidget {
 
   String _fmt(double? v) =>
       v == null || v == 0 ? '-' : formatNumber(v);
-
-  String _fmtPrice(double? value, double? price) {
-    if (value == null || value == 0 || price == null) return '-';
-    return formatNumber(value * price);
-  }
 }

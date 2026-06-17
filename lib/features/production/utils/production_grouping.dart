@@ -51,7 +51,7 @@ List<ProductionDayGroup> groupProductionsForDay(
           : p.clientId == group.groupId
     ).toList();
 
-    final rows = group.rows.map((rowScaffold) {
+    final unitRows = group.rows.map((rowScaffold) {
       final matches = cardProductions.where((p) =>
         (groupBy == '공정별' ? p.clientId : p.processId) == rowScaffold.rowGroupId &&
         p.unitId == rowScaffold.unitId
@@ -72,6 +72,8 @@ List<ProductionDayGroup> groupProductionsForDay(
       );
     }).toList();
 
+    final rows = _injectAmountRows(unitRows);
+
     final dailySums = <int, double>{};
     final cumulativeSums = <int, double>{};
     for (final p in cardProductions) {
@@ -88,4 +90,32 @@ List<ProductionDayGroup> groupProductionsForDay(
       cumulativeSumByUnit: cumulativeSums,
     );
   }).toList();
+}
+
+List<ProductionDayRow> _injectAmountRows(List<ProductionDayRow> unitRows) {
+  final result = <ProductionDayRow>[];
+  int i = 0;
+  while (i < unitRows.length) {
+    final groupId = unitRows[i].rowGroupId;
+    final shift = unitRows[i].shift;
+
+    final shiftRows = <ProductionDayRow>[];
+    while (i < unitRows.length &&
+        unitRows[i].rowGroupId == groupId &&
+        unitRows[i].shift == shift) {
+      shiftRows.add(unitRows[i]);
+      i++;
+    }
+
+    result.addAll(shiftRows);
+
+    result.add(ProductionDayRow(
+      rowGroupId: groupId,
+      rowGroupName: shiftRows.first.rowGroupName,
+      shift: shift,
+      unitId: -1,
+      unitName: '금액',
+    ));
+  }
+  return result;
 }

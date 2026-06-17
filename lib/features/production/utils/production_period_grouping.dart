@@ -70,7 +70,7 @@ List<ProductionPeriodGroup> groupProductionsForPeriod(
   }
 
   return scaffold.map((group) {
-    final rows = group.rows.map((rowScaffold) {
+    final unitRows = group.rows.map((rowScaffold) {
       final values = columns.map((column) {
         double? sum;
         for (final date in column.dates) {
@@ -102,6 +102,8 @@ List<ProductionPeriodGroup> groupProductionsForPeriod(
       );
     }).toList();
 
+    final rows = _injectAmountRows(unitRows, columns.length);
+
     final cardProductions = productions.where((p) => groupBy == '공정별'
         ? p.processId == group.groupId
         : p.clientId == group.groupId
@@ -122,4 +124,35 @@ List<ProductionPeriodGroup> groupProductionsForPeriod(
       cumulativeSumByUnit: cumulativeSums,
     );
   }).toList();
+}
+
+List<ProductionPeriodRow> _injectAmountRows(
+    List<ProductionPeriodRow> unitRows, int columnCount) {
+  final result = <ProductionPeriodRow>[];
+  int i = 0;
+  while (i < unitRows.length) {
+    final groupId = unitRows[i].rowGroupId;
+    final shift = unitRows[i].shift;
+
+    final shiftRows = <ProductionPeriodRow>[];
+    while (i < unitRows.length &&
+        unitRows[i].rowGroupId == groupId &&
+        unitRows[i].shift == shift) {
+      shiftRows.add(unitRows[i]);
+      i++;
+    }
+
+    result.addAll(shiftRows);
+
+    result.add(ProductionPeriodRow(
+      rowGroupId: groupId,
+      rowGroupName: shiftRows.first.rowGroupName,
+      shift: shift,
+      unitId: -1,
+      unitName: '금액',
+      values: List.filled(columnCount, null),
+      total: 0,
+    ));
+  }
+  return result;
 }
