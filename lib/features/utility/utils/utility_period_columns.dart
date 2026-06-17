@@ -8,8 +8,9 @@ import 'package:dpr_frontend/features/utility/utils/utility_period_grouping.dart
 class PeriodColumn {
   final String label;
   final List<String> dates;
+  final String? tooltip;
 
-  PeriodColumn({required this.label, required this.dates});
+  PeriodColumn({required this.label, required this.dates, this.tooltip});
 }
 
 // year/month의 1일~말일을 주(월~일) 단위로 묶어 4~5개 컬럼 생성
@@ -17,19 +18,25 @@ class PeriodColumn {
 List<PeriodColumn> monthPeriodColumns(int year, int month) {
   final lastDay = DateTime(year, month + 1, 0).day;
   final columns = <PeriodColumn>[];
+  String? currentRangeKey;
 
   for (int day = 1; day <= lastDay; day++) {
     final date = DateTime(year, month, day);
     final monday = date.subtract(Duration(days: date.weekday - 1));
     final sunday = monday.add(const Duration(days: 6));
-    final label =
+    final rangeKey =
         '${monday.month}/${monday.day}~${sunday.month}/${sunday.day}';
     final dateStr = date.toIso8601String().substring(0, 10);
 
-    if (columns.isNotEmpty && columns.last.label == label) {
+    if (currentRangeKey == rangeKey) {
       columns.last.dates.add(dateStr);
     } else {
-      columns.add(PeriodColumn(label: label, dates: [dateStr]));
+      currentRangeKey = rangeKey;
+      columns.add(PeriodColumn(
+        label: '${columns.length + 1}주',
+        dates: [dateStr],
+        tooltip: rangeKey,
+      ));
     }
   }
 

@@ -116,8 +116,8 @@ class ProductionDayTable extends StatelessWidget {
     }
 
     final row = rows[vicinity.row - 1];
+    if (column == 0) return _styledCell(row.rowGroupName, wrap: true);
     final text = switch (column) {
-      0 => row.rowGroupName,
       1 => row.shift,
       2 => row.unitName,
       3 => _fmt(row.value),
@@ -128,16 +128,17 @@ class ProductionDayTable extends StatelessWidget {
     return _styledCell(text);
   }
 
-  Widget _styledCell(String text, {bool isHeader = false}) {
+  Widget _styledCell(String text, {bool isHeader = false, bool wrap = false}) {
     return Container(
       alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Text(
         text,
         textAlign: TextAlign.center,
-        overflow: TextOverflow.ellipsis,
+        overflow: wrap ? null : TextOverflow.ellipsis,
+        maxLines: wrap ? null : 1,
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
         ),
       ),

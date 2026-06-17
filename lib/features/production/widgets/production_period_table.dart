@@ -7,6 +7,7 @@ class ProductionPeriodTable extends StatelessWidget {
   final String rowLabelHeader;
   final List<String> columnLabels;
   final List<ProductionPeriodRow> rows;
+  final List<String?>? columnTooltips;
   final List<String>? columnDates;
   final void Function(String date)? onDateTap;
 
@@ -15,15 +16,16 @@ class ProductionPeriodTable extends StatelessWidget {
     required this.rowLabelHeader,
     required this.columnLabels,
     required this.rows,
+    this.columnTooltips,
     this.columnDates,
     this.onDateTap,
   });
 
-  static const _colLabelWidth = 72.0;
-  static const _colShiftWidth = 36.0;
-  static const _colUnitWidth = 44.0;
-  static const _periodColWidth = 48.0;
-  static const _fixedColWidth = 56.0;
+  static const _colLabelWidth = 58.0;
+  static const _colShiftWidth = 26.0;
+  static const _colUnitWidth = 34.0;
+  static const _periodColWidth = 42.0;
+  static const _fixedColWidth = 46.0;
   static const _rowHeight = 36.0;
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
@@ -126,17 +128,31 @@ class ProductionPeriodTable extends StatelessWidget {
       if (column == 2) return _styledCell('단위', isHeader: true);
       final dateIndex = column - 3;
       final label = columnLabels[dateIndex];
+      final tip = columnTooltips != null ? columnTooltips![dateIndex] : null;
+
+      Widget cell;
       if (columnDates != null && onDateTap != null) {
-        return InkWell(
+        cell = InkWell(
           onTap: () => onDateTap!(columnDates![dateIndex]),
           child: _styledCell(label, isHeader: true, color: Colors.blue),
         );
+      } else {
+        cell = _styledCell(label, isHeader: true);
       }
-      return _styledCell(label, isHeader: true);
+
+      if (tip != null) {
+        return Tooltip(
+          message: tip,
+          preferBelow: false,
+          triggerMode: TooltipTriggerMode.tap,
+          child: cell,
+        );
+      }
+      return cell;
     }
 
     final row = rows[vicinity.row - 1];
-    if (column == 0) return _styledCell(row.rowGroupName);
+    if (column == 0) return _styledCell(row.rowGroupName, wrap: true);
     if (column == 1) return _styledCell(row.shift);
     if (column == 2) return _styledCell(row.unitName);
     return _styledCell(_fmt(row.values[column - 3]));
@@ -179,16 +195,21 @@ class ProductionPeriodTable extends StatelessWidget {
     );
   }
 
-  Widget _styledCell(String text, {bool isHeader = false, Color? color}) {
+  Widget _styledCell(String text, {
+    bool isHeader = false,
+    Color? color,
+    bool wrap = false,
+  }) {
     return Container(
       alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Text(
         text,
         textAlign: TextAlign.center,
-        overflow: TextOverflow.ellipsis,
+        overflow: wrap ? null : TextOverflow.ellipsis,
+        maxLines: wrap ? null : 1,
         style: TextStyle(
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
           color: color,
         ),

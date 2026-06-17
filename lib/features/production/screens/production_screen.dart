@@ -213,6 +213,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
     }
 
     final columnLabels = columns.map((c) => c.label).toList();
+    final columnTooltips = columns.map((c) => c.tooltip).toList();
     final periodGroups =
         groupProductionsForPeriod(_productions, scaffold, columns, _groupBy);
     final rowLabelHeader = _groupBy == '공정별' ? '업체' : '공정';
@@ -239,6 +240,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
             rowLabelHeader: rowLabelHeader,
             columnLabels: columnLabels,
             rows: group.rows,
+            columnTooltips: columnTooltips,
             columnDates: columnDates,
             onDateTap: columnDates != null
                 ? (date) {
