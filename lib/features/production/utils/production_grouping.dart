@@ -11,6 +11,8 @@ class ProductionDayRow {
   final double? unitPrice;
   final int? productionId;
 
+  final double? amount;
+
   ProductionDayRow({
     required this.rowGroupId,
     required this.rowGroupName,
@@ -19,6 +21,7 @@ class ProductionDayRow {
     required this.unitName,
     this.value,
     this.unitPrice,
+    this.amount,
     this.productionId,
   });
 }
@@ -68,6 +71,7 @@ List<ProductionDayGroup> groupProductionsForDay(
             ? production?.dayShift
             : production?.nightShift,
         unitPrice: production?.unitPrice,
+        amount: production?.amount,
         productionId: production?.productionId,
       );
     }).toList();
@@ -109,12 +113,22 @@ List<ProductionDayRow> _injectAmountRows(List<ProductionDayRow> unitRows) {
 
     result.addAll(shiftRows);
 
+    double amountSum = 0;
+    bool hasAmount = false;
+    for (final r in shiftRows) {
+      if (r.amount != null) {
+        amountSum += r.amount!;
+        hasAmount = true;
+      }
+    }
+
     result.add(ProductionDayRow(
       rowGroupId: groupId,
       rowGroupName: shiftRows.first.rowGroupName,
       shift: shift,
       unitId: -1,
       unitName: '금액',
+      value: hasAmount ? amountSum : null,
     ));
   }
   return result;

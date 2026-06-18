@@ -9,6 +9,7 @@ class ProductionPeriodRow {
   final int unitId;
   final String unitName;
   final List<double?> values;
+  final List<double?> amounts;
   final double total;
   final double? unitPrice;
 
@@ -19,9 +20,10 @@ class ProductionPeriodRow {
     required this.unitId,
     required this.unitName,
     required this.values,
+    List<double?>? amounts,
     required this.total,
     this.unitPrice,
-  });
+  }) : amounts = amounts ?? List.filled(values.length, null);
 }
 
 class ProductionPeriodGroup {
@@ -63,6 +65,11 @@ List<ProductionPeriodGroup> groupProductionsForPeriod(
       '${p.processId}|${p.clientId}|${p.unitId}|${p.date}': p,
   };
 
+  final Map<String, double?> amountByKey = {
+    for (final p in productions)
+      '${p.processId}|${p.clientId}|${p.unitId}|${p.date}': p.amount,
+  };
+
   String lookupKey(int groupId, ProductionRowScaffold row, String date) {
     return groupBy == '공정별'
         ? '$groupId|${row.rowGroupId}|${row.unitId}|$date'
@@ -77,6 +84,15 @@ List<ProductionPeriodGroup> groupProductionsForPeriod(
           final p = byKey[lookupKey(group.groupId, rowScaffold, date)];
           final v = rowScaffold.shift == '주' ? p?.dayShift : p?.nightShift;
           if (v != null) sum = (sum ?? 0) + v;
+        }
+        return sum;
+      }).toList();
+
+      final amounts = columns.map((column) {
+        double? sum;
+        for (final date in column.dates) {
+          final a = amountByKey[lookupKey(group.groupId, rowScaffold, date)];
+          if (a != null) sum = (sum ?? 0) + a;
         }
         return sum;
       }).toList();
@@ -97,6 +113,7 @@ List<ProductionPeriodGroup> groupProductionsForPeriod(
         unitId: rowScaffold.unitId,
         unitName: rowScaffold.unitName,
         values: values,
+        amounts: amounts,
         total: values.fold(0.0, (a, b) => a + (b ?? 0.0)),
         unitPrice: anyProd?.unitPrice,
       );
@@ -144,14 +161,23 @@ List<ProductionPeriodRow> _injectAmountRows(
 
     result.addAll(shiftRows);
 
+    final amountValues = List.generate(columnCount, (col) {
+      double? sum;
+      for (final r in shiftRows) {
+        final a = r.amounts[col];
+        if (a != null) sum = (sum ?? 0) + a;
+      }
+      return sum;
+    });
+
     result.add(ProductionPeriodRow(
       rowGroupId: groupId,
       rowGroupName: shiftRows.first.rowGroupName,
       shift: shift,
       unitId: -1,
       unitName: '금액',
-      values: List.filled(columnCount, null),
-      total: 0,
+      values: amountValues,
+      total: amountValues.fold(0.0, (a, b) => a + (b ?? 0.0)),
     ));
   }
   return result;

@@ -14,6 +14,7 @@ class Production {
   final double? result;
   final double? cumulativeResult;
   final double? unitPrice;
+  final double? amount;
   final String createdName;
   final String? updatedAt;
   final String status;
@@ -34,6 +35,7 @@ class Production {
     this.result,
     this.cumulativeResult,
     this.unitPrice,
+    this.amount,
     required this.createdName,
     this.updatedAt,
     required this.status,
@@ -56,6 +58,7 @@ class Production {
       result: (json['result'] as num?)?.toDouble(),
       cumulativeResult: (json['cumulativeResult'] as num?)?.toDouble(),
       unitPrice: (json['unitPrice'] as num?)?.toDouble(),
+      amount: (json['amount'] as num?)?.toDouble(),
       createdName: json['createdName'] as String,
       updatedAt: json['updatedAt'] as String?,
       status: json['status'] as String,

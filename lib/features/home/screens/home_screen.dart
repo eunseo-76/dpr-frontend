@@ -1,4 +1,5 @@
 import 'package:dpr_frontend/core/utils/user_storage.dart';
+import 'package:dpr_frontend/core/widgets/menu_card.dart';
 import 'package:dpr_frontend/features/auth/screens/my_page_screen.dart';
 import 'package:dpr_frontend/features/settings/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String _name = '';
   String _position = '';
+  String _role = '';
 
   @override
   void initState() {
@@ -25,13 +27,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _loadUserInfo() async {
     final name = await UserStorage.getName();
     final position = await UserStorage.getPosition();
+    final role = await UserStorage.getRole();
     if (mounted) {
       setState(() {
         _name = name ?? '';
         _position = position ?? '';
+        _role = role ?? '';
       });
     }
   }
+
+  bool get _isAdmin => _role == 'OWNER' || _role == 'MANAGER';
 
   @override
   Widget build(BuildContext context) {
@@ -102,38 +108,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildMenuSection(BuildContext context) {
     final items = [
-      (Icons.precision_manufacturing, '생산실적', () => widget.onTabChange(1)),
-      (Icons.layers, '재공현황', () => widget.onTabChange(2)),
-      (Icons.electric_bolt, '전기&용수', () => widget.onTabChange(3)),
-      (Icons.settings, '설정', () => Navigator.push(
+      MenuItem(
+        icon: Icons.precision_manufacturing,
+        label: '생산실적',
+        onTap: () => widget.onTabChange(1),
+      ),
+      MenuItem(
+        icon: Icons.layers,
+        label: '재공현황',
+        onTap: () => widget.onTabChange(2),
+      ),
+      MenuItem(
+        icon: Icons.electric_bolt,
+        label: '전기&용수',
+        onTap: () => widget.onTabChange(3),
+      ),
+      if (_isAdmin)
+        MenuItem(
+          icon: Icons.settings,
+          label: '설정',
+          onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const SettingsScreen()),
-          )),
+          ),
+        ),
     ];
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: items.asMap().entries.map((entry) {
-          final i = entry.key;
-          final (icon, label, onTap) = entry.value;
-          return Column(
-            children: [
-              ListTile(
-                leading: Icon(icon, color: const Color(0xFF1E3A5F)),
-                title: Text(label),
-                trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
-                onTap: onTap,
-              ),
-              if (i < items.length - 1)
-                const Divider(height: 1, indent: 56),
-            ],
-          );
-        }).toList(),
-      ),
-    );
+    return MenuCard(items: items);
   }
 }
