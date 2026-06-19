@@ -6,11 +6,19 @@ import 'package:dpr_frontend/features/production/utils/production_grouping.dart'
 class ProductionDayTable extends StatelessWidget {
   final String rowLabelHeader;
   final List<ProductionDayRow> rows;
+  final bool selectionMode;
+  final Set<int> selectedRowGroupIds;
+  final void Function(int rowGroupId)? onRowGroupLongPress;
+  final void Function(int rowGroupId)? onRowGroupTap;
 
   const ProductionDayTable({
     super.key,
     required this.rowLabelHeader,
     required this.rows,
+    this.selectionMode = false,
+    this.selectedRowGroupIds = const <int>{},
+    this.onRowGroupLongPress,
+    this.onRowGroupTap,
   });
 
   static const _fracLabel = 0.24;
@@ -24,6 +32,10 @@ class ProductionDayTable extends StatelessWidget {
 
   int get _columnCount => 5;
   int get _rowCount => 1 + rows.length;
+
+  bool _rowGroupHasData(int rowGroupId) {
+    return rows.any((r) => r.rowGroupId == rowGroupId && r.productionId != null);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,10 +52,28 @@ class ProductionDayTable extends StatelessWidget {
         rowBuilder: _buildRowSpan,
         cellBuilder: (context, vicinity) {
           final merge = _cellMerge(vicinity);
+          Widget child = _buildCell(vicinity);
+
+          if (vicinity.row > 0) {
+            final dataRow = rows[vicinity.row - 1];
+            if (_rowGroupHasData(dataRow.rowGroupId)) {
+              child = GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onLongPress: selectionMode
+                    ? () => onRowGroupTap?.call(dataRow.rowGroupId)
+                    : () => onRowGroupLongPress?.call(dataRow.rowGroupId),
+                onTap: selectionMode
+                    ? () => onRowGroupTap?.call(dataRow.rowGroupId)
+                    : null,
+                child: child,
+              );
+            }
+          }
+
           return TableViewCell(
             rowMergeStart: merge?.$1,
             rowMergeSpan: merge?.$2,
-            child: _buildCell(vicinity),
+            child: child,
           );
         },
       ),
@@ -68,11 +98,16 @@ class ProductionDayTable extends StatelessWidget {
   }
 
   TableSpan _buildRowSpan(int row) {
+    final isSelected = row > 0 &&
+        selectedRowGroupIds.contains(rows[row - 1].rowGroupId);
+
     return TableSpan(
       extent: const FixedTableSpanExtent(_rowHeight),
       backgroundDecoration: row == 0
           ? const TableSpanDecoration(color: _headerColor)
-          : null,
+          : isSelected
+              ? const TableSpanDecoration(color: Color(0xFFE3F2FD))
+              : null,
       foregroundDecoration: const TableSpanDecoration(
         border: TableSpanBorder(trailing: BorderSide(color: _borderColor)),
       ),

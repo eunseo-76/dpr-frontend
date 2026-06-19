@@ -15,6 +15,7 @@ import 'package:dpr_frontend/features/unit/models/unit.dart';
 import 'package:dpr_frontend/features/unit/services/unit_service.dart';
 import 'package:dpr_frontend/features/utility/models/factory_process.dart';
 import 'package:dpr_frontend/features/utility/services/utility_service.dart';
+import 'package:dpr_frontend/features/production/widgets/production_upsert_dialog.dart';
 import 'package:dpr_frontend/features/utility/utils/utility_period_columns.dart';
 import 'package:flutter/material.dart';
 
@@ -35,6 +36,8 @@ class _ProductionScreenState extends State<ProductionScreen> {
   String _groupBy = '공정별';
   String _selectedPeriod = '일';
   String _selectedDate = DateTime.now().toIso8601String().substring(0, 10);
+  bool _isSelectionMode = false;
+  Set<int> _selectedRowGroupIds = {};
 
   final _unitService = UnitService();
   final _clientService = ClientService();
@@ -150,6 +153,137 @@ class _ProductionScreenState extends State<ProductionScreen> {
     }
   }
 
+  void _enterSelectionMode(int rowGroupId) {
+    setState(() {
+      _isSelectionMode = true;
+      _selectedRowGroupIds = {rowGroupId};
+    });
+  }
+
+  void _toggleSelection(int rowGroupId) {
+    setState(() {
+      if (_selectedRowGroupIds.contains(rowGroupId)) {
+        _selectedRowGroupIds.remove(rowGroupId);
+      } else {
+        _selectedRowGroupIds.add(rowGroupId);
+      }
+      if (_selectedRowGroupIds.isEmpty) _isSelectionMode = false;
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _isSelectionMode = false;
+      _selectedRowGroupIds = {};
+    });
+  }
+
+  Future<void> _confirmDelete() async {
+    final idsToDelete = _productions
+        .where((p) {
+          final rowGroupId =
+              _groupBy == '공정별' ? p.clientId : p.processId;
+          return _selectedRowGroupIds.contains(rowGroupId);
+        })
+        .map((p) => p.productionId)
+        .toSet()
+        .toList();
+
+    if (idsToDelete.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('삭제'),
+        content: Text('선택한 ${_selectedRowGroupIds.length}개 그룹의 데이터를 삭제할까요?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await _productionService.deleteProductions(idsToDelete);
+      _exitSelectionMode();
+      _loadProductions();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
+      }
+    }
+  }
+
+  void _openUpsertDialog({
+    required ProductionDayGroup group,
+    required ProductionGroupScaffold groupScaffold,
+    required String rowLabelHeader,
+  }) {
+    final factoryId = _factoryProcesses.first.factoryId;
+
+    final rows = groupScaffold.rows.map((rowScaffold) {
+      final match = _productions.where((p) =>
+          (_groupBy == '공정별' ? p.clientId : p.processId) ==
+              rowScaffold.rowGroupId &&
+          p.unitId == rowScaffold.unitId &&
+          (_groupBy == '공정별' ? p.processId : p.clientId) ==
+              groupScaffold.groupId);
+      final production = match.isEmpty ? null : match.first;
+
+      return ProductionUpsertRow(
+        factoryId: factoryId,
+        processId: _groupBy == '공정별'
+            ? groupScaffold.groupId
+            : rowScaffold.rowGroupId,
+        clientId: _groupBy == '공정별'
+            ? rowScaffold.rowGroupId
+            : groupScaffold.groupId,
+        unitId: rowScaffold.unitId,
+        rowGroupId: rowScaffold.rowGroupId,
+        rowGroupName: rowScaffold.rowGroupName,
+        shift: rowScaffold.shift,
+        unitName: rowScaffold.unitName,
+        value: rowScaffold.shift == '주'
+            ? production?.dayShift
+            : production?.nightShift,
+      );
+    }).toList();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => ProductionUpsertDialog(
+        title: '${group.groupName} 편집',
+        date: _selectedDate.replaceAll('-', '.'),
+        rowLabelHeader: rowLabelHeader,
+        rows: rows,
+        onSave: (entries) async {
+          try {
+            await _productionService.upsertProductions(
+              date: _selectedDate,
+              entries: entries,
+            );
+            if (dialogContext.mounted) Navigator.pop(dialogContext);
+            _loadProductions();
+          } catch (e) {
+            if (dialogContext.mounted) {
+              ScaffoldMessenger.of(dialogContext)
+                  .showSnackBar(SnackBar(content: Text('저장 실패: $e')));
+            }
+          }
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) return const Center(child: CircularProgressIndicator());
@@ -163,18 +297,38 @@ class _ProductionScreenState extends State<ProductionScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('생산실적')),
+      appBar: _isSelectionMode
+          ? AppBar(
+              backgroundColor: Colors.deepPurple,
+              foregroundColor: Colors.white,
+              leading: IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: _exitSelectionMode,
+              ),
+              title: Text('${_selectedRowGroupIds.length}개 선택됨'),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: _confirmDelete,
+                ),
+              ],
+            )
+          : AppBar(title: const Text('생산실적')),
       body: Column(
         children: [
           SegmentedToggle(
             options: const ['공정별', '업체별'],
             selected: _groupBy,
-            onChanged: (value) => setState(() => _groupBy = value),
+            onChanged: (value) {
+              _exitSelectionMode();
+              setState(() => _groupBy = value);
+            },
           ),
           SegmentedToggle(
             options: const ['일', '주', '월', '년'],
             selected: _selectedPeriod,
             onChanged: (period) {
+              _exitSelectionMode();
               setState(() => _selectedPeriod = period);
               _loadProductions();
             },
@@ -277,6 +431,14 @@ class _ProductionScreenState extends State<ProductionScreen> {
         return ProductionCard(
           title: cardTitle,
           units: _units,
+          onEditTap: _isSelectionMode
+              ? null
+              : () => _openUpsertDialog(
+                    group: group,
+                    groupScaffold: scaffold
+                        .firstWhere((g) => g.groupId == group.groupId),
+                    rowLabelHeader: rowLabelHeader,
+                  ),
           footer: ProductionCardFooter(
             dailyByUnit: group.dailySumByUnit,
             cumulativeByUnit: group.cumulativeSumByUnit,
@@ -284,6 +446,10 @@ class _ProductionScreenState extends State<ProductionScreen> {
           table: ProductionDayTable(
             rowLabelHeader: rowLabelHeader,
             rows: group.rows,
+            selectionMode: _isSelectionMode,
+            selectedRowGroupIds: _selectedRowGroupIds,
+            onRowGroupLongPress: _enterSelectionMode,
+            onRowGroupTap: _toggleSelection,
           ),
         );
       }).toList(),

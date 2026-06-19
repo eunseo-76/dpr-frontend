@@ -248,6 +248,7 @@ class _UtilityScreenState extends State<UtilityScreen> {
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (dialogContext) => UtilityUpsertDialog(
         title: '${group.groupName} 편집',
         date: _selectedDate.replaceAll('-', '.'),
