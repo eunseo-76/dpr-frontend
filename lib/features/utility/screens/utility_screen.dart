@@ -8,8 +8,8 @@ import 'package:dpr_frontend/features/utility/utils/factory_process_scaffold.dar
 import 'package:dpr_frontend/features/utility/utils/utility_grouping.dart';
 import 'package:dpr_frontend/features/utility/utils/utility_period_columns.dart';
 import 'package:dpr_frontend/features/utility/utils/utility_period_grouping.dart';
-import 'package:dpr_frontend/features/utility/widgets/date_navigator.dart';
-import 'package:dpr_frontend/features/utility/widgets/segmented_toggle.dart';
+import 'package:dpr_frontend/core/widgets/date_navigator.dart';
+import 'package:dpr_frontend/core/widgets/segmented_toggle.dart';
 import 'package:dpr_frontend/features/utility/widgets/utility_card.dart';
 import 'package:dpr_frontend/features/utility/widgets/utility_period_table.dart';
 import 'package:dpr_frontend/features/utility/widgets/utility_upsert_dialog.dart';
@@ -248,6 +248,7 @@ class _UtilityScreenState extends State<UtilityScreen> {
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (dialogContext) => UtilityUpsertDialog(
         title: '${group.groupName} 편집',
         date: _selectedDate.replaceAll('-', '.'),
