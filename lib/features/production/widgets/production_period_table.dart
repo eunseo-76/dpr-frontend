@@ -155,42 +155,74 @@ class ProductionPeriodTable extends StatelessWidget {
     if (column == 0) return _styledCell(row.rowGroupName, wrap: true);
     if (column == 1) return _styledCell(row.shift);
     if (column == 2) return _styledCell(row.unitName);
-    return _styledCell(_fmt(row.values[column - 3]));
+    final value = row.values[column - 3];
+    if (row.unitName == '금액' && value != null && value != 0) {
+      return _compactCell(value);
+    }
+    return _styledCell(_fmt(value));
   }
 
   Widget _buildFixedRight() {
-    return _fixedColumn('합계', (r) => _fmt(r.total));
-  }
-
-  Widget _fixedColumn(String header, String Function(ProductionPeriodRow) valueFn) {
     return Container(
       width: _fixedColWidth,
       decoration: const BoxDecoration(
         border: Border(left: BorderSide(color: _borderColor)),
       ),
       child: Column(
-        children: List.generate(_rowCount, (row) {
-          final isHeader = row == 0;
-          final text = isHeader ? header : valueFn(rows[row - 1]);
-          return Container(
-            height: _rowHeight,
-            alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            decoration: BoxDecoration(
-              color: isHeader ? _headerColor : null,
-              border: const Border(bottom: BorderSide(color: _borderColor)),
-            ),
-            child: Text(
-              text,
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          );
+        children: List.generate(_rowCount, (i) {
+          final isHeader = i == 0;
+          if (isHeader) {
+            return _fixedCell('합계', isHeader: true);
+          }
+          final row = rows[i - 1];
+          if (row.unitName == '금액' && row.total != 0) {
+            return _fixedCompactCell(row.total);
+          }
+          return _fixedCell(_fmt(row.total));
         }),
+      ),
+    );
+  }
+
+  Widget _fixedCell(String text, {bool isHeader = false}) {
+    return Container(
+      height: _rowHeight,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      decoration: BoxDecoration(
+        color: isHeader ? _headerColor : null,
+        border: const Border(bottom: BorderSide(color: _borderColor)),
+      ),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 12,
+          fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+    );
+  }
+
+  Widget _fixedCompactCell(double value) {
+    return Tooltip(
+      message: formatNumber(value),
+      preferBelow: false,
+      triggerMode: TooltipTriggerMode.tap,
+      child: Container(
+        height: _rowHeight,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: _borderColor)),
+        ),
+        child: Text(
+          formatCompact(value),
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontSize: 12),
+        ),
       ),
     );
   }
@@ -212,6 +244,25 @@ class ProductionPeriodTable extends StatelessWidget {
           fontSize: 11,
           fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
           color: color,
+        ),
+      ),
+    );
+  }
+
+  Widget _compactCell(double value) {
+    return Tooltip(
+      message: formatNumber(value),
+      preferBelow: false,
+      triggerMode: TooltipTriggerMode.tap,
+      child: Container(
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: Text(
+          formatCompact(value),
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+          style: const TextStyle(fontSize: 11),
         ),
       ),
     );

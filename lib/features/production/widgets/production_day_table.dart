@@ -117,15 +117,31 @@ class ProductionDayTable extends StatelessWidget {
 
     final row = rows[vicinity.row - 1];
     if (column == 0) return _styledCell(row.rowGroupName, wrap: true);
-    final text = switch (column) {
-      1 => row.shift,
-      2 => row.unitName,
-      3 => _fmt(row.value),
-      4 => _fmt(row.value),
-      _ => '',
-    };
+    if (column == 1) return _styledCell(row.shift);
+    if (column == 2) return _styledCell(row.unitName);
+    if (row.unitName == '금액' && row.value != null && row.value != 0) {
+      return _compactCell(row.value!);
+    }
+    return _styledCell(_fmt(row.value));
+  }
 
-    return _styledCell(text);
+  Widget _compactCell(double value) {
+    return Tooltip(
+      message: formatNumber(value),
+      preferBelow: false,
+      triggerMode: TooltipTriggerMode.tap,
+      child: Container(
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: Text(
+          formatCompact(value),
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+          style: const TextStyle(fontSize: 11),
+        ),
+      ),
+    );
   }
 
   Widget _styledCell(String text, {bool isHeader = false, bool wrap = false}) {
