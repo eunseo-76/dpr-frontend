@@ -1,5 +1,6 @@
 import 'package:dpr_frontend/core/utils/token_storage.dart';
 import 'package:dpr_frontend/core/utils/user_storage.dart';
+import 'package:dpr_frontend/features/auth/screens/app_info_screen.dart';
 import 'package:dpr_frontend/features/auth/screens/edit_profile_screen.dart';
 import 'package:dpr_frontend/features/auth/screens/landing_screen.dart';
 import 'package:flutter/material.dart';
@@ -144,6 +145,23 @@ class _MyPageScreenState extends State<MyPageScreen> {
                   onTap: () {},
                 ),
               ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: const Text('앱 정보'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AppInfoScreen()),
+              ),
             ),
           ),
           const SizedBox(height: 16),
