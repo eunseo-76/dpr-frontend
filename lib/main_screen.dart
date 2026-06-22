@@ -1,7 +1,6 @@
 import 'package:dpr_frontend/features/home/screens/home_screen.dart';
 import 'package:dpr_frontend/features/production/screens/production_screen.dart';
 import 'package:dpr_frontend/features/utility/screens/utility_screen.dart';
-import 'package:dpr_frontend/features/wip/screens/wip_screen.dart';
 import 'package:flutter/material.dart';
 
 class MainScreen extends StatefulWidget {
@@ -21,7 +20,6 @@ class _MainScreenState extends State<MainScreen> {
     _screens = [
       HomeScreen(onTabChange: (index) => setState(() => _currentIndex = index)),
       const ProductionScreen(),
-      const WipScreen(),
       const UtilityScreen(),
     ];
   }
@@ -41,10 +39,6 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.precision_manufacturing),
             label: '생산실적',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.layers),
-            label: '재공현황',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.electric_bolt),

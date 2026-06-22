@@ -30,7 +30,7 @@ class ProductionUpsertDialog extends StatefulWidget {
   final String date;
   final String rowLabelHeader;
   final List<ProductionUpsertRow> rows;
-  final void Function(List<ProductionUpsertEntry> entries) onSave;
+  final Future<void> Function(List<ProductionUpsertEntry> entries) onSave;
 
   const ProductionUpsertDialog({
     super.key,
@@ -49,6 +49,7 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
   late final List<TextEditingController> _controllers;
   late final List<String> _initialTexts;
   bool _hasChanges = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -87,7 +88,7 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
     }
   }
 
-  void _save() {
+  Future<void> _save() async {
     final grouped = <String, Map<String, dynamic>>{};
 
     for (var i = 0; i < widget.rows.length; i++) {
@@ -125,7 +126,12 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
       ));
     }
 
-    widget.onSave(entries);
+    setState(() => _isSaving = true);
+    try {
+      await widget.onSave(entries);
+    } catch (_) {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   bool _showGroupLabel(int i) {
@@ -212,13 +218,18 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   TextButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: _isSaving ? null : () => Navigator.pop(context),
                     child: const Text('취소'),
                   ),
                   const SizedBox(width: 8),
                   FilledButton(
-                    onPressed: _hasChanges ? _save : null,
-                    child: const Text('저장'),
+                    onPressed: _hasChanges && !_isSaving ? _save : null,
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 20, height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text('저장'),
                   ),
                 ],
               ),

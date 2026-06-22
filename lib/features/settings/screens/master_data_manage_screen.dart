@@ -2,6 +2,7 @@ import 'package:dpr_frontend/core/models/field_config.dart';
 import 'package:dpr_frontend/core/models/master_data_entity.dart';
 import 'package:dpr_frontend/core/services/master_data_service.dart';
 import 'package:dpr_frontend/core/widgets/shake_field.dart';
+import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
 import 'package:flutter/material.dart';
 
 class MasterDataManageScreen extends StatefulWidget {
@@ -78,6 +79,7 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
     );
     if (confirmed != true) return;
 
+    setState(() => _isLoading = true);
     try {
       await widget.service.delete(item.id);
       _loadItems();
@@ -86,6 +88,7 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
       }
+      setState(() => _isLoading = false);
     }
   }
 
@@ -110,79 +113,90 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
       (_) => GlobalKey<ShakeFieldState>(),
     );
 
+    var isSaving = false;
+
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(isEdit ? '수정' : '추가'),
-            Text(
-              '* 는 필수 항목입니다',
-              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(isEdit ? '수정' : '추가'),
+              Text(
+                '* 는 필수 항목입니다',
+                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: List.generate(widget.fields.length, (i) {
+              final field = widget.fields[i];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: ShakeField(
+                  key: shakeKeys[i],
+                  controller: controllers[i],
+                  decoration: InputDecoration(
+                    labelText: field.required
+                        ? '${field.label} *'
+                        : field.label,
+                  ),
+                ),
+              );
+            }),
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSaving ? null : () => Navigator.pop(dialogContext),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: isSaving ? null : () async {
+                bool hasError = false;
+                for (var i = 0; i < widget.fields.length; i++) {
+                  if (widget.fields[i].required &&
+                      controllers[i].text.trim().isEmpty) {
+                    shakeKeys[i].currentState?.showError('필수 항목입니다');
+                    hasError = true;
+                  } else {
+                    shakeKeys[i].currentState?.clearError();
+                  }
+                }
+                if (hasError) return;
+
+                final body = <String, dynamic>{};
+                for (var i = 0; i < widget.fields.length; i++) {
+                  body[widget.fields[i].key] = controllers[i].text;
+                }
+
+                setDialogState(() => isSaving = true);
+                try {
+                  if (isEdit) {
+                    await widget.service.update(item.id, body);
+                  } else {
+                    await widget.service.create(body);
+                  }
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                  _loadItems();
+                } catch (e) {
+                  if (dialogContext.mounted) {
+                    setDialogState(() => isSaving = false);
+                    ScaffoldMessenger.of(dialogContext)
+                        .showSnackBar(SnackBar(content: Text('저장 실패: $e')));
+                  }
+                }
+              },
+              child: isSaving
+                  ? const SizedBox(
+                      width: 20, height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('저장'),
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: List.generate(widget.fields.length, (i) {
-            final field = widget.fields[i];
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: ShakeField(
-                key: shakeKeys[i],
-                controller: controllers[i],
-                decoration: InputDecoration(
-                  labelText: field.required
-                      ? '${field.label} *'
-                      : field.label,
-                ),
-              ),
-            );
-          }),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () async {
-              bool hasError = false;
-              for (var i = 0; i < widget.fields.length; i++) {
-                if (widget.fields[i].required &&
-                    controllers[i].text.trim().isEmpty) {
-                  shakeKeys[i].currentState?.showError('필수 항목입니다');
-                  hasError = true;
-                } else {
-                  shakeKeys[i].currentState?.clearError();
-                }
-              }
-              if (hasError) return;
-
-              final body = <String, dynamic>{};
-              for (var i = 0; i < widget.fields.length; i++) {
-                body[widget.fields[i].key] = controllers[i].text;
-              }
-
-              try {
-                if (isEdit) {
-                  await widget.service.update(item.id, body);
-                } else {
-                  await widget.service.create(body);
-                }
-                if (dialogContext.mounted) Navigator.pop(dialogContext);
-                _loadItems();
-              } catch (e) {
-                if (dialogContext.mounted) {
-                  ScaffoldMessenger.of(dialogContext)
-                      .showSnackBar(SnackBar(content: Text('저장 실패: $e')));
-                }
-              }
-            },
-            child: const Text('저장'),
-          ),
-        ],
       ),
     );
   }
@@ -191,7 +205,7 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
   Widget build(BuildContext context) {
     Widget body;
     if (_isLoading) {
-      body = const Center(child: CircularProgressIndicator());
+      body = const LoadingIndicator();
     } else if (_error != null) {
       body = Center(child: Text('오류: $_error'));
     } else if (_items.isEmpty) {

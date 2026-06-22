@@ -13,6 +13,7 @@ import 'package:dpr_frontend/core/widgets/segmented_toggle.dart';
 import 'package:dpr_frontend/features/utility/widgets/utility_card.dart';
 import 'package:dpr_frontend/features/utility/widgets/utility_period_table.dart';
 import 'package:dpr_frontend/features/utility/widgets/utility_upsert_dialog.dart';
+import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
 import 'package:flutter/material.dart';
 
 class UtilityScreen extends StatefulWidget {
@@ -215,11 +216,13 @@ class _UtilityScreenState extends State<UtilityScreen> {
     );
     if (confirmed != true) return;
 
+    setState(() => _isLoading = true);
     try {
       await _utilityService.deleteUtilities(_selectedIds.toList());
       _exitSelectionMode();
       _loadData();
     } catch (e) {
+      setState(() => _isLoading = false);
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
@@ -267,6 +270,7 @@ class _UtilityScreenState extends State<UtilityScreen> {
               ScaffoldMessenger.of(dialogContext)
                   .showSnackBar(SnackBar(content: Text('저장 실패: $e')));
             }
+            rethrow;
           }
         },
       ),
@@ -279,7 +283,7 @@ class _UtilityScreenState extends State<UtilityScreen> {
 
     Widget content;
     if (_isLoading) {
-      content = const Center(child: CircularProgressIndicator());
+      content = const LoadingIndicator();
     } else if (_error != null) {
       content = Center(child: Text('오류: $_error'));
     } else if (_selectedPeriod == '주') {
