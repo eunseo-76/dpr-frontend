@@ -1,3 +1,4 @@
+import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/features/auth/services/auth_service.dart';
 import 'package:dpr_frontend/main_screen.dart';
 import 'package:flutter/material.dart';
@@ -33,26 +34,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
-  String? _errorMessage;
 
   Future<void> _register() async {
     if (_nameController.text.trim().isEmpty) {
-      setState(() => _errorMessage = '이름을 입력해주세요');
+      showToast(context, '이름을 입력해주세요');
       return;
     }
     if (_passwordController.text.length < 8) {
-      setState(() => _errorMessage = '비밀번호는 8자 이상이어야 합니다');
+      showToast(context, '비밀번호는 8자 이상이어야 합니다');
       return;
     }
     if (_passwordController.text != _passwordConfirmController.text) {
-      setState(() => _errorMessage = '비밀번호가 일치하지 않습니다');
+      showToast(context, '비밀번호가 일치하지 않습니다');
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    setState(() => _isLoading = true);
 
     try {
       await _authService.register(
@@ -69,7 +66,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         (route) => false,
       );
     } catch (e) {
-      setState(() => _errorMessage = e.toString().replaceFirst('Exception: ', ''));
+      if (mounted) showToast(context, e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -220,20 +217,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       style: TextStyle(color: Colors.grey[400], fontSize: 12),
                     ),
                     const SizedBox(height: 24),
-                    if (_errorMessage != null)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.red[50],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          _errorMessage!,
-                          style: TextStyle(color: Colors.red[700], fontSize: 13),
-                        ),
-                      ),
                     SizedBox(
                       width: double.infinity,
                       height: 48,

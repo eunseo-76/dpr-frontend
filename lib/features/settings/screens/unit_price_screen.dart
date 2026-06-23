@@ -1,4 +1,5 @@
 import 'package:dpr_frontend/core/constants/api_constants.dart';
+import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/models/master_data_entity.dart';
 import 'package:dpr_frontend/core/services/master_data_service.dart';
 import 'package:dpr_frontend/features/client/models/factory_client.dart';
@@ -203,16 +204,10 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
         _currentProcessId,
         entries,
       );
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('저장되었습니다')));
-      }
+      if (mounted) showToast(context, '저장되었습니다', isError: false);
       await _loadUnitPrices();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('저장 실패: $e')));
-      }
+      if (mounted) showToast(context, '저장 실패: $e');
       setState(() => _isPriceLoading = false);
     }
   }

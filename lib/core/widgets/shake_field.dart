@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
-
+// 필수 필드 미입력 시 필드 흔드는 ux
 class ShakeField extends StatefulWidget {
   final TextEditingController controller;
   final InputDecoration decoration;
+  final bool obscureText;
+  final TextInputType? keyboardType;
+  final TextStyle? style;
+  final ValueChanged<String>? onSubmitted;
 
   const ShakeField({
     super.key,
     required this.controller,
     required this.decoration,
+    this.obscureText = false,
+    this.keyboardType,
+    this.style,
+    this.onSubmitted,
   });
 
   @override
@@ -66,7 +74,19 @@ class ShakeFieldState extends State<ShakeField>
       ),
       child: TextField(
         controller: widget.controller,
-        decoration: widget.decoration.copyWith(errorText: _errorText),
+        obscureText: widget.obscureText,
+        keyboardType: widget.keyboardType,
+        style: widget.style,
+        onSubmitted: widget.onSubmitted,
+        decoration: widget.decoration.copyWith(
+          errorText: _errorText,
+          errorBorder: const UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.red),
+          ),
+          focusedErrorBorder: const UnderlineInputBorder(
+            borderSide: BorderSide(color: Colors.red),
+          ),
+        ),
       ),
     );
   }

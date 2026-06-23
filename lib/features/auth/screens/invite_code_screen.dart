@@ -1,4 +1,5 @@
 import 'package:dpr_frontend/core/utils/fade_route.dart';
+import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/features/auth/screens/register_screen.dart';
 import 'package:dpr_frontend/features/auth/services/auth_service.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +17,6 @@ class _InviteCodeScreenState extends State<InviteCodeScreen> {
   final _authService = AuthService();
   final int _codeLength = 6;
   bool _isLoading = false;
-  String? _errorMessage;
 
   @override
   void initState() {
@@ -34,14 +34,11 @@ class _InviteCodeScreenState extends State<InviteCodeScreen> {
   Future<void> _verifyCode() async {
     final code = _codeController.text.trim();
     if (code.length < _codeLength) {
-      setState(() => _errorMessage = '초대코드 $_codeLength자리를 입력해주세요');
+      if (mounted) showToast(context, '초대코드 $_codeLength자리를 입력해주세요');
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final inviteData = await _authService.verifyInviteCode(code);
@@ -58,7 +55,7 @@ class _InviteCodeScreenState extends State<InviteCodeScreen> {
         )),
       );
     } catch (e) {
-      setState(() => _errorMessage = e.toString().replaceFirst('Exception: ', ''));
+      if (mounted) showToast(context, e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -164,20 +161,6 @@ class _InviteCodeScreenState extends State<InviteCodeScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    if (_errorMessage != null)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 16),
-                        decoration: BoxDecoration(
-                          color: Colors.red[50],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          _errorMessage!,
-                          style: TextStyle(color: Colors.red[700], fontSize: 13),
-                        ),
-                      ),
                     SizedBox(
                       width: double.infinity,
                       height: 48,

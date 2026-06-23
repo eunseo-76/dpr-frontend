@@ -1,4 +1,5 @@
 import 'package:dpr_frontend/core/models/field_config.dart';
+import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/models/master_data_entity.dart';
 import 'package:dpr_frontend/core/services/master_data_service.dart';
 import 'package:dpr_frontend/core/widgets/shake_field.dart';
@@ -84,10 +85,7 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
       await widget.service.delete(item.id);
       _loadItems();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
-      }
+      if (mounted) showToast(context, '삭제 실패: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -183,8 +181,7 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
                 } catch (e) {
                   if (dialogContext.mounted) {
                     setDialogState(() => isSaving = false);
-                    ScaffoldMessenger.of(dialogContext)
-                        .showSnackBar(SnackBar(content: Text('저장 실패: $e')));
+                    showToast(dialogContext, '저장 실패: $e');
                   }
                 }
               },

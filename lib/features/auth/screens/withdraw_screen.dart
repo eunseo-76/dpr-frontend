@@ -1,55 +1,65 @@
 import 'package:dpr_frontend/core/utils/toast.dart';
-import 'package:dpr_frontend/core/widgets/shake_field.dart';
-import 'package:dpr_frontend/features/auth/models/login_request.dart';
+import 'package:dpr_frontend/core/utils/token_storage.dart';
+import 'package:dpr_frontend/core/utils/user_storage.dart';
+import 'package:dpr_frontend/features/auth/screens/landing_screen.dart';
 import 'package:dpr_frontend/features/auth/services/auth_service.dart';
-import 'package:dpr_frontend/main_screen.dart';
 import 'package:flutter/material.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class WithdrawScreen extends StatefulWidget {
+  const WithdrawScreen({super.key});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<WithdrawScreen> createState() => _WithdrawScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+class _WithdrawScreenState extends State<WithdrawScreen> {
   final _passwordController = TextEditingController();
-  final _emailKey = GlobalKey<ShakeFieldState>();
-  final _passwordKey = GlobalKey<ShakeFieldState>();
   final _authService = AuthService();
   bool _isLoading = false;
   bool _obscurePassword = true;
 
-  Future<void> _login() async {
-    _emailKey.currentState?.clearError();
-    _passwordKey.currentState?.clearError();
-
-    bool hasError = false;
-    if (_emailController.text.trim().isEmpty) {
-      _emailKey.currentState?.showError('이메일을 입력해주세요');
-      hasError = true;
-    }
+  Future<void> _withdraw() async {
     if (_passwordController.text.isEmpty) {
-      _passwordKey.currentState?.showError('비밀번호를 입력해주세요');
-      hasError = true;
+      showToast(context, '비밀번호를 입력해주세요');
+      return;
     }
-    if (hasError) return;
 
     setState(() => _isLoading = true);
 
     try {
-      await _authService.login(
-        LoginRequest(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
+      if (!mounted) return;
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('회원탈퇴'),
+          content: const Text('정말로 탈퇴하시겠습니까?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text('탈퇴', style: TextStyle(color: Colors.red[600])),
+            ),
+          ],
         ),
       );
 
+      if (confirmed != true) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      await _authService.withdraw(_passwordController.text);
+      await TokenStorage.clearToken();
+      await UserStorage.clearUserInfo();
+
       if (!mounted) return;
+      showToast(context, '탈퇴되었습니다', isError: false);
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const MainScreen()),
+        MaterialPageRoute(builder: (_) => const LandingScreen()),
         (route) => false,
       );
     } catch (e) {
@@ -76,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const Expanded(
                     child: Text(
-                      '로그인',
+                      '회원탈퇴',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 17,
@@ -95,25 +105,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   children: [
                     const SizedBox(height: 32),
-                    ShakeField(
-                      key: _emailKey,
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      style: const TextStyle(fontSize: 16, color: Colors.black87),
-                      decoration: InputDecoration(
-                        hintText: '이메일',
-                        hintStyle: TextStyle(color: Colors.grey[400]),
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        focusedBorder: const UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.black87),
-                        ),
-                      ),
+                    Text(
+                      '탈퇴하면 계정이 영구 삭제되며\n같은 이메일로 재가입할 수 없습니다\n\n탈퇴 후 재가입하려면 관리자에게 문의하세요.\n (eunseolee19@gmail.com)',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.5),
                     ),
-                    const SizedBox(height: 24),
-                    ShakeField(
-                      key: _passwordKey,
+                    const SizedBox(height: 40),
+                    TextField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
                       style: const TextStyle(fontSize: 16, color: Colors.black87),
@@ -135,34 +133,18 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                         ),
                       ),
-                      onSubmitted: (_) => _login(),
-                    ),
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: () {
-                          // TODO(password-reset): 비밀번호 재설정 화면으로 이동
-                        },
-                        child: Text(
-                          '비밀번호 재설정',
-                          style: TextStyle(
-                            color: Colors.blue[600],
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
+                      onSubmitted: (_) => _withdraw(),
                     ),
                     const SizedBox(height: 24),
                     SizedBox(
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _login,
+                        onPressed: _isLoading ? null : _withdraw,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black87,
+                          backgroundColor: Colors.red[600],
                           foregroundColor: Colors.white,
-                          disabledBackgroundColor: Colors.grey[300],
+                          disabledBackgroundColor: Colors.red[200],
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                           elevation: 0,
                         ),
@@ -175,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               )
                             : const Text(
-                                '로그인',
+                                '탈퇴하기',
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                               ),
                       ),

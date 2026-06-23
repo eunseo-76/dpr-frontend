@@ -99,4 +99,24 @@ class AuthService {
         throw Exception('가입 실패: ${response.statusCode}');
     }
   }
+
+  Future<void> withdraw(String password) async {
+    final response = await _client.delete(
+      ApiConstants.updateMe,
+      {'password': password},
+    );
+
+    if (response.statusCode == 200) return;
+
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    final errorCode = body['code'] as String? ?? 'UNKNOWN';
+    switch (errorCode) {
+      case 'INVALID_PASSWORD':
+        throw Exception('비밀번호가 일치하지 않습니다');
+      case 'OWNER_CANNOT_WITHDRAW':
+        throw Exception('대표 계정은 탈퇴할 수 없습니다');
+      default:
+        throw Exception('탈퇴 실패: ${response.statusCode}');
+    }
+  }
 }

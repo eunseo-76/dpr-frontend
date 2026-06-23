@@ -1,3 +1,4 @@
+import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/utils/user_storage.dart';
 import 'package:dpr_frontend/core/widgets/date_navigator.dart';
 import 'package:dpr_frontend/core/widgets/segmented_toggle.dart';
@@ -218,10 +219,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
       _loadProductions();
     } catch (e) {
       setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
-      }
+      if (mounted) showToast(context, '삭제 실패: $e');
     }
   }
 
@@ -277,10 +275,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
             if (dialogContext.mounted) Navigator.pop(dialogContext);
             _loadProductions();
           } catch (e) {
-            if (dialogContext.mounted) {
-              ScaffoldMessenger.of(dialogContext)
-                  .showSnackBar(SnackBar(content: Text('저장 실패: $e')));
-            }
+            if (dialogContext.mounted) showToast(dialogContext, '저장 실패: $e');
             rethrow;
           }
         },
