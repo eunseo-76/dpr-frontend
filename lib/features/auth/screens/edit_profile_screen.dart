@@ -1,3 +1,4 @@
+import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/utils/user_storage.dart';
 import 'package:dpr_frontend/features/auth/models/update_user_request.dart';
 import 'package:dpr_frontend/features/auth/services/user_service.dart';
@@ -60,8 +61,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('수정 실패: $e')));
+      showToast(context, '수정 실패: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

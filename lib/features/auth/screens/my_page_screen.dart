@@ -1,7 +1,9 @@
 import 'package:dpr_frontend/core/utils/token_storage.dart';
 import 'package:dpr_frontend/core/utils/user_storage.dart';
+import 'package:dpr_frontend/features/auth/screens/app_info_screen.dart';
 import 'package:dpr_frontend/features/auth/screens/edit_profile_screen.dart';
 import 'package:dpr_frontend/features/auth/screens/landing_screen.dart';
+import 'package:dpr_frontend/features/auth/screens/withdraw_screen.dart';
 import 'package:flutter/material.dart';
 
 class MyPageScreen extends StatefulWidget {
@@ -153,6 +155,23 @@ class _MyPageScreenState extends State<MyPageScreen> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
+            child: ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: const Text('앱 정보'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AppInfoScreen()),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Column(
               children: [
                 ListTile(
@@ -163,16 +182,21 @@ class _MyPageScreenState extends State<MyPageScreen> {
                   ),
                   onTap: _logout,
                 ),
-                const Divider(height: 1, indent: 56),
-                ListTile(
-                  leading: Icon(Icons.person_remove_outlined,
-                      color: Colors.red[300]),
-                  title: Text(
-                    '회원탈퇴',
-                    style: TextStyle(color: Colors.red[300]),
+                if (_role != 'OWNER') ...[
+                  const Divider(height: 1, indent: 56),
+                  ListTile(
+                    leading: Icon(Icons.person_remove_outlined,
+                        color: Colors.red[300]),
+                    title: Text(
+                      '회원탈퇴',
+                      style: TextStyle(color: Colors.red[300]),
+                    ),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const WithdrawScreen()),
+                    ),
                   ),
-                  onTap: () {},
-                ),
+                ],
               ],
             ),
           ),

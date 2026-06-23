@@ -4,6 +4,7 @@ import 'package:dpr_frontend/core/services/master_data_service.dart';
 import 'package:dpr_frontend/core/widgets/menu_card.dart';
 import 'package:dpr_frontend/features/settings/screens/factory_mapping_screen.dart';
 import 'package:dpr_frontend/features/settings/screens/master_data_manage_screen.dart';
+import 'package:dpr_frontend/features/settings/screens/unit_price_screen.dart';
 import 'package:flutter/material.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -102,6 +103,16 @@ class SettingsScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => const FactoryMappingScreen(),
+                  ),
+                ),
+              ),
+              MenuItem(
+                icon: Icons.attach_money,
+                label: '단가 관리',
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const UnitPriceScreen(),
                   ),
                 ),
               ),

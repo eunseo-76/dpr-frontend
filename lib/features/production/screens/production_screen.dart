@@ -1,3 +1,4 @@
+import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/utils/user_storage.dart';
 import 'package:dpr_frontend/core/widgets/date_navigator.dart';
 import 'package:dpr_frontend/core/widgets/segmented_toggle.dart';
@@ -17,6 +18,7 @@ import 'package:dpr_frontend/features/utility/models/factory_process.dart';
 import 'package:dpr_frontend/features/utility/services/utility_service.dart';
 import 'package:dpr_frontend/features/production/widgets/production_upsert_dialog.dart';
 import 'package:dpr_frontend/features/utility/utils/utility_period_columns.dart';
+import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
 import 'package:flutter/material.dart';
 
 class ProductionScreen extends StatefulWidget {
@@ -210,15 +212,14 @@ class _ProductionScreenState extends State<ProductionScreen> {
     );
     if (confirmed != true) return;
 
+    setState(() { _isLoading = true; _error = null; });
     try {
       await _productionService.deleteProductions(idsToDelete);
       _exitSelectionMode();
       _loadProductions();
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('삭제 실패: $e')));
-      }
+      setState(() => _isLoading = false);
+      if (mounted) showToast(context, '삭제 실패: $e');
     }
   }
 
@@ -274,10 +275,8 @@ class _ProductionScreenState extends State<ProductionScreen> {
             if (dialogContext.mounted) Navigator.pop(dialogContext);
             _loadProductions();
           } catch (e) {
-            if (dialogContext.mounted) {
-              ScaffoldMessenger.of(dialogContext)
-                  .showSnackBar(SnackBar(content: Text('저장 실패: $e')));
-            }
+            if (dialogContext.mounted) showToast(dialogContext, '저장 실패: $e');
+            rethrow;
           }
         },
       ),
@@ -286,8 +285,18 @@ class _ProductionScreenState extends State<ProductionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const Center(child: CircularProgressIndicator());
-    if (_error != null) return Center(child: Text('오류: $_error'));
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('생산실적')),
+        body: const LoadingIndicator(),
+      );
+    }
+    if (_error != null) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('생산실적')),
+        body: Center(child: Text('오류: $_error')),
+      );
+    }
 
     Widget content;
     if (_selectedPeriod == '일') {

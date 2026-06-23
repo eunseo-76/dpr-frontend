@@ -1,10 +1,12 @@
 import 'package:dpr_frontend/core/constants/api_constants.dart';
+import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/models/master_data_entity.dart';
 import 'package:dpr_frontend/core/services/master_data_service.dart';
 import 'package:dpr_frontend/features/client/models/factory_client.dart';
 import 'package:dpr_frontend/features/settings/models/factory_unit.dart';
 import 'package:dpr_frontend/features/settings/services/factory_mapping_service.dart';
 import 'package:dpr_frontend/features/utility/models/factory_process.dart';
+import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
 import 'package:flutter/material.dart';
 
 class FactoryMappingScreen extends StatefulWidget {
@@ -34,6 +36,7 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
   );
 
   bool _isLoading = true;
+  bool _isSaving = false;
   String? _error;
 
   List<MasterDataEntity> _factories = [];
@@ -130,6 +133,14 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
     _applyMappingForFactory(_factories[index].id);
   }
 
+  bool get _hasChanges =>
+      !_setEquals(_checkedProcessIds, _savedProcessIds) ||
+      !_setEquals(_checkedUnitIds, _savedUnitIds) ||
+      !_setEquals(_checkedClientIds, _savedClientIds);
+
+  bool _setEquals(Set<int> a, Set<int> b) =>
+      a.length == b.length && a.containsAll(b);
+
   void _onCancel() {
     setState(() {
       _checkedProcessIds = Set.from(_savedProcessIds);
@@ -141,6 +152,8 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
   Future<void> _onSave() async {
     final factoryId = _factories[_selectedTabIndex].id;
 
+    setState(() => _isSaving = true);
+
     try {
       await Future.wait([
         _mappingService.syncProcesses(factoryId, _checkedProcessIds.toList()),
@@ -148,22 +161,17 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
         _mappingService.syncClients(factoryId, _checkedClientIds.toList()),
       ]);
 
-      // 저장 성공 시 현재 상태를 saved로 갱신
       setState(() {
         _savedProcessIds = Set.from(_checkedProcessIds);
         _savedUnitIds = Set.from(_checkedUnitIds);
         _savedClientIds = Set.from(_checkedClientIds);
       });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('저장되었습니다')));
-      }
+      if (mounted) showToast(context, '저장되었습니다', isError: false);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('저장 실패: $e')));
-      }
+      if (mounted) showToast(context, '저장 실패: $e');
+    } finally {
+      setState(() => _isSaving = false);
     }
   }
 
@@ -215,7 +223,7 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(title: const Text('공장별 항목 관리')),
-        body: const Center(child: CircularProgressIndicator()),
+        body: const LoadingIndicator(),
       );
     }
 
@@ -304,8 +312,13 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton(
-                    onPressed: _onSave,
-                    child: const Text('저장'),
+                    onPressed: _hasChanges && !_isSaving ? _onSave : null,
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 20, height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Text('저장'),
                   ),
                 ),
               ],
