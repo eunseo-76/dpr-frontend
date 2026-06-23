@@ -1,3 +1,5 @@
+import 'package:dpr_frontend/core/utils/fade_route.dart';
+import 'package:dpr_frontend/features/auth/screens/invite_code_screen.dart';
 import 'package:dpr_frontend/features/auth/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -57,26 +59,49 @@ class LandingScreen extends StatelessWidget {
                   ),
                 ),
                 const Spacer(flex: 3),
+                // 초대코드로 가입
                 SizedBox(
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
                     onPressed: () => Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      fadeRoute(const InviteCodeScreen()),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white.withValues(alpha: 0.15),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      '초대코드로 가입',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // 로그인
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      fadeRoute(const LoginScreen()),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
-                      foregroundColor: Colors.black,
+                      foregroundColor: const Color(0xFF0D1B2A),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      elevation: 2
+                      elevation: 0,
                     ),
                     child: const Text(
                       '로그인',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),

@@ -1,26 +1,51 @@
-import 'package:dpr_frontend/features/auth/models/login_request.dart';
 import 'package:dpr_frontend/features/auth/services/auth_service.dart';
 import 'package:dpr_frontend/main_screen.dart';
 import 'package:flutter/material.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends StatefulWidget {
+  final String inviteCode;
+  final String email;
+  final String companyName;
+  final String? factoryName;
+  final String role;
+  final String position;
+
+  const RegisterScreen({
+    super.key,
+    required this.inviteCode,
+    required this.email,
+    required this.companyName,
+    this.factoryName,
+    required this.role,
+    required this.position,
+  });
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+class _RegisterScreenState extends State<RegisterScreen> {
+  final _nameController = TextEditingController();
+  final _nicknameController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _passwordConfirmController = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _obscureConfirm = true;
   String? _errorMessage;
 
-  Future<void> _login() async {
-    if (_emailController.text.trim().isEmpty || _passwordController.text.isEmpty) {
-      setState(() => _errorMessage = '이메일과 비밀번호를 입력해주세요');
+  Future<void> _register() async {
+    if (_nameController.text.trim().isEmpty) {
+      setState(() => _errorMessage = '이름을 입력해주세요');
+      return;
+    }
+    if (_passwordController.text.length < 8) {
+      setState(() => _errorMessage = '비밀번호는 8자 이상이어야 합니다');
+      return;
+    }
+    if (_passwordController.text != _passwordConfirmController.text) {
+      setState(() => _errorMessage = '비밀번호가 일치하지 않습니다');
       return;
     }
 
@@ -30,11 +55,11 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await _authService.login(
-        LoginRequest(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-        ),
+      await _authService.register(
+        inviteCode: widget.inviteCode,
+        name: _nameController.text.trim(),
+        nickname: _nicknameController.text.trim(),
+        password: _passwordController.text,
       );
 
       if (!mounted) return;
@@ -67,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const Expanded(
                     child: Text(
-                      '로그인',
+                      '회원가입',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 17,
@@ -81,17 +106,57 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             Expanded(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const SizedBox(height: 16),
+                    // 초대 정보 (읽기전용)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _infoRow('이메일', widget.email),
+                          const SizedBox(height: 8),
+                          _infoRow('회사', widget.companyName),
+                          if (widget.factoryName != null) ...[
+                            const SizedBox(height: 8),
+                            _infoRow('공장', widget.factoryName!),
+                          ],
+                          const SizedBox(height: 8),
+                          _infoRow('직급', widget.position),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 32),
+                    // 입력 필드
                     TextField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
+                      controller: _nameController,
                       style: const TextStyle(fontSize: 16, color: Colors.black87),
                       decoration: InputDecoration(
-                        hintText: '이메일',
+                        hintText: '이름',
+                        hintStyle: TextStyle(color: Colors.grey[400]),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.black87),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: _nicknameController,
+                      style: const TextStyle(fontSize: 16, color: Colors.black87),
+                      decoration: InputDecoration(
+                        hintText: '닉네임 (선택)',
                         hintStyle: TextStyle(color: Colors.grey[400]),
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -124,23 +189,35 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                         ),
                       ),
-                      onSubmitted: (_) => _login(),
                     ),
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: () {
-                          // TODO(password-reset): 비밀번호 재설정 화면으로 이동
-                        },
-                        child: Text(
-                          '비밀번호 재설정',
-                          style: TextStyle(
-                            color: Colors.blue[600],
-                            fontSize: 13,
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: _passwordConfirmController,
+                      obscureText: _obscureConfirm,
+                      style: const TextStyle(fontSize: 16, color: Colors.black87),
+                      decoration: InputDecoration(
+                        hintText: '비밀번호 확인',
+                        hintStyle: TextStyle(color: Colors.grey[400]),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey[300]!),
+                        ),
+                        focusedBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.black87),
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirm ? Icons.visibility_off : Icons.visibility,
+                            color: Colors.grey[500],
+                            size: 20,
                           ),
+                          onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '영문 + 숫자 + 특수문자 포함 8자 이상',
+                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
                     ),
                     const SizedBox(height: 24),
                     if (_errorMessage != null)
@@ -161,7 +238,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _login,
+                        onPressed: _isLoading ? null : _register,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black87,
                           foregroundColor: Colors.white,
@@ -178,11 +255,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               )
                             : const Text(
-                                '로그인',
+                                '가입하기',
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                               ),
                       ),
                     ),
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),
@@ -190,6 +268,31 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _infoRow(String label, String value) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 48,
+          child: Text(
+            label,
+            style: TextStyle(color: Colors.grey[500], fontSize: 13),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              color: Colors.black87,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
