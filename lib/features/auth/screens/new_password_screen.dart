@@ -1,39 +1,54 @@
 import 'package:dpr_frontend/core/utils/fade_route.dart';
 import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/widgets/shake_field.dart';
-import 'package:dpr_frontend/features/auth/models/login_request.dart';
-import 'package:dpr_frontend/features/auth/screens/forgot_password_screen.dart';
+import 'package:dpr_frontend/features/auth/screens/login_screen.dart';
 import 'package:dpr_frontend/features/auth/services/auth_service.dart';
-import 'package:dpr_frontend/main_screen.dart';
 import 'package:flutter/material.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+class NewPasswordScreen extends StatefulWidget {
+  final String email;
+  final String code;
+
+  const NewPasswordScreen({super.key, required this.email, required this.code});
 
   @override
-  State<LoginScreen> createState() => _LoginScreenState();
+  State<NewPasswordScreen> createState() => _NewPasswordScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+class _NewPasswordScreenState extends State<NewPasswordScreen> {
   final _passwordController = TextEditingController();
-  final _emailKey = GlobalKey<ShakeFieldState>();
+  final _passwordConfirmController = TextEditingController();
   final _passwordKey = GlobalKey<ShakeFieldState>();
+  final _passwordConfirmKey = GlobalKey<ShakeFieldState>();
   final _authService = AuthService();
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _obscureConfirm = true;
 
-  Future<void> _login() async {
-    _emailKey.currentState?.clearError();
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    _passwordConfirmController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _resetPassword() async {
     _passwordKey.currentState?.clearError();
+    _passwordConfirmKey.currentState?.clearError();
 
     bool hasError = false;
-    if (_emailController.text.trim().isEmpty) {
-      _emailKey.currentState?.showError('이메일을 입력해주세요');
+    if (_passwordController.text.isEmpty) {
+      _passwordKey.currentState?.showError('새 비밀번호를 입력해주세요');
+      hasError = true;
+    } else if (_passwordController.text.length < 8) {
+      _passwordKey.currentState?.showError('8자 이상 입력해주세요');
       hasError = true;
     }
-    if (_passwordController.text.isEmpty) {
-      _passwordKey.currentState?.showError('비밀번호를 입력해주세요');
+    if (_passwordConfirmController.text.isEmpty) {
+      _passwordConfirmKey.currentState?.showError('비밀번호 확인을 입력해주세요');
+      hasError = true;
+    } else if (_passwordController.text != _passwordConfirmController.text) {
+      _passwordConfirmKey.currentState?.showError('비밀번호가 일치하지 않습니다');
       hasError = true;
     }
     if (hasError) return;
@@ -41,18 +56,17 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _authService.login(
-        LoginRequest(
-          email: _emailController.text.trim(),
-          password: _passwordController.text,
-        ),
+      await _authService.resetPassword(
+        email: widget.email,
+        code: widget.code,
+        newPassword: _passwordController.text,
       );
-
       if (!mounted) return;
+      showToast(context, '비밀번호가 변경되었습니다', isError: false);
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const MainScreen()),
-        (route) => false,
+        fadeRoute(const LoginScreen()),
+        (route) => route.isFirst,
       );
     } catch (e) {
       if (mounted) showToast(context, e.toString().replaceFirst('Exception: ', ''));
@@ -78,7 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const Expanded(
                     child: Text(
-                      '로그인',
+                      '새 비밀번호',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 17,
@@ -98,29 +112,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     const SizedBox(height: 32),
                     ShakeField(
-                      key: _emailKey,
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      style: const TextStyle(fontSize: 16, color: Colors.black87),
-                      decoration: InputDecoration(
-                        hintText: '이메일',
-                        hintStyle: TextStyle(color: Colors.grey[400]),
-                        enabledBorder: UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.grey[300]!),
-                        ),
-                        focusedBorder: const UnderlineInputBorder(
-                          borderSide: BorderSide(color: Colors.black87),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    ShakeField(
                       key: _passwordKey,
                       controller: _passwordController,
                       obscureText: _obscurePassword,
                       style: const TextStyle(fontSize: 16, color: Colors.black87),
                       decoration: InputDecoration(
-                        hintText: '비밀번호',
+                        hintText: '새 비밀번호',
                         hintStyle: TextStyle(color: Colors.grey[400]),
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: Colors.grey[300]!),
@@ -137,23 +134,39 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                         ),
                       ),
-                      onSubmitted: (_) => _login(),
                     ),
-                    const SizedBox(height: 16),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          fadeRoute(const ForgotPasswordScreen()),
+                    const SizedBox(height: 24),
+                    ShakeField(
+                      key: _passwordConfirmKey,
+                      controller: _passwordConfirmController,
+                      obscureText: _obscureConfirm,
+                      style: const TextStyle(fontSize: 16, color: Colors.black87),
+                      decoration: InputDecoration(
+                        hintText: '새 비밀번호 확인',
+                        hintStyle: TextStyle(color: Colors.grey[400]),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.grey[300]!),
                         ),
-                        child: Text(
-                          '비밀번호 재설정',
-                          style: TextStyle(
-                            color: Colors.blue[600],
-                            fontSize: 13,
+                        focusedBorder: const UnderlineInputBorder(
+                          borderSide: BorderSide(color: Colors.black87),
+                        ),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirm ? Icons.visibility_off : Icons.visibility,
+                            color: Colors.grey[500],
+                            size: 20,
                           ),
+                          onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
                         ),
+                      ),
+                      onSubmitted: (_) => _resetPassword(),
+                    ),
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '영문 + 숫자 + 특수문자 포함 8자 이상',
+                        style: TextStyle(color: Colors.grey[400], fontSize: 12),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -161,7 +174,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _login,
+                        onPressed: _isLoading ? null : _resetPassword,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black87,
                           foregroundColor: Colors.white,
@@ -178,7 +191,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               )
                             : const Text(
-                                '로그인',
+                                '변경하기',
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                               ),
                       ),

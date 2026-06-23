@@ -1,18 +1,20 @@
 import 'package:dpr_frontend/core/utils/fade_route.dart';
 import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/widgets/pin_code_field.dart';
-import 'package:dpr_frontend/features/auth/screens/register_screen.dart';
+import 'package:dpr_frontend/features/auth/screens/new_password_screen.dart';
 import 'package:dpr_frontend/features/auth/services/auth_service.dart';
 import 'package:flutter/material.dart';
 
-class InviteCodeScreen extends StatefulWidget {
-  const InviteCodeScreen({super.key});
+class ResetPasswordScreen extends StatefulWidget {
+  final String email;
+
+  const ResetPasswordScreen({super.key, required this.email});
 
   @override
-  State<InviteCodeScreen> createState() => _InviteCodeScreenState();
+  State<ResetPasswordScreen> createState() => _ResetPasswordScreenState();
 }
 
-class _InviteCodeScreenState extends State<InviteCodeScreen> {
+class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _codeController = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
@@ -26,25 +28,18 @@ class _InviteCodeScreenState extends State<InviteCodeScreen> {
   Future<void> _verifyCode() async {
     final code = _codeController.text.trim();
     if (code.length < 6) {
-      if (mounted) showToast(context, '초대코드 6자리를 입력해주세요');
+      showToast(context, '인증 코드 6자리를 입력해주세요');
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
-      final inviteData = await _authService.verifyInviteCode(code);
+      await _authService.verifyResetCode(email: widget.email, code: code);
       if (!mounted) return;
       Navigator.push(
         context,
-        fadeRoute(RegisterScreen(
-          inviteCode: code,
-          email: inviteData['email'] as String,
-          companyName: inviteData['companyName'] as String,
-          factoryName: inviteData['factoryName'] as String?,
-          role: inviteData['role'] as String,
-          position: inviteData['position'] as String,
-        )),
+        fadeRoute(NewPasswordScreen(email: widget.email, code: code)),
       );
     } catch (e) {
       if (mounted) showToast(context, e.toString().replaceFirst('Exception: ', ''));
@@ -70,7 +65,7 @@ class _InviteCodeScreenState extends State<InviteCodeScreen> {
                   ),
                   const Expanded(
                     child: Text(
-                      '초대코드 입력',
+                      '인증 코드 입력',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 17,
@@ -90,12 +85,14 @@ class _InviteCodeScreenState extends State<InviteCodeScreen> {
                   children: [
                     const SizedBox(height: 16),
                     Text(
-                      '관리자에게 받은 초대코드를 입력하세요',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                      '${widget.email}으로\n발송된 인증 코드를 입력해주세요',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.5),
                     ),
                     const SizedBox(height: 40),
                     PinCodeField(
                       controller: _codeController,
+                      autofocus: true,
                       onSubmitted: (_) => _verifyCode(),
                     ),
                     const SizedBox(height: 24),
@@ -120,7 +117,7 @@ class _InviteCodeScreenState extends State<InviteCodeScreen> {
                                 ),
                               )
                             : const Text(
-                                '확인',
+                                '다음',
                                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                               ),
                       ),
