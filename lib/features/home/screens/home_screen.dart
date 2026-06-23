@@ -58,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildProfileHeader(BuildContext context) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const MyPageScreen()),
@@ -114,14 +115,9 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: () => widget.onTabChange(1),
       ),
       MenuItem(
-        icon: Icons.layers,
-        label: '재공현황',
-        onTap: () => widget.onTabChange(2),
-      ),
-      MenuItem(
         icon: Icons.electric_bolt,
         label: '전기&용수',
-        onTap: () => widget.onTabChange(3),
+        onTap: () => widget.onTabChange(2),
       ),
       if (_isAdmin)
         MenuItem(

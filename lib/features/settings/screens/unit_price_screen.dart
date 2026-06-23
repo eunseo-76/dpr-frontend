@@ -216,21 +216,21 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('단가 관리')),
+        appBar: AppBar(title: const Text('단가 관리'), backgroundColor: Colors.grey[100], elevation: 0, scrolledUnderElevation: 0),
         body: const LoadingIndicator(),
       );
     }
 
     if (_error != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('단가 관리')),
+        appBar: AppBar(title: const Text('단가 관리'), backgroundColor: Colors.grey[100], elevation: 0, scrolledUnderElevation: 0),
         body: Center(child: Text('오류: $_error')),
       );
     }
 
     if (_factories.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('단가 관리')),
+        appBar: AppBar(title: const Text('단가 관리'), backgroundColor: Colors.grey[100], elevation: 0, scrolledUnderElevation: 0),
         body: const Center(child: Text('등록된 공장이 없습니다')),
       );
     }
@@ -245,6 +245,9 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
         backgroundColor: Colors.grey[100],
         appBar: AppBar(
           title: const Text('단가 관리'),
+          backgroundColor: Colors.grey[100],
+          elevation: 0,
+          scrolledUnderElevation: 0,
           bottom: TabBar(
             isScrollable: true,
             onTap: _onFactoryTabChanged,

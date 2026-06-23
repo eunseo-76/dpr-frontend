@@ -45,14 +45,6 @@ class _MyPageScreenState extends State<MyPageScreen> {
     }
   }
 
-  Widget _infoTile(IconData icon, String label, String value) {
-    return ListTile(
-      leading: Icon(icon, color: Colors.grey[600]),
-      title: Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
-      subtitle: Text(value, style: const TextStyle(fontSize: 15, color: Colors.black87)),
-    );
-  }
-
   Future<void> _logout() async {
     await TokenStorage.clearToken();
     await UserStorage.clearUserInfo();
@@ -64,13 +56,41 @@ class _MyPageScreenState extends State<MyPageScreen> {
     );
   }
 
+  Widget _menuTile({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color? iconColor,
+    Color? textColor,
+    bool showChevron = true,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: iconColor ?? const Color(0xFF1E3A5F)),
+      title: Text(label, style: TextStyle(color: textColor)),
+      trailing: showChevron ? Icon(Icons.chevron_right, color: Colors.grey[400]) : null,
+      onTap: onTap,
+    );
+  }
+
+  Widget _divider() {
+    return Divider(height: 0.5, thickness: 0.5, indent: 56, color: Colors.grey[200]);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('내 정보')),
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        title: const Text('내 정보'),
+        backgroundColor: Colors.grey[100],
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
       body: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
         children: [
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          // 프로필
           Center(
             child: Container(
               width: 72,
@@ -105,44 +125,53 @@ class _MyPageScreenState extends State<MyPageScreen> {
             ),
           ),
           const SizedBox(height: 24),
+          // 소속 정보
+          if (_role == 'OWNER' || _factoryName != null)
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  if (_role == 'OWNER') ...[
+                    ListTile(
+                      leading: Icon(Icons.business_outlined, color: Colors.grey[600]),
+                      title: Text('회사', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                      subtitle: Text(_companyName, style: const TextStyle(fontSize: 15, color: Colors.black87)),
+                    ),
+                    if (_factoryName != null) _divider(),
+                  ],
+                  if (_factoryName != null)
+                    ListTile(
+                      leading: Icon(Icons.factory_outlined, color: Colors.grey[600]),
+                      title: Text('소속', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                      subtitle: Text(_factoryName!, style: const TextStyle(fontSize: 15, color: Colors.black87)),
+                    ),
+                ],
+              ),
+            ),
+          // 메뉴
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
               children: [
-                if (_role == 'OWNER')
-                  _infoTile(Icons.business_outlined, '회사', _companyName),
-                if (_factoryName != null)
-                  _infoTile(Icons.factory_outlined, '소속', _factoryName!),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.person_outline),
-                  title: const Text('회원정보 수정'),
-                  trailing: const Icon(Icons.chevron_right),
+                _menuTile(
+                  icon: Icons.person_outline,
+                  label: '회원정보 수정',
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const EditProfileScreen()),
                   ),
                 ),
-                const Divider(height: 1, indent: 56),
-                ListTile(
-                  leading: const Icon(Icons.group_add_outlined),
-                  title: const Text('초대 계정 관리'),
-                  trailing: const Icon(Icons.chevron_right),
+                _divider(),
+                _menuTile(
+                  icon: Icons.group_add_outlined,
+                  label: '초대 계정 관리',
                   onTap: () {},
                 ),
               ],
@@ -150,15 +179,13 @@ class _MyPageScreenState extends State<MyPageScreen> {
           ),
           const SizedBox(height: 16),
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: const Text('앱 정보'),
-              trailing: const Icon(Icons.chevron_right),
+            child: _menuTile(
+              icon: Icons.info_outline,
+              label: '앱 정보',
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const AppInfoScreen()),
@@ -167,30 +194,28 @@ class _MyPageScreenState extends State<MyPageScreen> {
           ),
           const SizedBox(height: 16),
           Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Column(
               children: [
-                ListTile(
-                  leading: const Icon(Icons.logout, color: Colors.red),
-                  title: const Text(
-                    '로그아웃',
-                    style: TextStyle(color: Colors.red),
-                  ),
+                _menuTile(
+                  icon: Icons.logout,
+                  label: '로그아웃',
+                  iconColor: Colors.red,
+                  textColor: Colors.red,
+                  showChevron: false,
                   onTap: _logout,
                 ),
                 if (_role != 'OWNER') ...[
-                  const Divider(height: 1, indent: 56),
-                  ListTile(
-                    leading: Icon(Icons.person_remove_outlined,
-                        color: Colors.red[300]),
-                    title: Text(
-                      '회원탈퇴',
-                      style: TextStyle(color: Colors.red[300]),
-                    ),
+                  _divider(),
+                  _menuTile(
+                    icon: Icons.person_remove_outlined,
+                    label: '회원탈퇴',
+                    iconColor: Colors.red[300],
+                    textColor: Colors.red[300],
+                    showChevron: false,
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const WithdrawScreen()),
@@ -200,6 +225,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
               ],
             ),
           ),
+          const SizedBox(height: 32),
         ],
       ),
     );

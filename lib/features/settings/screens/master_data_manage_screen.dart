@@ -238,6 +238,9 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
         title: Text(widget.title),
+        backgroundColor: Colors.grey[100],
+        elevation: 0,
+        scrolledUnderElevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
