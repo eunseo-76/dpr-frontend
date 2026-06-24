@@ -284,40 +284,94 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
             selectedIndex: _selectedFactoryIndex,
             onSelected: _onFactorySelected,
           ),
-          if (processes.isNotEmpty)
-            PillSelector(
-              labels: processes.map((p) => p.processName).toList(),
-              selectedIndex: _selectedProcessIndex,
-              onSelected: _onProcessSelected,
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            ),
           Expanded(
-            child: _isPriceLoading
-                ? const LoadingIndicator()
-                : processes.isEmpty
-                    ? const Center(
-                        child: Text(
-                          '이 공장에 등록된 공정이 없습니다.\n[공장별 항목 관리] 메뉴에서 공정을 추가해주세요.',
-                          textAlign: TextAlign.center,
+            child: processes.isEmpty
+                ? const FractionallySizedBox(
+                    heightFactor: 0.5,
+                    alignment: Alignment.topCenter,
+                    child: Center(
+                      child: Text(
+                        '이 공장에 등록된 공정이 없습니다.\n[공장별 항목 관리] 메뉴에서 공정을 추가해주세요.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  )
+                : clients.isEmpty && !_isPriceLoading
+                    ? const FractionallySizedBox(
+                        heightFactor: 0.5,
+                        alignment: Alignment.topCenter,
+                        child: Center(
+                          child: Text(
+                            '이 공장에 등록된 업체가 없습니다.\n[공장별 항목 관리] 메뉴에서 업체를 추가해주세요.',
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       )
-                    : clients.isEmpty
-                        ? const Center(
-                            child: Text(
-                              '이 공장에 등록된 업체가 없습니다.\n[공장별 항목 관리] 메뉴에서 업체를 추가해주세요.',
-                              textAlign: TextAlign.center,
-                            ),
-                          )
-                        : ListView(
+                    : ListView(
                             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                             children: [
+                              Row(
+                                children: processes.asMap().entries.map((entry) {
+                                  final isSelected = entry.key == _selectedProcessIndex;
+                                  final isLast = entry.key == processes.length - 1;
+                                  return Expanded(
+                                    child: Padding(
+                                      padding: EdgeInsets.only(right: isLast ? 0 : 2),
+                                      child: GestureDetector(
+                                        onTap: () => _onProcessSelected(entry.key),
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(vertical: 10),
+                                          decoration: BoxDecoration(
+                                            color: isSelected
+                                                ? Colors.white
+                                                : Colors.grey[200],
+                                            borderRadius: const BorderRadius.only(
+                                              topLeft: Radius.circular(10),
+                                              topRight: Radius.circular(10),
+                                            ),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            entry.value.processName,
+                                            style: TextStyle(
+                                              fontWeight: isSelected
+                                                  ? FontWeight.w600
+                                                  : FontWeight.normal,
+                                              color: isSelected
+                                                  ? Colors.blue
+                                                  : Colors.grey[600],
+                                              fontSize: 13,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
                               Container(
                                 decoration: BoxDecoration(
                                   color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: _selectedProcessIndex == 0
+                                        ? Radius.zero
+                                        : const Radius.circular(12),
+                                    topRight: const Radius.circular(12),
+                                    bottomLeft: const Radius.circular(12),
+                                    bottomRight: const Radius.circular(12),
+                                  ),
                                 ),
                                 padding: const EdgeInsets.all(16),
-                                child: Column(
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 250),
+                                  child: _isPriceLoading
+                                    ? const SizedBox(
+                                        key: ValueKey('loading'),
+                                        height: 120,
+                                        child: LoadingIndicator(size: 90),
+                                      )
+                                    : Column(
+                                        key: ValueKey(_selectedProcessIndex),
                                   children: [
                                     const Row(
                                       children: [
@@ -422,7 +476,9 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                     }),
                                   ],
                                 ),
+                                ),
                               ),
+                              if (!_isPriceLoading) ...[
                               const SizedBox(height: 24),
                               Row(
                                 children: [
@@ -481,6 +537,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                   ),
                                 ],
                               ),
+                              ],
                             ],
                           ),
           ),

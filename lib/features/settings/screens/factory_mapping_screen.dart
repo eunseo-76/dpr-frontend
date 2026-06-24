@@ -1,5 +1,6 @@
 import 'package:dpr_frontend/core/constants/api_constants.dart';
 import 'package:dpr_frontend/core/utils/toast.dart';
+import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
 import 'package:dpr_frontend/core/models/master_data_entity.dart';
 import 'package:dpr_frontend/core/services/master_data_service.dart';
 import 'package:dpr_frontend/features/client/models/factory_client.dart';
@@ -127,7 +128,20 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
     });
   }
 
-  void _onFactorySelected(int index) {
+  Future<void> _onFactorySelected(int index) async {
+    if (index == _selectedFactoryIndex) return;
+
+    if (_hasChanges) {
+      final confirmed = await showConfirmDialog(
+        context,
+        title: '변경사항이 있습니다',
+        content: '저장하지 않고 다른 공장으로 이동하시겠습니까?\n수정한 내용은 사라집니다.',
+        confirmLabel: '이동',
+        isDestructive: true,
+      );
+      if (!confirmed) return;
+    }
+
     setState(() => _selectedFactoryIndex = index);
     _applyMappingForFactory(_factories[index].id);
   }
