@@ -25,7 +25,7 @@ class PillSelector extends StatelessWidget {
           color: isSelected
               ? Colors.white.withValues(alpha: 0.6)
               : Colors.grey[300]!,
-          width: isSelected ? 1.5 : 1,
+          width: 1.5,
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [

@@ -10,8 +10,8 @@ class PopEffect extends StatefulWidget {
     super.key,
     required this.trigger,
     required this.child,
-    this.peakScale = 1.15,
-    this.duration = const Duration(milliseconds: 400),
+    this.peakScale = 1.30,
+    this.duration = const Duration(milliseconds: 500),
   });
 
   @override
