@@ -4,6 +4,7 @@ import 'package:dpr_frontend/features/auth/screens/app_info_screen.dart';
 import 'package:dpr_frontend/features/auth/screens/edit_profile_screen.dart';
 import 'package:dpr_frontend/features/auth/screens/landing_screen.dart';
 import 'package:dpr_frontend/features/auth/screens/withdraw_screen.dart';
+import 'package:dpr_frontend/core/widgets/name_avatar.dart';
 import 'package:flutter/material.dart';
 
 class MyPageScreen extends StatefulWidget {
@@ -91,26 +92,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
         children: [
           const SizedBox(height: 16),
           // 프로필
-          Center(
-            child: Container(
-              width: 72,
-              height: 72,
-              decoration: const BoxDecoration(
-                color: Color(0xFF1E3A5F),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  _name.isNotEmpty ? _name[0] : '?',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
+          Center(child: NameAvatar(name: _name, size: 72, fontSize: 28)),
           const SizedBox(height: 12),
           Center(
             child: Text(

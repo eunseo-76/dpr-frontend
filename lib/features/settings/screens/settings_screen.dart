@@ -16,6 +16,7 @@ class SettingsScreen extends StatelessWidget {
     required String endpoint,
     required String idKey,
     required List<FieldConfig> fields,
+    bool showAvatar = false,
   }) {
     Navigator.push(
       context,
@@ -24,6 +25,7 @@ class SettingsScreen extends StatelessWidget {
           title: title,
           service: MasterDataService(endpoint: endpoint, idKey: idKey),
           fields: fields,
+          showAvatar: showAvatar,
         ),
       ),
     );
@@ -66,6 +68,7 @@ class SettingsScreen extends StatelessWidget {
                   endpoint: ApiConstants.factory_,
                   idKey: 'factoryId',
                   fields: detailFields,
+                  showAvatar: true,
                 ),
               ),
               MenuItem(
@@ -99,6 +102,7 @@ class SettingsScreen extends StatelessWidget {
                   endpoint: ApiConstants.client,
                   idKey: 'clientId',
                   fields: detailFields,
+                  showAvatar: true,
                 ),
               ),
               MenuItem(

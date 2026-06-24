@@ -1,4 +1,5 @@
 import 'package:dpr_frontend/core/utils/toast.dart';
+import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
 import 'package:dpr_frontend/core/utils/token_storage.dart';
 import 'package:dpr_frontend/core/utils/user_storage.dart';
 import 'package:dpr_frontend/features/auth/screens/landing_screen.dart';
@@ -28,22 +29,12 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
 
     try {
       if (!mounted) return;
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('회원탈퇴'),
-          content: const Text('정말로 탈퇴하시겠습니까?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('취소'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text('탈퇴', style: TextStyle(color: Colors.red[600])),
-            ),
-          ],
-        ),
+      final confirmed = await showConfirmDialog(
+        context,
+        title: '회원탈퇴',
+        content: '정말로 탈퇴하시겠습니까?',
+        confirmLabel: '탈퇴',
+        isDestructive: true,
       );
 
       if (confirmed != true) {

@@ -7,6 +7,7 @@ import 'package:dpr_frontend/features/settings/models/factory_unit.dart';
 import 'package:dpr_frontend/features/settings/services/factory_mapping_service.dart';
 import 'package:dpr_frontend/features/utility/models/factory_process.dart';
 import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
+import 'package:dpr_frontend/core/widgets/pill_selector.dart';
 import 'package:flutter/material.dart';
 
 class FactoryMappingScreen extends StatefulWidget {
@@ -48,14 +49,12 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
   List<FactoryUnit> _factoryUnits = [];
   List<FactoryClient> _factoryClients = [];
 
-  int _selectedTabIndex = 0;
+  int _selectedFactoryIndex = 0;
 
-  // 현재 선택된 공장의 체크 상태 (편집 중인 상태)
   Set<int> _checkedProcessIds = {};
   Set<int> _checkedUnitIds = {};
   Set<int> _checkedClientIds = {};
 
-  // 저장된 원래 상태 (취소 시 복원용)
   Set<int> _savedProcessIds = {};
   Set<int> _savedUnitIds = {};
   Set<int> _savedClientIds = {};
@@ -103,7 +102,6 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
     }
   }
 
-  // 선택된 공장의 매핑 데이터로 체크 상태를 세팅
   void _applyMappingForFactory(int factoryId) {
     final processIds = _factoryProcesses
         .where((fp) => fp.factoryId == factoryId)
@@ -128,8 +126,8 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
     });
   }
 
-  void _onTabChanged(int index) {
-    setState(() => _selectedTabIndex = index);
+  void _onFactorySelected(int index) {
+    setState(() => _selectedFactoryIndex = index);
     _applyMappingForFactory(_factories[index].id);
   }
 
@@ -150,7 +148,7 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
   }
 
   Future<void> _onSave() async {
-    final factoryId = _factories[_selectedTabIndex].id;
+    final factoryId = _factories[_selectedFactoryIndex].id;
 
     setState(() => _isSaving = true);
 
@@ -181,39 +179,38 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
     required Set<int> checkedIds,
     required void Function(int id, bool checked) onChanged,
   }) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 0,
-              children: allItems.map((item) {
-                return SizedBox(
-                  width: 160,
-                  child: CheckboxListTile(
-                    title: Text(item.name, style: const TextStyle(fontSize: 14)),
-                    value: checkedIds.contains(item.id),
-                    onChanged: (checked) => onChanged(item.id, checked ?? false),
-                    dense: true,
-                    contentPadding: EdgeInsets.zero,
-                    controlAffinity: ListTileControlAffinity.leading,
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 0,
+            children: allItems.map((item) {
+              return SizedBox(
+                width: 160,
+                child: CheckboxListTile(
+                  title: Text(item.name, style: const TextStyle(fontSize: 14)),
+                  value: checkedIds.contains(item.id),
+                  onChanged: (checked) => onChanged(item.id, checked ?? false),
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  controlAffinity: ListTileControlAffinity.leading,
+                ),
+              );
+            }).toList(),
+          ),
+        ],
       ),
     );
   }
@@ -222,112 +219,172 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(title: const Text('공장별 항목 관리'), backgroundColor: Colors.grey[100], elevation: 0, scrolledUnderElevation: 0),
-        body: const LoadingIndicator(),
-      );
-    }
-
-    if (_error != null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('공장별 항목 관리'), backgroundColor: Colors.grey[100], elevation: 0, scrolledUnderElevation: 0),
-        body: Center(child: Text('오류: $_error')),
-      );
-    }
-
-    if (_factories.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('공장별 항목 관리'), backgroundColor: Colors.grey[100], elevation: 0, scrolledUnderElevation: 0),
-        body: const Center(child: Text('등록된 공장이 없습니다')),
-      );
-    }
-
-    return DefaultTabController(
-      length: _factories.length,
-      child: Scaffold(
         backgroundColor: Colors.grey[100],
         appBar: AppBar(
           title: const Text('공장별 항목 관리'),
           backgroundColor: Colors.grey[100],
           elevation: 0,
           scrolledUnderElevation: 0,
-          bottom: TabBar(
-            isScrollable: true,
-            onTap: _onTabChanged,
-            tabs: _factories.map((f) => Tab(text: f.name)).toList(),
-          ),
         ),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            _buildCheckboxSection(
-              title: '공정',
-              allItems: _allProcesses,
-              checkedIds: _checkedProcessIds,
-              onChanged: (id, checked) {
-                setState(() {
-                  if (checked) {
-                    _checkedProcessIds.add(id);
-                  } else {
-                    _checkedProcessIds.remove(id);
-                  }
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            _buildCheckboxSection(
-              title: '단위',
-              allItems: _allUnits,
-              checkedIds: _checkedUnitIds,
-              onChanged: (id, checked) {
-                setState(() {
-                  if (checked) {
-                    _checkedUnitIds.add(id);
-                  } else {
-                    _checkedUnitIds.remove(id);
-                  }
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-            _buildCheckboxSection(
-              title: '업체',
-              allItems: _allClients,
-              checkedIds: _checkedClientIds,
-              onChanged: (id, checked) {
-                setState(() {
-                  if (checked) {
-                    _checkedClientIds.add(id);
-                  } else {
-                    _checkedClientIds.remove(id);
-                  }
-                });
-              },
-            ),
-            const SizedBox(height: 24),
-            Row(
+        body: const LoadingIndicator(),
+      );
+    }
+
+    if (_error != null) {
+      return Scaffold(
+        backgroundColor: Colors.grey[100],
+        appBar: AppBar(
+          title: const Text('공장별 항목 관리'),
+          backgroundColor: Colors.grey[100],
+          elevation: 0,
+          scrolledUnderElevation: 0,
+        ),
+        body: Center(child: Text('오류: $_error')),
+      );
+    }
+
+    if (_factories.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.grey[100],
+        appBar: AppBar(
+          title: const Text('공장별 항목 관리'),
+          backgroundColor: Colors.grey[100],
+          elevation: 0,
+          scrolledUnderElevation: 0,
+        ),
+        body: const Center(child: Text('등록된 공장이 없습니다')),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        title: const Text('공장별 항목 관리'),
+        backgroundColor: Colors.grey[100],
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
+      body: Column(
+        children: [
+          PillSelector(
+            labels: _factories.map((f) => f.name).toList(),
+            selectedIndex: _selectedFactoryIndex,
+            onSelected: _onFactorySelected,
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: _onCancel,
-                    child: const Text('취소'),
-                  ),
+                _buildCheckboxSection(
+                  title: '공정',
+                  allItems: _allProcesses,
+                  checkedIds: _checkedProcessIds,
+                  onChanged: (id, checked) {
+                    setState(() {
+                      if (checked) {
+                        _checkedProcessIds.add(id);
+                      } else {
+                        _checkedProcessIds.remove(id);
+                      }
+                    });
+                  },
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: _hasChanges && !_isSaving ? _onSave : null,
-                    child: _isSaving
-                        ? const SizedBox(
-                            width: 20, height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Text('저장'),
-                  ),
+                const SizedBox(height: 12),
+                _buildCheckboxSection(
+                  title: '단위',
+                  allItems: _allUnits,
+                  checkedIds: _checkedUnitIds,
+                  onChanged: (id, checked) {
+                    setState(() {
+                      if (checked) {
+                        _checkedUnitIds.add(id);
+                      } else {
+                        _checkedUnitIds.remove(id);
+                      }
+                    });
+                  },
+                ),
+                const SizedBox(height: 12),
+                _buildCheckboxSection(
+                  title: '업체',
+                  allItems: _allClients,
+                  checkedIds: _checkedClientIds,
+                  onChanged: (id, checked) {
+                    setState(() {
+                      if (checked) {
+                        _checkedClientIds.add(id);
+                      } else {
+                        _checkedClientIds.remove(id);
+                      }
+                    });
+                  },
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: OutlinedButton(
+                          onPressed: _hasChanges ? _onCancel : null,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.black87,
+                            side: BorderSide(color: Colors.grey[300]!),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                          child: const Text(
+                            '취소',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: ElevatedButton(
+                          onPressed:
+                              _hasChanges && !_isSaving ? _onSave : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black87,
+                            foregroundColor: Colors.white,
+                            disabledBackgroundColor: Colors.grey[300],
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: _isSaving
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  '저장',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

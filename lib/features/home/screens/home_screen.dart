@@ -1,5 +1,6 @@
 import 'package:dpr_frontend/core/utils/user_storage.dart';
 import 'package:dpr_frontend/core/widgets/menu_card.dart';
+import 'package:dpr_frontend/core/widgets/name_avatar.dart';
 import 'package:dpr_frontend/features/auth/screens/my_page_screen.dart';
 import 'package:dpr_frontend/features/settings/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
@@ -65,24 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-              color: Color(0xFF1E3A5F),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                _name.isNotEmpty ? _name[0] : '?',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
+          NameAvatar(name: _name, size: 48, fontSize: 20),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,

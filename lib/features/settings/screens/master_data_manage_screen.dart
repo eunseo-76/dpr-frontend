@@ -1,7 +1,10 @@
 import 'package:dpr_frontend/core/models/field_config.dart';
 import 'package:dpr_frontend/core/utils/toast.dart';
+import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
+import 'package:dpr_frontend/core/widgets/name_avatar.dart';
 import 'package:dpr_frontend/core/models/master_data_entity.dart';
 import 'package:dpr_frontend/core/services/master_data_service.dart';
+import 'package:dpr_frontend/core/widgets/form_dialog.dart';
 import 'package:dpr_frontend/core/widgets/shake_field.dart';
 import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
 import 'package:flutter/material.dart';
@@ -10,12 +13,14 @@ class MasterDataManageScreen extends StatefulWidget {
   final String title;
   final MasterDataService service;
   final List<FieldConfig> fields;
+  final bool showAvatar;
 
   const MasterDataManageScreen({
     super.key,
     required this.title,
     required this.service,
     required this.fields,
+    this.showAvatar = false,
   });
 
   @override
@@ -49,34 +54,12 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
   }
 
   Future<void> _deleteItem(MasterDataEntity item) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('삭제 확인'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text("'${item.name}'을(를) 삭제하시겠습니까?"),
-            const SizedBox(height: 12),
-            Text(
-              '삭제된 항목은 되살릴 수 없습니다.\n기존 데이터(생산실적 등)는 유지됩니다.',
-              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: "'${item.name}' 삭제",
+      content: '삭제된 항목은 되살릴 수 없습니다.\n기존 데이터(생산실적 등)는 유지됩니다.',
+      confirmLabel: '삭제',
+      isDestructive: true,
     );
     if (confirmed != true) return;
 
@@ -93,18 +76,16 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
   void _showFormDialog({MasterDataEntity? item}) {
     final isEdit = item != null;
 
-    // 1. 각 필드마다 TextEditingController 생성
-    // widget.fields = [FieldConfig(key:'name', label:'이름'), FieldConfig(key:'nickname', label:'별칭')]
-    // .map()으로 순회하면서 각각에 대응하는 controller를 만든다
-    // 결과: controllers = [TextEditingController(), TextEditingController()]
     final controllers = widget.fields.map((field) {
       final controller = TextEditingController();
-      // 수정 모드이고 key가 'name'이면 기존 이름을 채워넣기
-      if (isEdit && field.key == 'name') {
-        controller.text = item.name;
+      if (isEdit) {
+        final value = item.data[field.key];
+        if (value != null) controller.text = value.toString();
       }
       return controller;
     }).toList();
+
+    final initialValues = controllers.map((c) => c.text).toList();
 
     final shakeKeys = List.generate(
       widget.fields.length,
@@ -116,84 +97,87 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
     showDialog(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (dialogContext, setDialogState) => AlertDialog(
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(isEdit ? '수정' : '추가'),
-              Text(
-                '* 는 필수 항목입니다',
-                style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: List.generate(widget.fields.length, (i) {
-              final field = widget.fields[i];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: ShakeField(
-                  key: shakeKeys[i],
-                  controller: controllers[i],
-                  decoration: InputDecoration(
-                    labelText: field.required
-                        ? '${field.label} *'
-                        : field.label,
+        builder: (dialogContext, setDialogState) {
+          bool hasChanges() {
+            for (var i = 0; i < controllers.length; i++) {
+              if (controllers[i].text.trim() != initialValues[i]) return true;
+            }
+            return false;
+          }
+
+          void listen() => setDialogState(() {});
+
+          for (final c in controllers) {
+            c.removeListener(listen);
+            c.addListener(listen);
+          }
+
+          return FormDialog(
+            title: isEdit ? '수정' : '추가',
+            subtitle: '* 는 필수 항목입니다',
+            hasChanges: hasChanges(),
+            isLoading: isSaving,
+            onSave: () async {
+              bool hasError = false;
+              for (var i = 0; i < widget.fields.length; i++) {
+                if (widget.fields[i].required &&
+                    controllers[i].text.trim().isEmpty) {
+                  shakeKeys[i].currentState?.showError('필수 항목입니다');
+                  hasError = true;
+                } else {
+                  shakeKeys[i].currentState?.clearError();
+                }
+              }
+              if (hasError) return;
+
+              final body = <String, dynamic>{};
+              for (var i = 0; i < widget.fields.length; i++) {
+                body[widget.fields[i].key] = controllers[i].text;
+              }
+
+              setDialogState(() => isSaving = true);
+              try {
+                if (isEdit) {
+                  await widget.service.update(item.id, body);
+                } else {
+                  await widget.service.create(body);
+                }
+                if (dialogContext.mounted) Navigator.pop(dialogContext);
+                _loadItems();
+              } catch (e) {
+                if (dialogContext.mounted) {
+                  setDialogState(() => isSaving = false);
+                  showToast(dialogContext, '저장 실패: $e');
+                }
+              }
+            },
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(widget.fields.length, (i) {
+                final field = widget.fields[i];
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: ShakeField(
+                    key: shakeKeys[i],
+                    controller: controllers[i],
+                    style: const TextStyle(fontSize: 16, color: Colors.black87),
+                    decoration: InputDecoration(
+                      labelText: field.required ? '${field.label} *' : field.label,
+                      labelStyle: TextStyle(color: Colors.grey[500]),
+                      floatingLabelStyle: const TextStyle(color: Colors.black87),
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.grey[300]!),
+                      ),
+                      focusedBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black87),
+                      ),
+                    ),
                   ),
-                ),
-              );
-            }),
-          ),
-          actions: [
-            TextButton(
-              onPressed: isSaving ? null : () => Navigator.pop(dialogContext),
-              child: const Text('취소'),
+                );
+              }),
             ),
-            TextButton(
-              onPressed: isSaving ? null : () async {
-                bool hasError = false;
-                for (var i = 0; i < widget.fields.length; i++) {
-                  if (widget.fields[i].required &&
-                      controllers[i].text.trim().isEmpty) {
-                    shakeKeys[i].currentState?.showError('필수 항목입니다');
-                    hasError = true;
-                  } else {
-                    shakeKeys[i].currentState?.clearError();
-                  }
-                }
-                if (hasError) return;
-
-                final body = <String, dynamic>{};
-                for (var i = 0; i < widget.fields.length; i++) {
-                  body[widget.fields[i].key] = controllers[i].text;
-                }
-
-                setDialogState(() => isSaving = true);
-                try {
-                  if (isEdit) {
-                    await widget.service.update(item.id, body);
-                  } else {
-                    await widget.service.create(body);
-                  }
-                  if (dialogContext.mounted) Navigator.pop(dialogContext);
-                  _loadItems();
-                } catch (e) {
-                  if (dialogContext.mounted) {
-                    setDialogState(() => isSaving = false);
-                    showToast(dialogContext, '저장 실패: $e');
-                  }
-                }
-              },
-              child: isSaving
-                  ? const SizedBox(
-                      width: 20, height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('저장'),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -211,23 +195,30 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
       body = ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: _items.length,
-        separatorBuilder: (_, _) => const Divider(height: 1),
+        separatorBuilder: (_, _) => const SizedBox(height: 8),
         itemBuilder: (context, index) {
           final item = _items[index];
-          return ListTile(
-            title: Text(item.name),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.grey),
-                  onPressed: () => _showFormDialog(item: item),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.grey),
-                  onPressed: () => _deleteItem(item),
-                ),
-              ],
+          return Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: ListTile(
+              leading: widget.showAvatar ? NameAvatar(name: item.name, size: 36, fontSize: 14) : null,
+              title: Text(item.name),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.edit_outlined, color: Colors.grey[400], size: 20),
+                    onPressed: () => _showFormDialog(item: item),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.delete_outline, color: Colors.grey[400], size: 20),
+                    onPressed: () => _deleteItem(item),
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -242,9 +233,27 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => _showFormDialog(),
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: GestureDetector(
+              onTap: () => _showFormDialog(),
+              child: Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(Icons.add, size: 20, color: Colors.grey[700]),
+              ),
+            ),
           ),
         ],
       ),

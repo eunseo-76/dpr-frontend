@@ -83,8 +83,6 @@ class _UtilityUpsertDialogState extends State<UtilityUpsertDialog> {
     return v == v.roundToDouble() ? v.toInt().toString() : v.toString();
   }
 
-  // TODO(human): 입력값이 초기값(_initialElectricityTexts/_initialWaterTexts)과
-  // 하나라도 달라졌는지 확인해서 _hasChanges를 갱신하고, 바뀌었으면 setState 호출
   void _onChanged() {
     bool changed = false;
     for (var i = 0; i < widget.rows.length; i++) {
