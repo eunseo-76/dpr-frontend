@@ -226,10 +226,11 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
     }
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: Text(widget.title),
-        backgroundColor: Colors.grey[100],
+        title: Text(widget.title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
@@ -257,7 +258,34 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
           ),
         ],
       ),
-      body: body,
+      body: Column(
+        children: [
+          Container(
+            height: MediaQuery.of(context).padding.top + kToolbarHeight,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.white, Colors.grey[100]!],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFFEFF0F4),
+                border: Border(top: BorderSide(color: Color(0xFFB0B8C8), width: 2)),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment(0, -0.95),
+                  colors: [Color(0xFFDFE4F0), Color(0xFFEFF0F4)],
+                ),
+              ),
+              child: body,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
