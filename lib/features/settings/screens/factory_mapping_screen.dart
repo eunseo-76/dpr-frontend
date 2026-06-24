@@ -8,6 +8,7 @@ import 'package:dpr_frontend/features/settings/services/factory_mapping_service.
 import 'package:dpr_frontend/features/utility/models/factory_process.dart';
 import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
 import 'package:dpr_frontend/core/widgets/pill_selector.dart';
+import 'package:dpr_frontend/core/widgets/rounded_checkbox.dart';
 import 'package:flutter/material.dart';
 
 class FactoryMappingScreen extends StatefulWidget {
@@ -197,15 +198,30 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
             spacing: 8,
             runSpacing: 0,
             children: allItems.map((item) {
+              final isChecked = checkedIds.contains(item.id);
               return SizedBox(
                 width: 160,
-                child: CheckboxListTile(
-                  title: Text(item.name, style: const TextStyle(fontSize: 14)),
-                  value: checkedIds.contains(item.id),
-                  onChanged: (checked) => onChanged(item.id, checked ?? false),
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  controlAffinity: ListTileControlAffinity.leading,
+                child: InkWell(
+                  onTap: () => onChanged(item.id, !isChecked),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    child: Row(
+                      children: [
+                        RoundedCheckbox(value: isChecked),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            item.name,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: isChecked ? FontWeight.w600 : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               );
             }).toList(),

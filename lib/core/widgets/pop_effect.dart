@@ -5,13 +5,15 @@ class PopEffect extends StatefulWidget {
   final Widget child;
   final double peakScale;
   final Duration duration;
+  final bool animateOnDeactivate;
 
   const PopEffect({
     super.key,
     required this.trigger,
     required this.child,
     this.peakScale = 1.30,
-    this.duration = const Duration(milliseconds: 500),
+    this.duration = const Duration(milliseconds: 800),
+    this.animateOnDeactivate = false,
   });
 
   @override
@@ -33,26 +35,28 @@ class _PopEffectState extends State<PopEffect>
     _scaleAnimation = TweenSequence<double>([
       TweenSequenceItem(
         tween: Tween(begin: 1.0, end: widget.peakScale),
-        weight: 35,
+        weight: 20,
       ),
       TweenSequenceItem(
         tween: Tween(begin: widget.peakScale, end: 0.97),
-        weight: 35,
+        weight: 45,
       ),
       TweenSequenceItem(
         tween: Tween(begin: 0.97, end: 1.0),
-        weight: 30,
+        weight: 35,
       ),
     ]).animate(CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOut,
     ));
   }
 
   @override
   void didUpdateWidget(PopEffect oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.trigger && !oldWidget.trigger) {
+    final activated = widget.trigger && !oldWidget.trigger;
+    final deactivated = !widget.trigger && oldWidget.trigger;
+    if (activated || (deactivated && widget.animateOnDeactivate)) {
       _controller.forward(from: 0);
     }
   }
