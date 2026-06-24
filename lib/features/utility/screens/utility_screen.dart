@@ -282,7 +282,7 @@ class _UtilityScreenState extends State<UtilityScreen> {
       final groups = groupUtilitiesByPeriod(_utilities, scaffold, dateColumns);
       final rowLabelHeader = _groupBy == '공장별' ? '공정' : '공장';
       return ListView(
-        padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
+        padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
         children: groups
             .map((group) => UtilityCard(
                   title: group.groupName,
@@ -313,7 +313,7 @@ class _UtilityScreenState extends State<UtilityScreen> {
       final groups = groupUtilitiesByColumns(_utilities, scaffold, columns);
       final rowLabelHeader = _groupBy == '공장별' ? '공정' : '공장';
       return ListView(
-        padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
+        padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
         children: groups
             .map((group) => UtilityCard(
                   title: group.groupName,
@@ -335,7 +335,7 @@ class _UtilityScreenState extends State<UtilityScreen> {
       final groups = groupUtilitiesByColumns(_utilities, scaffold, columns);
       final rowLabelHeader = _groupBy == '공장별' ? '공정' : '공장';
       return ListView(
-        padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
+        padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
         children: groups
             .map((group) => UtilityCard(
                   title: group.groupName,
@@ -355,7 +355,7 @@ class _UtilityScreenState extends State<UtilityScreen> {
       final groups = groupUtilities(_utilities, scaffold);
       final rowLabelHeader = _groupBy == '공장별' ? '공정' : '공장';
       return ListView(
-        padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
+        padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
         children: groups
             .map((group) => UtilityCard(
                   title: group.groupName,

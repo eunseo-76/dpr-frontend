@@ -455,7 +455,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
         : null;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
+      padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
       children: periodGroups.map((group) {
         final cardTitle = _groupBy == '공정별'
             ? '${group.groupName} 공정'
@@ -500,7 +500,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
     final rowLabelHeader = _groupBy == '공정별' ? '업체' : '공정';
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(8, 16, 8, 8),
+      padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
       children: dayGroups.map((group) {
         final cardTitle = _groupBy == '공정별'
             ? '${group.groupName} 공정'

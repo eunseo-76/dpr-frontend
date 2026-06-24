@@ -46,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.grey[100],
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 80),
           children: [
             _buildProfileHeader(context),
             const SizedBox(height: 24),
@@ -96,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
       MenuItem(
         icon: Icons.precision_manufacturing,
         label: '생산실적',
-        onTap: () => widget.onTabChange(1),
+        onTap: () => widget.onTabChange(0),
       ),
       MenuItem(
         icon: Icons.electric_bolt,
