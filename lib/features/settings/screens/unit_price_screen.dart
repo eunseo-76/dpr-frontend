@@ -1,5 +1,6 @@
 import 'package:dpr_frontend/core/constants/api_constants.dart';
 import 'package:dpr_frontend/core/utils/toast.dart';
+import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
 import 'package:dpr_frontend/core/models/master_data_entity.dart';
 import 'package:dpr_frontend/core/services/master_data_service.dart';
 import 'package:dpr_frontend/features/client/models/factory_client.dart';
@@ -10,6 +11,7 @@ import 'package:dpr_frontend/features/settings/services/unit_price_service.dart'
 import 'package:dpr_frontend/features/utility/models/factory_process.dart';
 import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
 import 'package:dpr_frontend/core/widgets/pill_selector.dart';
+import 'package:dpr_frontend/core/widgets/wobble_effect.dart';
 import 'package:flutter/material.dart';
 
 class UnitPriceScreen extends StatefulWidget {
@@ -182,7 +184,20 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
     return false;
   }
 
-  void _onFactorySelected(int index) {
+  Future<void> _onFactorySelected(int index) async {
+    if (index == _selectedFactoryIndex) return;
+
+    if (_hasChanges) {
+      final confirmed = await showConfirmDialog(
+        context,
+        title: '변경사항이 있습니다',
+        content: '저장하지 않고 다른 공장으로 이동하시겠습니까?\n수정한 내용은 사라집니다.',
+        confirmLabel: '이동',
+        isDestructive: true,
+      );
+      if (!confirmed) return;
+    }
+
     setState(() {
       _selectedFactoryIndex = index;
       _selectedProcessIndex = 0;
@@ -190,7 +205,20 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
     _loadUnitPrices();
   }
 
-  void _onProcessSelected(int index) {
+  Future<void> _onProcessSelected(int index) async {
+    if (index == _selectedProcessIndex) return;
+
+    if (_hasChanges) {
+      final confirmed = await showConfirmDialog(
+        context,
+        title: '변경사항이 있습니다',
+        content: '저장하지 않고 다른 공정으로 이동하시겠습니까?\n수정한 내용은 사라집니다.',
+        confirmLabel: '이동',
+        isDestructive: true,
+      );
+      if (!confirmed) return;
+    }
+
     setState(() => _selectedProcessIndex = index);
     _loadUnitPrices();
   }
@@ -319,7 +347,9 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                       padding: EdgeInsets.only(right: isLast ? 0 : 2),
                                       child: GestureDetector(
                                         onTap: () => _onProcessSelected(entry.key),
-                                        child: Container(
+                                        child: WobbleEffect(
+                                          trigger: isSelected,
+                                          child: Container(
                                           padding: const EdgeInsets.symmetric(vertical: 10),
                                           decoration: BoxDecoration(
                                             color: isSelected
@@ -343,6 +373,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                               fontSize: 13,
                                             ),
                                           ),
+                                        ),
                                         ),
                                       ),
                                     ),
@@ -376,7 +407,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                     const Row(
                                       children: [
                                         Expanded(
-                                          flex: 3,
+                                          flex: 2,
                                           child: Text(
                                             '업체',
                                             style: TextStyle(
@@ -384,6 +415,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                             ),
                                           ),
                                         ),
+                                        SizedBox(width: 8),
                                         Expanded(
                                           flex: 2,
                                           child: Text(
@@ -393,6 +425,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                             ),
                                           ),
                                         ),
+                                        SizedBox(width: 8),
                                         Expanded(
                                           flex: 2,
                                           child: Text(
@@ -419,35 +452,66 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                         child: Row(
                                           children: [
                                             Expanded(
-                                              flex: 3,
+                                              flex: 2,
                                               child: Text(client.clientName),
                                             ),
+                                            const SizedBox(width: 8),
                                             Expanded(
                                               flex: 2,
-                                              child: DropdownButton<int>(
-                                                value: editing.unitId,
-                                                isExpanded: true,
-                                                underline: const SizedBox(),
-                                                items: units
-                                                    .map(
-                                                      (u) => DropdownMenuItem(
+                                              child: LayoutBuilder(
+                                                builder: (context, constraints) {
+                                                  final selectedName = units
+                                                      .firstWhere((u) => u.unitId == editing.unitId)
+                                                      .unitName;
+                                                  return PopupMenuButton<int>(
+                                                    initialValue: editing.unitId,
+                                                    onSelected: (value) =>
+                                                        setState(() => editing.unitId = value),
+                                                    constraints: BoxConstraints(
+                                                      minWidth: constraints.maxWidth,
+                                                      maxWidth: constraints.maxWidth,
+                                                    ),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius: BorderRadius.circular(12),
+                                                    ),
+                                                    color: Colors.white,
+                                                    elevation: 4,
+                                                    position: PopupMenuPosition.under,
+                                                    itemBuilder: (_) => units.map((u) =>
+                                                      PopupMenuItem(
                                                         value: u.unitId,
-                                                        child:
-                                                            Text(u.unitName),
+                                                        height: 40,
+                                                        child: Text(u.unitName, style: const TextStyle(fontSize: 14)),
                                                       ),
-                                                    )
-                                                    .toList(),
-                                                onChanged: (value) {
-                                                  if (value != null) {
-                                                    setState(
-                                                      () =>
-                                                          editing.unitId =
-                                                              value,
-                                                    );
-                                                  }
+                                                    ).toList(),
+                                                    child: InputDecorator(
+                                                      decoration: InputDecoration(
+                                                        isDense: true,
+                                                        contentPadding: const EdgeInsets.symmetric(
+                                                          horizontal: 12,
+                                                          vertical: 8,
+                                                        ),
+                                                        border: OutlineInputBorder(
+                                                          borderRadius: BorderRadius.circular(8),
+                                                          borderSide: BorderSide(color: Colors.grey[300]!),
+                                                        ),
+                                                        enabledBorder: OutlineInputBorder(
+                                                          borderRadius: BorderRadius.circular(8),
+                                                          borderSide: BorderSide(color: Colors.grey[300]!),
+                                                        ),
+                                                        suffixIcon: const Icon(Icons.keyboard_arrow_down, size: 20),
+                                                        suffixIconConstraints: const BoxConstraints(
+                                                          minWidth: 24,
+                                                          minHeight: 24,
+                                                        ),
+                                                      ),
+                                                      child: Text(selectedName, style: const TextStyle(fontSize: 14)),
+                                                    ),
+                                                  );
                                                 },
                                               ),
                                             ),
+                                            const SizedBox(width: 8),
                                             Expanded(
                                               flex: 2,
                                               child: TextField(
