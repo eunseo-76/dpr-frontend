@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
 import 'package:dpr_frontend/features/utility/models/utility_upsert_entry.dart';
 
-// 편집 팝업의 한 행 - scaffold 정보(factoryId, processId, label) + 현재 값
-// label: 공장별 뷰 -> 공정명, 공정별 뷰 -> 공장명
 class UtilityUpsertRow {
   final int factoryId;
   final int processId;
@@ -19,9 +18,6 @@ class UtilityUpsertRow {
   });
 }
 
-// 카드 편집 팝업
-// rowLabelHeader(공정/공장) + 전기(Kwh) + 용수(t) 입력 테이블
-// 기존 값으로 prefill (없으면 0), 값이 하나도 바뀌지 않으면 저장 비활성화
 class UtilityUpsertDialog extends StatefulWidget {
   final String title;
   final String date;
@@ -50,34 +46,34 @@ class _UtilityUpsertDialogState extends State<UtilityUpsertDialog> {
   bool _hasChanges = false;
   bool _isSaving = false;
 
+  static const _borderColor = Color(0xFFE0E0E0);
+  static const _headerColor = Color(0xFFF5F5F5);
+
   @override
   void initState() {
     super.initState();
-
     _initialElectricityTexts =
         widget.rows.map((r) => _formatInitial(r.electricity)).toList();
     _initialWaterTexts =
         widget.rows.map((r) => _formatInitial(r.water)).toList();
-
-    _electricityControllers =
-        _initialElectricityTexts.map((t) => TextEditingController(text: t)).toList();
+    _electricityControllers = _initialElectricityTexts
+        .map((t) => TextEditingController(text: t))
+        .toList();
     _waterControllers =
         _initialWaterTexts.map((t) => TextEditingController(text: t)).toList();
-
-    for (final controller in [..._electricityControllers, ..._waterControllers]) {
-      controller.addListener(_onChanged);
+    for (final c in [..._electricityControllers, ..._waterControllers]) {
+      c.addListener(_onChanged);
     }
   }
 
   @override
   void dispose() {
-    for (final controller in [..._electricityControllers, ..._waterControllers]) {
-      controller.dispose();
+    for (final c in [..._electricityControllers, ..._waterControllers]) {
+      c.dispose();
     }
     super.dispose();
   }
 
-  // 0/null -> "0", 정수면 "300", 소수면 "2.5"
   String _formatInitial(double? value) {
     final v = value ?? 0;
     return v == v.roundToDouble() ? v.toInt().toString() : v.toString();
@@ -93,7 +89,6 @@ class _UtilityUpsertDialogState extends State<UtilityUpsertDialog> {
       }
     }
     if (changed != _hasChanges) {
-      // 버튼이 바뀌었을 때만 다시 빌드
       setState(() => _hasChanges = changed);
     }
   }
@@ -117,13 +112,31 @@ class _UtilityUpsertDialogState extends State<UtilityUpsertDialog> {
     }
   }
 
+  Future<bool> _confirmDismiss() async {
+    if (!_hasChanges) return true;
+    return showConfirmDialog(
+      context,
+      title: '변경사항이 있습니다',
+      content: '저장하지 않고 나가시겠습니까?',
+      confirmLabel: '나가기',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shouldPop = await _confirmDismiss();
+        if (shouldPop && context.mounted) Navigator.pop(context);
+      },
+      child: AlertDialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+        titlePadding: const EdgeInsets.fromLTRB(20, 16, 8, 0),
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -131,80 +144,247 @@ class _UtilityUpsertDialogState extends State<UtilityUpsertDialog> {
                 Expanded(
                   child: Text(
                     widget.title,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 IconButton(
                   icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () async {
+                    final shouldPop = await _confirmDismiss();
+                    if (shouldPop && context.mounted) Navigator.pop(context);
+                  },
                 ),
               ],
             ),
-            Text(widget.date),
-            const SizedBox(height: 12),
-            Table(
-              columnWidths: const {
-                0: FlexColumnWidth(2),
-                1: FlexColumnWidth(1.5),
-                2: FlexColumnWidth(1.5),
-              },
-              children: [
-                TableRow(children: [
-                  _headerCell(widget.rowLabelHeader),
-                  _headerCell('전기(Kwh)'),
-                  _headerCell('용수(t)'),
-                ]),
-                for (var i = 0; i < widget.rows.length; i++)
-                  TableRow(children: [
-                    _labelCell(widget.rows[i].label),
-                    _inputCell(_electricityControllers[i]),
-                    _inputCell(_waterControllers[i]),
-                  ]),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: _isSaving ? null : () => Navigator.pop(context),
-                  child: const Text('취소'),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.green.withValues(alpha: 0.1),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.6),
+                  width: 1.5,
                 ),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: _hasChanges && !_isSaving ? _save : null,
-                  child: _isSaving
-                      ? const SizedBox(
-                          width: 20, height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('저장'),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.green.withValues(alpha: 0.15),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Text(
+                widget.date,
+                style: const TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
                 ),
-              ],
+              ),
             ),
           ],
         ),
+        contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                decoration: const BoxDecoration(
+                  color: _headerColor,
+                  border: Border(
+                    top: BorderSide(color: _borderColor),
+                    bottom: BorderSide(color: _borderColor),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    _headerCell(widget.rowLabelHeader, flex: 2),
+                    _headerCell('전기(Kwh)', flex: 2),
+                    _headerCell('용수(t)', flex: 2, isLast: true),
+                  ],
+                ),
+              ),
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < widget.rows.length; i++)
+                        Container(
+                          decoration: const BoxDecoration(
+                            border: Border(
+                              bottom: BorderSide(color: _borderColor),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              _labelCell(widget.rows[i].label, flex: 2),
+                              _inputCell(_electricityControllers[i], flex: 2),
+                              _inputCell(_waterControllers[i],
+                                  flex: 2, isLast: true),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 48,
+                  child: OutlinedButton(
+                    onPressed: _isSaving
+                        ? null
+                        : () async {
+                            final shouldPop = await _confirmDismiss();
+                            if (shouldPop && context.mounted) {
+                              Navigator.pop(context);
+                            }
+                          },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.black87,
+                      side: BorderSide(color: Colors.grey[300]!),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                    ),
+                    child: const Text(
+                      '취소',
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: SizedBox(
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: _hasChanges && !_isSaving ? _save : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black87,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey[300],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            '저장',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _headerCell(String text) => Padding(
-        padding: const EdgeInsets.all(8),
-        child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
+  Widget _headerCell(String text,
+          {required int flex, bool isLast = false}) =>
+      Expanded(
+        flex: flex,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          decoration: BoxDecoration(
+            border: isLast
+                ? null
+                : const Border(right: BorderSide(color: _borderColor)),
+          ),
+          child: Text(
+            text,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+          ),
+        ),
       );
 
-  Widget _labelCell(String text) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Text(text),
+  Widget _labelCell(String text, {required int flex}) => Expanded(
+        flex: flex,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+          decoration: const BoxDecoration(
+            border: Border(right: BorderSide(color: _borderColor)),
+          ),
+          child: Text(text, style: const TextStyle(fontSize: 13)),
+        ),
       );
 
-  Widget _inputCell(TextEditingController controller) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-        child: TextField(
-          controller: controller,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          textAlign: TextAlign.center,
-          decoration: const InputDecoration(isDense: true, border: OutlineInputBorder()),
+  Widget _inputCell(TextEditingController controller,
+          {required int flex, bool isLast = false}) =>
+      Expanded(
+        flex: flex,
+        child: Container(
+          decoration: BoxDecoration(
+            border: isLast
+                ? null
+                : const Border(right: BorderSide(color: _borderColor)),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          child: Theme(
+            data: Theme.of(context).copyWith(
+              textSelectionTheme: const TextSelectionThemeData(
+                selectionHandleColor: Colors.transparent,
+              ),
+            ),
+            child: TextField(
+              controller: controller,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              textAlign: TextAlign.center,
+              enableInteractiveSelection: true,
+              style: const TextStyle(fontSize: 13),
+              decoration: InputDecoration(
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 8,
+                ),
+                hintText: '-',
+                hintStyle: TextStyle(color: Colors.grey[400]),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: const BorderSide(color: Colors.blue, width: 2),
+                ),
+              ),
+            ),
+          ),
         ),
       );
 }
