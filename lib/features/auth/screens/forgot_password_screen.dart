@@ -1,5 +1,6 @@
 import 'package:dpr_frontend/core/utils/fade_route.dart';
 import 'package:dpr_frontend/core/utils/toast.dart';
+import 'package:dpr_frontend/core/utils/validators.dart';
 import 'package:dpr_frontend/core/widgets/shake_field.dart';
 import 'package:dpr_frontend/features/auth/screens/reset_password_screen.dart';
 import 'package:dpr_frontend/features/auth/services/auth_service.dart';
@@ -22,15 +23,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     _emailKey.currentState?.clearError();
 
     final email = _emailController.text.trim();
-    if (email.isEmpty) {
-      _emailKey.currentState?.showError('이메일을 입력해주세요');
-      return;
-    }
-    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email)) {
-      // (1) @ 앞에 1자 이상
-      // (2) @ 뒤에 . 있는지
-      // (3) 공백 없는지 확인
-      _emailKey.currentState?.showError('올바른 이메일 형식이 아닙니다');
+    final emailError = Validators.validateEmail(email);
+    if (emailError != null) {
+      _emailKey.currentState?.showError(emailError);
       return;
     }
 

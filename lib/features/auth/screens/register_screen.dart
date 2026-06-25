@@ -1,4 +1,6 @@
 import 'package:dpr_frontend/core/utils/toast.dart';
+import 'package:dpr_frontend/core/utils/validators.dart';
+import 'package:dpr_frontend/core/widgets/shake_field.dart';
 import 'package:dpr_frontend/features/auth/services/auth_service.dart';
 import 'package:dpr_frontend/main_screen.dart';
 import 'package:flutter/material.dart';
@@ -30,24 +32,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nicknameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _passwordConfirmController = TextEditingController();
+  final _nameKey = GlobalKey<ShakeFieldState>();
+  final _passwordKey = GlobalKey<ShakeFieldState>();
+  final _passwordConfirmKey = GlobalKey<ShakeFieldState>();
   final _authService = AuthService();
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
 
   Future<void> _register() async {
+    _nameKey.currentState?.clearError();
+    _passwordKey.currentState?.clearError();
+    _passwordConfirmKey.currentState?.clearError();
+
+    bool hasError = false;
     if (_nameController.text.trim().isEmpty) {
-      showToast(context, '이름을 입력해주세요');
-      return;
+      _nameKey.currentState?.showError('이름을 입력해주세요');
+      hasError = true;
     }
-    if (_passwordController.text.length < 8) {
-      showToast(context, '비밀번호는 8자 이상이어야 합니다');
-      return;
+    final passwordError = Validators.validatePassword(_passwordController.text);
+    if (passwordError != null) {
+      _passwordKey.currentState?.showError(passwordError);
+      hasError = true;
     }
     if (_passwordController.text != _passwordConfirmController.text) {
-      showToast(context, '비밀번호가 일치하지 않습니다');
-      return;
+      _passwordConfirmKey.currentState?.showError('비밀번호가 일치하지 않습니다');
+      hasError = true;
     }
+    if (hasError) return;
 
     setState(() => _isLoading = true);
 
@@ -109,7 +121,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 16),
-                    // 초대 정보 (읽기전용)
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
@@ -133,8 +144,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    // 입력 필드
-                    TextField(
+                    ShakeField(
+                      key: _nameKey,
                       controller: _nameController,
                       style: const TextStyle(fontSize: 16, color: Colors.black87),
                       decoration: InputDecoration(
@@ -164,7 +175,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    TextField(
+                    ShakeField(
+                      key: _passwordKey,
                       controller: _passwordController,
                       obscureText: _obscurePassword,
                       style: const TextStyle(fontSize: 16, color: Colors.black87),
@@ -188,7 +200,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    TextField(
+                    ShakeField(
+                      key: _passwordConfirmKey,
                       controller: _passwordConfirmController,
                       obscureText: _obscureConfirm,
                       style: const TextStyle(fontSize: 16, color: Colors.black87),
@@ -213,7 +226,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '영문 + 숫자 + 특수문자 포함 8자 이상',
+                      '영문 + 숫자 + 특수문자(@\$!%*#?&) 포함 8자 이상',
                       style: TextStyle(color: Colors.grey[400], fontSize: 12),
                     ),
                     const SizedBox(height: 24),

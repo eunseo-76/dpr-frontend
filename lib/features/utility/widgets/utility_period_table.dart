@@ -59,6 +59,9 @@ class UtilityPeriodTable extends StatelessWidget {
               verticalDetails: const ScrollableDetails.vertical(
                 physics: NeverScrollableScrollPhysics(),
               ),
+              horizontalDetails: const ScrollableDetails.horizontal(
+                physics: ClampingScrollPhysics(),
+              ),
               columnBuilder: _buildColumnSpan,
               rowBuilder: _buildRowSpan,
               cellBuilder: (context, vicinity) {

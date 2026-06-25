@@ -1,5 +1,6 @@
 import 'package:dpr_frontend/core/constants/api_constants.dart';
 import 'package:dpr_frontend/core/utils/toast.dart';
+import 'package:dpr_frontend/core/utils/validators.dart';
 import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
 import 'package:dpr_frontend/core/models/master_data_entity.dart';
 import 'package:dpr_frontend/core/services/master_data_service.dart';
@@ -512,6 +513,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                                     editing.priceController,
                                                 keyboardType:
                                                     TextInputType.number,
+                                                inputFormatters: [PositiveDecimalFormatter()],
                                                 onChanged: (_) =>
                                                     setState(() {}),
                                                 decoration:

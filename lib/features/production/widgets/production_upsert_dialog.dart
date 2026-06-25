@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dpr_frontend/core/utils/validators.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
 import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
 import 'package:dpr_frontend/features/production/models/production_upsert_entry.dart';
@@ -262,6 +263,7 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
               controller: _controllers[dataIndex],
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [PositiveDecimalFormatter()],
               textAlign: TextAlign.center,
               style: const TextStyle(fontSize: 13),
               decoration: InputDecoration(

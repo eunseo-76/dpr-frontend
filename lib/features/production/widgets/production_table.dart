@@ -29,6 +29,7 @@ class ProductionTable extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      physics: const ClampingScrollPhysics(),
       child: SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: Column(

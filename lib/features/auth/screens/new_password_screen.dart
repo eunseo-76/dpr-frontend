@@ -1,5 +1,6 @@
 import 'package:dpr_frontend/core/utils/fade_route.dart';
 import 'package:dpr_frontend/core/utils/toast.dart';
+import 'package:dpr_frontend/core/utils/validators.dart';
 import 'package:dpr_frontend/core/widgets/shake_field.dart';
 import 'package:dpr_frontend/features/auth/screens/login_screen.dart';
 import 'package:dpr_frontend/features/auth/services/auth_service.dart';
@@ -37,11 +38,9 @@ class _NewPasswordScreenState extends State<NewPasswordScreen> {
     _passwordConfirmKey.currentState?.clearError();
 
     bool hasError = false;
-    if (_passwordController.text.isEmpty) {
-      _passwordKey.currentState?.showError('새 비밀번호를 입력해주세요');
-      hasError = true;
-    } else if (_passwordController.text.length < 8) {
-      _passwordKey.currentState?.showError('8자 이상 입력해주세요');
+    final passwordError = Validators.validatePassword(_passwordController.text);
+    if (passwordError != null) {
+      _passwordKey.currentState?.showError(passwordError);
       hasError = true;
     }
     if (_passwordConfirmController.text.isEmpty) {

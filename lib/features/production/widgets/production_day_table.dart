@@ -21,11 +21,11 @@ class ProductionDayTable extends StatelessWidget {
     this.onRowGroupTap,
   });
 
-  static const _fracLabel = 0.24;
-  static const _fracShift = 0.12;
-  static const _fracUnit = 0.14;
-  static const _fracValue = 0.25;
-  static const _fracTotal = 0.25;
+  static const _colLabel = 80.0;
+  static const _colShift = 44.0;
+  static const _colUnit = 52.0;
+  static const _colValue = 120.0;
+  static const _colTotal = 120.0;
   static const _rowHeight = 36.0;
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
@@ -47,6 +47,9 @@ class ProductionDayTable extends StatelessWidget {
         pinnedColumnCount: 3,
         verticalDetails: const ScrollableDetails.vertical(
           physics: NeverScrollableScrollPhysics(),
+        ),
+        horizontalDetails: const ScrollableDetails.horizontal(
+          physics: ClampingScrollPhysics(), // 가로 overscroll 방지
         ),
         columnBuilder: _buildColumnSpan,
         rowBuilder: _buildRowSpan,
@@ -81,16 +84,16 @@ class ProductionDayTable extends StatelessWidget {
   }
 
   TableSpan _buildColumnSpan(int column) {
-    final frac = switch (column) {
-      0 => _fracLabel,
-      1 => _fracShift,
-      2 => _fracUnit,
-      3 => _fracValue,
-      4 => _fracTotal,
-      _ => _fracValue,
+    final width = switch (column) {
+      0 => _colLabel,
+      1 => _colShift,
+      2 => _colUnit,
+      3 => _colValue,
+      4 => _colTotal,
+      _ => _colValue,
     };
     return TableSpan(
-      extent: FractionalTableSpanExtent(frac),
+      extent: FixedTableSpanExtent(width),
       foregroundDecoration: const TableSpanDecoration(
         border: TableSpanBorder(trailing: BorderSide(color: _borderColor)),
       ),
@@ -154,29 +157,7 @@ class ProductionDayTable extends StatelessWidget {
     if (column == 0) return _styledCell(row.rowGroupName, wrap: true);
     if (column == 1) return _styledCell(row.shift);
     if (column == 2) return _styledCell(row.unitName);
-    if (row.unitName == '금액' && row.value != null && row.value != 0) {
-      return _compactCell(row.value!);
-    }
     return _styledCell(_fmt(row.value));
-  }
-
-  Widget _compactCell(double value) {
-    return Tooltip(
-      message: formatNumber(value),
-      preferBelow: false,
-      triggerMode: TooltipTriggerMode.tap,
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        child: Text(
-          formatCompact(value),
-          textAlign: TextAlign.center,
-          overflow: TextOverflow.ellipsis,
-          maxLines: 1,
-          style: const TextStyle(fontSize: 11),
-        ),
-      ),
-    );
   }
 
   Widget _styledCell(String text, {bool isHeader = false, bool wrap = false}) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dpr_frontend/core/utils/validators.dart';
 import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
 import 'package:dpr_frontend/features/utility/models/utility_upsert_entry.dart';
 
@@ -359,6 +360,7 @@ class _UtilityUpsertDialogState extends State<UtilityUpsertDialog> {
               controller: controller,
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [PositiveDecimalFormatter()],
               textAlign: TextAlign.center,
               enableInteractiveSelection: true,
               style: const TextStyle(fontSize: 13),

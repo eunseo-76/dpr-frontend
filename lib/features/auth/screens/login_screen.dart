@@ -3,6 +3,7 @@ import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/widgets/shake_field.dart';
 import 'package:dpr_frontend/features/auth/models/login_request.dart';
 import 'package:dpr_frontend/features/auth/screens/forgot_password_screen.dart';
+import 'package:dpr_frontend/core/utils/validators.dart';
 import 'package:dpr_frontend/features/auth/services/auth_service.dart';
 import 'package:dpr_frontend/main_screen.dart';
 import 'package:flutter/material.dart';
@@ -28,8 +29,9 @@ class _LoginScreenState extends State<LoginScreen> {
     _passwordKey.currentState?.clearError();
 
     bool hasError = false;
-    if (_emailController.text.trim().isEmpty) {
-      _emailKey.currentState?.showError('이메일을 입력해주세요');
+    final emailError = Validators.validateEmail(_emailController.text);
+    if (emailError != null) {
+      _emailKey.currentState?.showError(emailError);
       hasError = true;
     }
     if (_passwordController.text.isEmpty) {
