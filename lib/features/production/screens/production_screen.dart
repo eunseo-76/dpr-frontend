@@ -19,6 +19,7 @@ import 'package:dpr_frontend/features/utility/services/utility_service.dart';
 import 'package:dpr_frontend/features/production/widgets/production_upsert_dialog.dart';
 import 'package:dpr_frontend/features/utility/utils/utility_period_columns.dart';
 import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
+import 'package:dpr_frontend/core/widgets/wrench_refresh.dart';
 import 'package:flutter/material.dart';
 
 class ProductionScreen extends StatefulWidget {
@@ -155,6 +156,18 @@ class _ProductionScreenState extends State<ProductionScreen> {
     }
   }
 
+  Future<void> _refreshProductions() async {
+    try {
+      final productions = await _productionService.getProductionList(
+        date: _selectedDate,
+        periodType: _periodTypeMap[_selectedPeriod]!,
+      );
+      setState(() => _productions = productions);
+    } catch (e) {
+      if (mounted) showToast(context, '새로고침 실패: $e');
+    }
+  }
+
   void _enterSelectionMode(int rowGroupId) {
     setState(() {
       _isSelectionMode = true;
@@ -262,7 +275,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => ProductionUpsertDialog(
-        title: '${group.groupName} 편집',
+        title: '${group.groupName} 일일 실적 수정',
         date: _selectedDate.replaceAll('-', '.'),
         rowLabelHeader: rowLabelHeader,
         rows: rows,
@@ -285,27 +298,9 @@ class _ProductionScreenState extends State<ProductionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('생산실적')),
-        body: const LoadingIndicator(),
-      );
-    }
-    if (_error != null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('생산실적')),
-        body: Center(child: Text('오류: $_error')),
-      );
-    }
-
-    Widget content;
-    if (_selectedPeriod == '일') {
-      content = _buildDayView();
-    } else {
-      content = _buildPeriodView();
-    }
-
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
       appBar: _isSelectionMode
           ? AppBar(
               backgroundColor: Colors.deepPurple,
@@ -322,33 +317,107 @@ class _ProductionScreenState extends State<ProductionScreen> {
                 ),
               ],
             )
-          : AppBar(title: const Text('생산실적')),
+          : AppBar(
+              title: const Text(
+                '생산실적',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+            ),
       body: Column(
         children: [
-          SegmentedToggle(
-            options: const ['공정별', '업체별'],
-            selected: _groupBy,
-            onChanged: (value) {
-              _exitSelectionMode();
-              setState(() => _groupBy = value);
-            },
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.white, Colors.grey[100]!],
+              ),
+            ),
+            child: Column(
+              children: [
+                SizedBox(height: MediaQuery.of(context).padding.top + kToolbarHeight),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      SegmentedToggle(
+                        options: const ['공정별', '업체별'],
+                        selected: _groupBy,
+                        onChanged: (value) {
+                          _exitSelectionMode();
+                          setState(() => _groupBy = value);
+                        },
+                      ),
+                      const Spacer(),
+                      Container(
+                        width: 1.5,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(1),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      SegmentedToggle(
+                        options: const ['일', '주', '월', '년'],
+                        selected: _selectedPeriod,
+                        activeColor: Colors.green,
+                        onChanged: (period) {
+                          _exitSelectionMode();
+                          setState(() => _selectedPeriod = period);
+                          _loadProductions();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                DateNavigator(
+                  label: _displayLabel(),
+                  onPrevious: () => _navigateDate(-1),
+                  onNext: () => _navigateDate(1),
+                  onCalendarTap: _onCalendarTap,
+                ),
+              ],
+            ),
           ),
-          SegmentedToggle(
-            options: const ['일', '주', '월', '년'],
-            selected: _selectedPeriod,
-            onChanged: (period) {
-              _exitSelectionMode();
-              setState(() => _selectedPeriod = period);
-              _loadProductions();
-            },
+          Expanded(
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFFEFF0F4),
+                border: Border(
+                  top: BorderSide(color: Color(0xFFB0B8C8), width: 2),
+                ),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment(0, -0.95),
+                  colors: [
+                    Color(0xFFDFE4F0),
+                    Color(0xFFEFF0F4),
+                  ],
+                ),
+              ),
+              child: _isLoading
+                  ? const LoadingIndicator()
+                  : _error != null
+                      ? Center(child: Text('오류: $_error'))
+                      : WrenchRefresh(
+                          onRefresh: _loadProductions,
+                          child: _selectedPeriod == '일'
+                              ? _buildDayView()
+                              : _buildPeriodView(),
+                        ),
+            ),
           ),
-          DateNavigator(
-            label: _displayLabel(),
-            onPrevious: () => _navigateDate(-1),
-            onNext: () => _navigateDate(1),
-            onCalendarTap: _onCalendarTap,
-          ),
-          Expanded(child: content),
         ],
       ),
     );
@@ -386,7 +455,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
         : null;
 
     return ListView(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
       children: periodGroups.map((group) {
         final cardTitle = _groupBy == '공정별'
             ? '${group.groupName} 공정'
@@ -431,7 +500,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
     final rowLabelHeader = _groupBy == '공정별' ? '업체' : '공정';
 
     return ListView(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
       children: dayGroups.map((group) {
         final cardTitle = _groupBy == '공정별'
             ? '${group.groupName} 공정'

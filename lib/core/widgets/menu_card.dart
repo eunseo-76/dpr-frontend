@@ -37,8 +37,7 @@ class MenuCard extends StatelessWidget {
                 trailing: Icon(Icons.chevron_right, color: Colors.grey[400]),
                 onTap: item.onTap,
               ),
-              if (i < items.length - 1)
-                const Divider(height: 1, indent: 56),
+              Divider(height: 0.5, thickness: 0.5, indent: 56, color: Colors.grey[200]),
             ],
           );
         }).toList(),

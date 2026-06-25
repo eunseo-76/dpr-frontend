@@ -1,5 +1,6 @@
 import 'package:dpr_frontend/core/utils/user_storage.dart';
 import 'package:dpr_frontend/core/widgets/menu_card.dart';
+import 'package:dpr_frontend/core/widgets/name_avatar.dart';
 import 'package:dpr_frontend/features/auth/screens/my_page_screen.dart';
 import 'package:dpr_frontend/features/settings/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
@@ -45,7 +46,7 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: Colors.grey[100],
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 80),
           children: [
             _buildProfileHeader(context),
             const SizedBox(height: 24),
@@ -58,30 +59,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildProfileHeader(BuildContext context) {
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const MyPageScreen()),
       ),
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: const BoxDecoration(
-              color: Color(0xFF1E3A5F),
-              shape: BoxShape.circle,
-            ),
-            child: Center(
-              child: Text(
-                _name.isNotEmpty ? _name[0] : '?',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
+          NameAvatar(name: _name, size: 48, fontSize: 20),
           const SizedBox(width: 12),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,17 +96,12 @@ class _HomeScreenState extends State<HomeScreen> {
       MenuItem(
         icon: Icons.precision_manufacturing,
         label: '생산실적',
-        onTap: () => widget.onTabChange(1),
-      ),
-      MenuItem(
-        icon: Icons.layers,
-        label: '재공현황',
-        onTap: () => widget.onTabChange(2),
+        onTap: () => widget.onTabChange(0),
       ),
       MenuItem(
         icon: Icons.electric_bolt,
         label: '전기&용수',
-        onTap: () => widget.onTabChange(3),
+        onTap: () => widget.onTabChange(2),
       ),
       if (_isAdmin)
         MenuItem(

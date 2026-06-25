@@ -48,6 +48,9 @@ class ProductionPeriodTable extends StatelessWidget {
               verticalDetails: const ScrollableDetails.vertical(
                 physics: NeverScrollableScrollPhysics(),
               ),
+              horizontalDetails: const ScrollableDetails.horizontal(
+                physics: ClampingScrollPhysics(),
+              ),
               columnBuilder: _buildColumnSpan,
               rowBuilder: _buildRowSpan,
               cellBuilder: (context, vicinity) {
@@ -156,7 +159,7 @@ class ProductionPeriodTable extends StatelessWidget {
     if (column == 1) return _styledCell(row.shift);
     if (column == 2) return _styledCell(row.unitName);
     final value = row.values[column - 3];
-    if (row.unitName == '금액' && value != null && value != 0) {
+    if (value != null && value != 0 && value.abs() >= 10000) {
       return _compactCell(value);
     }
     return _styledCell(_fmt(value));
@@ -175,7 +178,7 @@ class ProductionPeriodTable extends StatelessWidget {
             return _fixedCell('합계', isHeader: true);
           }
           final row = rows[i - 1];
-          if (row.unitName == '금액' && row.total != 0) {
+          if (row.total != 0 && row.total.abs() >= 10000) {
             return _fixedCompactCell(row.total);
           }
           return _fixedCell(_fmt(row.total));

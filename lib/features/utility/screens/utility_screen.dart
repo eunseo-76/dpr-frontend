@@ -15,6 +15,7 @@ import 'package:dpr_frontend/features/utility/widgets/utility_card.dart';
 import 'package:dpr_frontend/features/utility/widgets/utility_period_table.dart';
 import 'package:dpr_frontend/features/utility/widgets/utility_upsert_dialog.dart';
 import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
+import 'package:dpr_frontend/core/widgets/wrench_refresh.dart';
 import 'package:flutter/material.dart';
 
 class UtilityScreen extends StatefulWidget {
@@ -251,7 +252,7 @@ class _UtilityScreenState extends State<UtilityScreen> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => UtilityUpsertDialog(
-        title: '${group.groupName} 편집',
+        title: '${group.groupName} 전기&용수 수정',
         date: _selectedDate.replaceAll('-', '.'),
         rowLabelHeader: rowLabelHeader,
         rows: rows,
@@ -272,24 +273,16 @@ class _UtilityScreenState extends State<UtilityScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final scaffold = buildScaffold(_factoryProcesses, _groupBy);
-
-    Widget content;
-    if (_isLoading) {
-      content = const LoadingIndicator();
-    } else if (_error != null) {
-      content = Center(child: Text('오류: $_error'));
-    } else if (_selectedPeriod == '주') {
+  Widget _buildContent(List<GroupScaffold> scaffold) {
+    if (_selectedPeriod == '주') {
       final dateColumns = _weekDateColumns();
       final columnLabels = dateColumns
           .map((date) => DateTime.parse(date).day.toString().padLeft(2, '0'))
           .toList();
       final groups = groupUtilitiesByPeriod(_utilities, scaffold, dateColumns);
       final rowLabelHeader = _groupBy == '공장별' ? '공정' : '공장';
-      content = ListView(
-        padding: const EdgeInsets.all(8),
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
         children: groups
             .map((group) => UtilityCard(
                   title: group.groupName,
@@ -319,8 +312,8 @@ class _UtilityScreenState extends State<UtilityScreen> {
       final columnLabels = columns.map((c) => c.label).toList();
       final groups = groupUtilitiesByColumns(_utilities, scaffold, columns);
       final rowLabelHeader = _groupBy == '공장별' ? '공정' : '공장';
-      content = ListView(
-        padding: const EdgeInsets.all(8),
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
         children: groups
             .map((group) => UtilityCard(
                   title: group.groupName,
@@ -341,8 +334,8 @@ class _UtilityScreenState extends State<UtilityScreen> {
       final columnLabels = columns.map((c) => c.label).toList();
       final groups = groupUtilitiesByColumns(_utilities, scaffold, columns);
       final rowLabelHeader = _groupBy == '공장별' ? '공정' : '공장';
-      content = ListView(
-        padding: const EdgeInsets.all(8),
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
         children: groups
             .map((group) => UtilityCard(
                   title: group.groupName,
@@ -361,8 +354,8 @@ class _UtilityScreenState extends State<UtilityScreen> {
     } else {
       final groups = groupUtilities(_utilities, scaffold);
       final rowLabelHeader = _groupBy == '공장별' ? '공정' : '공장';
-      content = ListView(
-        padding: const EdgeInsets.all(8),
+      return ListView(
+        padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
         children: groups
             .map((group) => UtilityCard(
                   title: group.groupName,
@@ -398,8 +391,15 @@ class _UtilityScreenState extends State<UtilityScreen> {
             .toList(),
       );
     }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scaffold = buildScaffold(_factoryProcesses, _groupBy);
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
       appBar: _isSelectionMode
           ? AppBar(
               backgroundColor: Colors.deepPurple,
@@ -416,50 +416,127 @@ class _UtilityScreenState extends State<UtilityScreen> {
                 ),
               ],
             )
-          : null,
-      body: SafeArea(
-        child: Column(
-          children: [
-            SegmentedToggle(
-              options: const ['공장별', '공정별'],
-              selected: _groupBy,
-              onChanged: (value) {
-                _exitSelectionMode();
-                setState(() => _groupBy = value);
-                _loadData();
-              },
+          : AppBar(
+              title: const Text(
+                '전기&용수',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              ),
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              scrolledUnderElevation: 0,
             ),
-            SegmentedToggle(
-              options: const ['일', '주', '월', '년'],
-              selected: _selectedPeriod,
-              onChanged: (value) {
-                _exitSelectionMode();
-                setState(() => _selectedPeriod = value);
-                _loadData();
-              },
+      body: Column(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.white, Colors.grey[100]!],
+              ),
             ),
-            DateNavigator(
-              label: _displayLabel,
-              onPrevious: () => _navigateDate(-1),
-              onNext: () => _navigateDate(1),
-              onCalendarTap: () async {
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: _selectedDateTime,
-                  firstDate: DateTime(2020),
-                  lastDate: DateTime(2100),
-                );
-                if (picked != null) {
-                  setState(() {
-                    _selectedDate = picked.toIso8601String().substring(0, 10);
-                  });
-                  _loadData();
-                }
-              },
+            child: Column(
+              children: [
+                SizedBox(
+                  height:
+                      MediaQuery.of(context).padding.top + kToolbarHeight,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Row(
+                    children: [
+                      SegmentedToggle(
+                        options: const ['공장별', '공정별'],
+                        selected: _groupBy,
+                        onChanged: (value) {
+                          _exitSelectionMode();
+                          setState(() => _groupBy = value);
+                          _loadData();
+                        },
+                      ),
+                      const Spacer(),
+                      Container(
+                        width: 1.5,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(1),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.1),
+                              blurRadius: 4,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      SegmentedToggle(
+                        options: const ['일', '주', '월', '년'],
+                        selected: _selectedPeriod,
+                        activeColor: Colors.green,
+                        onChanged: (value) {
+                          _exitSelectionMode();
+                          setState(() => _selectedPeriod = value);
+                          _loadData();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                DateNavigator(
+                  label: _displayLabel,
+                  onPrevious: () => _navigateDate(-1),
+                  onNext: () => _navigateDate(1),
+                  onCalendarTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _selectedDateTime,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2100),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _selectedDate =
+                            picked.toIso8601String().substring(0, 10);
+                      });
+                      _loadData();
+                    }
+                  },
+                ),
+              ],
             ),
-            Expanded(child: content),
-          ],
-        ),
+          ),
+          Expanded(
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFFEFF0F4),
+                border: Border(
+                  top: BorderSide(color: Color(0xFFB0B8C8), width: 2),
+                ),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment(0, -0.95),
+                  colors: [
+                    Color(0xFFDFE4F0),
+                    Color(0xFFEFF0F4),
+                  ],
+                ),
+              ),
+              child: _isLoading
+                  ? const LoadingIndicator()
+                  : _error != null
+                      ? Center(child: Text('오류: $_error'))
+                      : WrenchRefresh(
+                          onRefresh: _loadData,
+                          child: _buildContent(scaffold),
+                        ),
+            ),
+          ),
+        ],
       ),
     );
   }

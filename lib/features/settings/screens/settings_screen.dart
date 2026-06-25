@@ -16,6 +16,7 @@ class SettingsScreen extends StatelessWidget {
     required String endpoint,
     required String idKey,
     required List<FieldConfig> fields,
+    bool showAvatar = false,
   }) {
     Navigator.push(
       context,
@@ -24,6 +25,7 @@ class SettingsScreen extends StatelessWidget {
           title: title,
           service: MasterDataService(endpoint: endpoint, idKey: idKey),
           fields: fields,
+          showAvatar: showAvatar,
         ),
       ),
     );
@@ -45,10 +47,39 @@ class SettingsScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(title: const Text('설정')),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
+      appBar: AppBar(
+        title: const Text('설정', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
+      body: Column(
+        children: [
+          Container(
+            height: MediaQuery.of(context).padding.top + kToolbarHeight,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.white, Colors.grey[100]!],
+              ),
+            ),
+          ),
+          Expanded(
+            child: Container(
+              decoration: const BoxDecoration(
+                color: Color(0xFFEFF0F4),
+                border: Border(top: BorderSide(color: Color(0xFFB0B8C8), width: 2)),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment(0, -0.95),
+                  colors: [Color(0xFFDFE4F0), Color(0xFFEFF0F4)],
+                ),
+              ),
+              child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
         children: [
           MenuCard(
             items: [
@@ -61,6 +92,7 @@ class SettingsScreen extends StatelessWidget {
                   endpoint: ApiConstants.factory_,
                   idKey: 'factoryId',
                   fields: detailFields,
+                  showAvatar: true,
                 ),
               ),
               MenuItem(
@@ -94,6 +126,7 @@ class SettingsScreen extends StatelessWidget {
                   endpoint: ApiConstants.client,
                   idKey: 'clientId',
                   fields: detailFields,
+                  showAvatar: true,
                 ),
               ),
               MenuItem(
@@ -117,6 +150,10 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ],
+      ),
+            ),
           ),
         ],
       ),

@@ -1,4 +1,6 @@
 import 'package:dpr_frontend/core/utils/toast.dart';
+import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
+import 'package:dpr_frontend/core/widgets/shake_field.dart';
 import 'package:dpr_frontend/core/utils/token_storage.dart';
 import 'package:dpr_frontend/core/utils/user_storage.dart';
 import 'package:dpr_frontend/features/auth/screens/landing_screen.dart';
@@ -14,13 +16,15 @@ class WithdrawScreen extends StatefulWidget {
 
 class _WithdrawScreenState extends State<WithdrawScreen> {
   final _passwordController = TextEditingController();
+  final _passwordKey = GlobalKey<ShakeFieldState>();
   final _authService = AuthService();
   bool _isLoading = false;
   bool _obscurePassword = true;
 
   Future<void> _withdraw() async {
+    _passwordKey.currentState?.clearError();
     if (_passwordController.text.isEmpty) {
-      showToast(context, '비밀번호를 입력해주세요');
+      _passwordKey.currentState?.showError('비밀번호를 입력해주세요');
       return;
     }
 
@@ -28,22 +32,12 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
 
     try {
       if (!mounted) return;
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('회원탈퇴'),
-          content: const Text('정말로 탈퇴하시겠습니까?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('취소'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text('탈퇴', style: TextStyle(color: Colors.red[600])),
-            ),
-          ],
-        ),
+      final confirmed = await showConfirmDialog(
+        context,
+        title: '회원탈퇴',
+        content: '정말로 탈퇴하시겠습니까?',
+        confirmLabel: '탈퇴',
+        isDestructive: true,
       );
 
       if (confirmed != true) {
@@ -111,10 +105,12 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                       style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.5),
                     ),
                     const SizedBox(height: 40),
-                    TextField(
+                    ShakeField(
+                      key: _passwordKey,
                       controller: _passwordController,
                       obscureText: _obscurePassword,
                       style: const TextStyle(fontSize: 16, color: Colors.black87),
+                      onSubmitted: (_) => _withdraw(),
                       decoration: InputDecoration(
                         hintText: '비밀번호',
                         hintStyle: TextStyle(color: Colors.grey[400]),
@@ -133,7 +129,6 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                         ),
                       ),
-                      onSubmitted: (_) => _withdraw(),
                     ),
                     const SizedBox(height: 24),
                     SizedBox(

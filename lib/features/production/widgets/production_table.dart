@@ -29,6 +29,7 @@ class ProductionTable extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      physics: const ClampingScrollPhysics(),
       child: SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: Column(
@@ -319,18 +320,6 @@ class ProductionTable extends StatelessWidget {
     );
   }
 
-  // TODO(human): selectedDate가 속한 월의 주 범위 목록을 반환하세요.
-  // 각 주 범위는 [weekStart, weekEnd] 형태의 List<DateTime>입니다.
-  //
-  // 힌트:
-  //   final d = DateTime.parse(selectedDate);
-  //   final firstDay = DateTime(d.year, d.month, 1);         // 이번달 1일
-  //   final lastDay  = DateTime(d.year, d.month + 1, 0);     // 이번달 마지막날
-  //   final firstMonday = firstDay.subtract(Duration(days: firstDay.weekday - 1)); // 첫주 월요일
-  //
-  //   var weekStart = firstMonday;
-  //   while (!weekStart.isAfter(lastDay)) { ... weekStart = weekStart.add(Duration(days: 7)); }
-  //   각 주의 start = max(weekStart, firstDay), end = min(weekStart+6, lastDay)
   List<List<DateTime>> _monthWeekRanges() {
     final d = DateTime.parse(selectedDate);
     final firstDay = DateTime(d.year, d.month, 1);  // 이번달 1일
@@ -350,16 +339,6 @@ class ProductionTable extends StatelessWidget {
     return result;
   }
 
-  // TODO(human): selectedDate가 속한 연도의 12개월 범위 목록을 반환하세요.
-  // 각 월 범위는 [monthStart, monthEnd] 형태의 List<DateTime>입니다.
-  //
-  // 힌트:
-  //   final d = DateTime.parse(selectedDate);
-  //   1월(month=1)부터 12월(month=12)까지 반복하면서
-  //     monthStart = DateTime(d.year, month, 1)
-  //     monthEnd   = DateTime(d.year, month + 1, 0)   // 그 달의 마지막 날
-  //   를 구해 [monthStart, monthEnd]를 리스트에 추가하세요.
-  //   (참고: _monthWeekRanges()의 firstDay/lastDay 계산 방식과 동일한 패턴입니다)
   List<List<DateTime>> _yearMonthRanges() {
     final d = DateTime.parse(selectedDate);
     final result = <List<DateTime>>[];

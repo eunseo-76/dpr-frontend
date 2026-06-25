@@ -59,6 +59,9 @@ class UtilityPeriodTable extends StatelessWidget {
               verticalDetails: const ScrollableDetails.vertical(
                 physics: NeverScrollableScrollPhysics(),
               ),
+              horizontalDetails: const ScrollableDetails.horizontal(
+                physics: ClampingScrollPhysics(),
+              ),
               columnBuilder: _buildColumnSpan,
               rowBuilder: _buildRowSpan,
               cellBuilder: (context, vicinity) {
@@ -107,7 +110,7 @@ class UtilityPeriodTable extends StatelessWidget {
     );
   }
 
-  // "구분" 컬럼(전기/용수)의 행 병합 정보. (rowMergeStart, rowMergeSpan)
+  // "구분" 컬럼(전기&용수)의 행 병합 정보. (rowMergeStart, rowMergeSpan)
   // 헤더 행이거나 구분 컬럼이 아니면 null (병합 없음)
   (int, int)? _categoryMerge(TableVicinity vicinity) {
     if (vicinity.column != 0 || vicinity.row == 0) return null;
