@@ -150,12 +150,6 @@ class _MyPageScreenState extends State<MyPageScreen> {
                     MaterialPageRoute(builder: (_) => const EditProfileScreen()),
                   ),
                 ),
-                _divider(),
-                _menuTile(
-                  icon: Icons.group_add_outlined,
-                  label: '초대 계정 관리',
-                  onTap: () {},
-                ),
               ],
             ),
           ),

@@ -1,14 +1,37 @@
 import 'package:dpr_frontend/core/constants/api_constants.dart';
 import 'package:dpr_frontend/core/models/field_config.dart';
 import 'package:dpr_frontend/core/services/master_data_service.dart';
+import 'package:dpr_frontend/core/utils/user_storage.dart';
 import 'package:dpr_frontend/core/widgets/menu_card.dart';
 import 'package:dpr_frontend/features/settings/screens/factory_mapping_screen.dart';
 import 'package:dpr_frontend/features/settings/screens/master_data_manage_screen.dart';
+import 'package:dpr_frontend/features/settings/screens/invitation_manage_screen.dart';
 import 'package:dpr_frontend/features/settings/screens/unit_price_screen.dart';
 import 'package:flutter/material.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  String? _role;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRole();
+  }
+
+  Future<void> _loadRole() async {
+    final role = await UserStorage.getRole();
+    if (mounted) setState(() => _role = role);
+  }
+
+  bool get _canManageInvitations =>
+      _role == 'OWNER' || _role == 'MANAGER';
 
   void _openManageScreen(
     BuildContext context, {
@@ -149,6 +172,17 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ),
               ),
+              if (_canManageInvitations)
+                MenuItem(
+                  icon: Icons.group,
+                  label: '초대 계정 관리',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const InvitationManageScreen(),
+                    ),
+                  ),
+                ),
             ],
           ),
         ],
