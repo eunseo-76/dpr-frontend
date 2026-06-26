@@ -4,9 +4,12 @@ import 'package:dpr_frontend/core/services/master_data_service.dart';
 import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/utils/validators.dart';
 import 'package:dpr_frontend/core/utils/user_storage.dart';
+import 'package:dpr_frontend/core/widgets/pin_code_field.dart';
+import 'package:dpr_frontend/core/widgets/pop_effect.dart';
 import 'package:dpr_frontend/core/widgets/shake_field.dart';
 import 'package:dpr_frontend/features/settings/services/invitation_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class InvitationCreateDialog extends StatefulWidget {
   const InvitationCreateDialog({super.key});
@@ -18,6 +21,7 @@ class InvitationCreateDialog extends StatefulWidget {
 class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
   final _emailController = TextEditingController();
   final _positionController = TextEditingController();
+  final _codeDisplayController = TextEditingController();
   final _emailKey = GlobalKey<ShakeFieldState>();
   final _positionKey = GlobalKey<ShakeFieldState>();
   final _service = InvitationService();
@@ -28,11 +32,21 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
   String? _currentUserRole;
   bool _isLoading = true;
   bool _isSaving = false;
+  String? _createdInviteCode;
+  bool _copyTrigger = false;
 
   @override
   void initState() {
     super.initState();
     _loadInitialData();
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _positionController.dispose();
+    _codeDisplayController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadInitialData() async {
@@ -87,14 +101,24 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
         factoryId: _selectedFactoryId!,
       );
       if (!mounted) return;
-      Navigator.pop(context, result);
+      final code = result['inviteCode'] as String;
+      _codeDisplayController.text = code;
+      setState(() {
+        _createdInviteCode = code;
+        _isSaving = false;
+      });
     } catch (e) {
       if (mounted) {
         showToast(context, e.toString().replaceFirst('Exception: ', ''));
+        setState(() => _isSaving = false);
       }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  Future<void> _copyCode() async {
+    setState(() => _copyTrigger = !_copyTrigger);
+    await Clipboard.setData(ClipboardData(text: _createdInviteCode!));
+    if (mounted) showToast(context, '초대코드가 복사되었습니다', isError: false);
   }
 
   @override
@@ -106,18 +130,48 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
       titlePadding: const EdgeInsets.fromLTRB(20, 16, 8, 0),
       title: Row(
         children: [
-          const Expanded(
-            child: Text('초대하기',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: Align(
+                key: ValueKey(_createdInviteCode != null),
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  _createdInviteCode != null ? '초대코드' : '초대하기',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.close),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(context, _createdInviteCode != null ? {'inviteCode': _createdInviteCode} : null),
           ),
         ],
       ),
       contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      content: _isLoading
+      content: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: _createdInviteCode != null
+            ? _buildCodeView()
+            : _buildFormView(),
+      ),
+      actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      actions: [
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          child: _createdInviteCode != null
+              ? _buildCodeActions()
+              : _buildFormActions(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFormView() {
+    return SizedBox(
+      key: const ValueKey('form'),
+      child: _isLoading
           ? const SizedBox(
               height: 200,
               child: Center(child: CircularProgressIndicator()),
@@ -128,8 +182,7 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('이메일',
-                      style:
-                          TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                   const SizedBox(height: 6),
                   ShakeField(
                     key: _emailKey,
@@ -148,8 +201,7 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
                   ),
                   const SizedBox(height: 16),
                   const Text('직급',
-                      style:
-                          TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                   const SizedBox(height: 6),
                   ShakeField(
                     key: _positionKey,
@@ -167,8 +219,7 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
                   ),
                   const SizedBox(height: 16),
                   const Text('역할',
-                      style:
-                          TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
                     initialValue: _selectedRole,
@@ -180,11 +231,9 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
                           borderRadius: BorderRadius.circular(8)),
                     ),
                     items: [
-                      const DropdownMenuItem(
-                          value: 'STAFF', child: Text('멤버')),
+                      const DropdownMenuItem(value: 'STAFF', child: Text('멤버')),
                       if (!_isManager)
-                        const DropdownMenuItem(
-                            value: 'MANAGER', child: Text('매니저')),
+                        const DropdownMenuItem(value: 'MANAGER', child: Text('매니저')),
                     ],
                     onChanged: (v) {
                       if (v != null) setState(() => _selectedRole = v);
@@ -192,8 +241,7 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
                   ),
                   const SizedBox(height: 16),
                   const Text('공장',
-                      style:
-                          TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<int>(
                     initialValue: _selectedFactoryId,
@@ -205,60 +253,143 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
                           borderRadius: BorderRadius.circular(8)),
                     ),
                     items: _factories
-                        .map((f) => DropdownMenuItem(
-                            value: f.id, child: Text(f.name)))
+                        .map((f) => DropdownMenuItem(value: f.id, child: Text(f.name)))
                         .toList(),
                     onChanged: _isManager
                         ? null
                         : (v) {
-                            if (v != null) {
-                              setState(() => _selectedFactoryId = v);
-                            }
+                            if (v != null) setState(() => _selectedFactoryId = v);
                           },
                   ),
                   const SizedBox(height: 8),
                 ],
               ),
             ),
-      actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-      actions: [
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: _isSaving ? null : () => Navigator.pop(context),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
+    );
+  }
+
+  Widget _buildCodeView() {
+    return SizedBox(
+      key: const ValueKey('code'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 4),
+          Text(
+            '이 코드를 새로운 회원에게 보내주세요.\n새로운 회원은 앱에서 초대 코드를 통해 회원가입 할 수 있습니다.',
+            style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          IgnorePointer(
+            child: PinCodeField(
+              controller: _codeDisplayController,
+              autofocus: false,
+              gap: 8,
+              itemWidth: 38,
+              itemHeight: 46,
+            ),
+          ),
+          const SizedBox(height: 20),
+          PopEffect(
+            trigger: _copyTrigger,
+            animateOnDeactivate: true,
+            peakScale: 1.15,
+            child: GestureDetector(
+              onTap: _copyCode,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-                child: const Text('취소'),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.content_copy, size: 16, color: Colors.grey[700]),
+                    const SizedBox(width: 6),
+                    Text(
+                      '복사',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: _isSaving ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black87,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                ),
-                child: _isSaving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text('초대'),
+          ),
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFormActions() {
+    return SizedBox(
+      key: const ValueKey('form-actions'),
+      child: Row(
+        children: [
+          Expanded(
+            child: OutlinedButton(
+              onPressed: _isSaving ? null : () => Navigator.pop(context),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
               ),
+              child: const Text('취소'),
             ),
-          ],
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: _isSaving ? null : _submit,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black87,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
+              ),
+              child: _isSaving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('초대'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCodeActions() {
+    return SizedBox(
+      key: const ValueKey('code-actions'),
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () => Navigator.pop(context, {'inviteCode': _createdInviteCode}),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.black87,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
-      ],
+        child: const Text('확인'),
+      ),
     );
   }
 }

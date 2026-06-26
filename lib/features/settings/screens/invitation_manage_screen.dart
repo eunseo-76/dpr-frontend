@@ -1,9 +1,12 @@
 import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
 import 'package:dpr_frontend/core/widgets/name_avatar.dart';
+import 'package:dpr_frontend/core/widgets/pin_code_field.dart';
+import 'package:dpr_frontend/core/widgets/pop_effect.dart';
 import 'package:dpr_frontend/core/widgets/rounded_checkbox.dart';
 import 'package:dpr_frontend/core/widgets/pill_selector.dart';
 import 'package:dpr_frontend/core/widgets/wrench_refresh.dart';
+import 'package:flutter/services.dart';
 import 'package:dpr_frontend/features/settings/models/invitation.dart';
 import 'package:dpr_frontend/features/settings/models/user_member.dart';
 import 'package:dpr_frontend/features/settings/services/invitation_service.dart';
@@ -146,7 +149,7 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             if (_pendingInvitations.isNotEmpty) ...[
-              _sectionHeader('대기 중 초대', _pendingInvitations.length),
+              _sectionHeader('대기 중인 초대', _pendingInvitations.length),
               const SizedBox(height: 8),
               ..._pendingInvitations.map(_buildInvitationCard),
               const SizedBox(height: 24),
@@ -233,7 +236,7 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
                   );
                   if (result != null) {
                     if (!mounted) return;
-                    showToast(context, '초대가 생성되었습니다', isError: false);
+                    showToast(context, '초대를 보냈습니다', isError: false);
                     _loadData();
                   }
                 },
@@ -362,8 +365,105 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
     );
   }
 
+  void _showInviteCodeDialog(Invitation inv) {
+    final controller = TextEditingController(text: inv.inviteCode);
+    showDialog(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          bool copyTrigger = false;
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+            title: const Text('초대코드', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  inv.email,
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 20),
+                IgnorePointer(
+                  child: PinCodeField(
+                    controller: controller,
+                    autofocus: false,
+                    gap: 8,
+                    itemWidth: 38,
+                    itemHeight: 46,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                PopEffect(
+                  trigger: copyTrigger,
+                  animateOnDeactivate: true,
+                  peakScale: 1.15,
+                  child: GestureDetector(
+                    onTap: () async {
+                      setDialogState(() => copyTrigger = !copyTrigger);
+                      await Clipboard.setData(ClipboardData(text: inv.inviteCode));
+                      if (mounted) showToast(context, '초대코드가 복사되었습니다', isError: false);
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.content_copy, size: 16, color: Colors.grey[700]),
+                          const SizedBox(width: 6),
+                          Text(
+                            '복사',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+              ],
+            ),
+            actions: [
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black87,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  child: const Text('닫기'),
+                ),
+              ),
+            ],
+            actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          );
+        },
+      ),
+    ).then((_) => controller.dispose());
+  }
+
   Widget _buildInvitationCard(Invitation inv) {
-    return Container(
+    return GestureDetector(
+      onTap: () => _showInviteCodeDialog(inv),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -375,8 +475,6 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
         children: [
           Row(
             children: [
-              Icon(Icons.mail_outline, size: 18, color: Colors.orange[700]),
-              const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   inv.email,
@@ -415,6 +513,7 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
             ],
           ),
         ],
+      ),
       ),
     );
   }
