@@ -439,15 +439,6 @@ class ProductionTable extends StatelessWidget {
     return List.generate(7, (i) => monday.add(Duration(days: i)));  // 월~일 7개
   }
 
-  // record.date → 현재 기간새의 열 인덱스
-  int _columnIndex(String date) {
-    final d = DateTime.parse(date);
-    switch (selectedPeriod) {
-      case '주': return d.weekday - 1; // 월=0, 일=6
-      default:   return 0;
-    }
-  }
-
   // DateTime → 요일 라벨
   String _dayLabel(DateTime d) {
     const labels = ['월', '화', '수', '목', '금', '토', '일'];

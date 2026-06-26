@@ -156,17 +156,6 @@ class _ProductionScreenState extends State<ProductionScreen> {
     }
   }
 
-  Future<void> _refreshProductions() async {
-    try {
-      final productions = await _productionService.getProductionList(
-        date: _selectedDate,
-        periodType: _periodTypeMap[_selectedPeriod]!,
-      );
-      setState(() => _productions = productions);
-    } catch (e) {
-      if (mounted) showToast(context, '새로고침 실패: $e');
-    }
-  }
 
   void _enterSelectionMode(int rowGroupId) {
     setState(() {

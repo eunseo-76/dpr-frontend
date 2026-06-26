@@ -25,10 +25,7 @@ class MenuCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
-        children: items.asMap().entries.map((entry) {
-          final i = entry.key;
-          final item = entry.value;
-
+        children: items.map((item) {
           return Column(
             children: [
               ListTile(

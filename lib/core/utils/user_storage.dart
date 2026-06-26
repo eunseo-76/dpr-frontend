@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class UserStorage {
   static const _role = 'user_role';
   static const _name = 'user_name';
+  static const _email = 'user_email';
   static const _position = 'user_position';
   static const _companyId = 'user_company_id';
   static const _companyName = 'user_company_name';
@@ -30,6 +31,16 @@ class UserStorage {
 
   // 한 번도 로그인 안 한 경우 sharedPreferences가 비어있음.
   // 키가 없으면 null 반환하기 때문에 ? 필수
+  static Future<void> saveEmail(String email) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_email, email);
+  }
+
+  static Future<String?> getEmail() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_email);
+  }
+
   static Future<String?> getRole() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_role);
@@ -76,9 +87,12 @@ class UserStorage {
     await Future.wait({
       prefs.remove(_role),
       prefs.remove(_name),
+      prefs.remove(_email),
       prefs.remove(_position),
       prefs.remove(_companyId),
+      prefs.remove(_companyName),
       prefs.remove(_factoryId),
+      prefs.remove(_factoryName),
     });
   }
 }

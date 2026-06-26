@@ -1,9 +1,13 @@
+import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/utils/token_storage.dart';
 import 'package:dpr_frontend/core/utils/user_storage.dart';
 import 'package:dpr_frontend/features/auth/screens/app_info_screen.dart';
 import 'package:dpr_frontend/features/auth/screens/edit_profile_screen.dart';
 import 'package:dpr_frontend/features/auth/screens/landing_screen.dart';
+import 'package:dpr_frontend/features/auth/screens/forgot_password_screen.dart';
+import 'package:dpr_frontend/features/auth/screens/reset_password_screen.dart';
 import 'package:dpr_frontend/features/auth/screens/withdraw_screen.dart';
+import 'package:dpr_frontend/features/auth/services/auth_service.dart';
 import 'package:dpr_frontend/core/widgets/name_avatar.dart';
 import 'package:flutter/material.dart';
 
@@ -43,6 +47,29 @@ class _MyPageScreenState extends State<MyPageScreen> {
         _companyName = results[3] ?? '';
         _factoryName = results[4];
       });
+    }
+  }
+
+  Future<void> _changePassword() async {
+    final email = await UserStorage.getEmail();
+    if (!mounted) return;
+    if (email == null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
+      );
+      return;
+    }
+    try {
+      await AuthService().forgotPassword(email);
+      if (!mounted) return;
+      showToast(context, '인증 코드가 발송되었습니다', isError: false);
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ResetPasswordScreen(email: email)),
+      );
+    } catch (e) {
+      if (mounted) showToast(context, e.toString().replaceFirst('Exception: ', ''));
     }
   }
 
@@ -152,9 +179,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
                 ),
                 _divider(),
                 _menuTile(
-                  icon: Icons.group_add_outlined,
-                  label: '초대 계정 관리',
-                  onTap: () {},
+                  icon: Icons.lock_outline,
+                  label: '비밀번호 변경',
+                  onTap: _changePassword,
                 ),
               ],
             ),

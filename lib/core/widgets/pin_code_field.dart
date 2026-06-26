@@ -5,6 +5,9 @@ class PinCodeField extends StatefulWidget {
   final TextEditingController controller;
   final bool autofocus;
   final ValueChanged<String>? onSubmitted;
+  final double? gap;       // null이면 spaceBetween (기존 동작), 값이 있으면 center + 고정 간격
+  final double itemWidth;  // 각 칸의 너비
+  final double itemHeight; // 각 칸의 높이
 
   const PinCodeField({
     super.key,
@@ -12,6 +15,9 @@ class PinCodeField extends StatefulWidget {
     required this.controller,
     this.autofocus = true,
     this.onSubmitted,
+    this.gap,
+    this.itemWidth = 48,
+    this.itemHeight = 56,
   });
 
   @override
@@ -42,28 +48,35 @@ class _PinCodeFieldState extends State<PinCodeField> {
       child: Stack(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: widget.gap == null
+                ? MainAxisAlignment.spaceBetween
+                : MainAxisAlignment.center,
             children: List.generate(widget.length, (i) {
               final hasChar = i < code.length;
               final isCursor = i == code.length && _focusNode.hasFocus;
-              return Container(
-                width: 48,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: hasChar ? Colors.grey[100] : Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: isCursor ? Colors.black87 : Colors.grey[300]!,
-                    width: isCursor ? 1.5 : 1,
+              return Padding(
+                padding: widget.gap != null && i < widget.length - 1
+                    ? EdgeInsets.only(right: widget.gap!)
+                    : EdgeInsets.zero,
+                child: Container(
+                  width: widget.itemWidth,
+                  height: widget.itemHeight,
+                  decoration: BoxDecoration(
+                    color: hasChar ? Colors.grey[100] : Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isCursor ? Colors.black87 : Colors.grey[300]!,
+                      width: isCursor ? 1.5 : 1,
+                    ),
                   ),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  hasChar ? code[i] : '',
-                  style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                  alignment: Alignment.center,
+                  child: Text(
+                    hasChar ? code[i] : '',
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
                   ),
                 ),
               );
