@@ -1,4 +1,5 @@
 import 'package:dpr_frontend/core/utils/toast.dart';
+import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
 import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
 import 'package:dpr_frontend/core/widgets/name_avatar.dart';
 import 'package:dpr_frontend/core/widgets/pin_code_field.dart';
@@ -98,22 +99,12 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
 
   Future<void> _confirmAndDeleteUsers() async {
     final count = _selectedUserIds.length;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('회원 삭제'),
-        content: Text('선택한 $count명의 회원을 삭제하시겠습니까?\n삭제된 회원은 복구할 수 없습니다.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+    final confirmed = await showConfirmDialog(
+      context,
+      title: '회원 삭제',
+      content: '선택한 $count명의 회원을 삭제하시겠습니까?\n삭제된 회원은 복구할 수 없습니다.',
+      confirmLabel: '삭제',
+      isDestructive: true,
     );
     if (confirmed != true) return;
 
@@ -234,8 +225,8 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
                     context: context,
                     builder: (_) => const InvitationCreateDialog(),
                   );
+                  if (!mounted) return;
                   if (result != null) {
-                    if (!mounted) return;
                     showToast(context, '초대를 보냈습니다', isError: false);
                     _loadData();
                   }
@@ -369,9 +360,10 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
     final controller = TextEditingController(text: inv.inviteCode);
     showDialog(
       context: context,
-      builder: (_) => StatefulBuilder(
+      builder: (_) {
+        bool copyTrigger = false;
+        return StatefulBuilder(
         builder: (ctx, setDialogState) {
-          bool copyTrigger = false;
           return AlertDialog(
             backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -456,7 +448,8 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
             actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
           );
         },
-      ),
+        );
+      },
     ).then((_) => controller.dispose());
   }
 

@@ -1,4 +1,5 @@
 import 'package:dpr_frontend/features/auth/screens/splash_screen.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
@@ -19,6 +20,16 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
+          textSelectionTheme: const TextSelectionThemeData(
+            selectionHandleColor: Colors.transparent,
+          ),
+          pageTransitionsTheme: PageTransitionsTheme(
+            builders: {
+              // 페이지 전환 제스처 적용
+              TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            },
+          ),
         ),
         scrollBehavior: _NoStretchScrollBehavior(),
         home: const SplashScreen(),

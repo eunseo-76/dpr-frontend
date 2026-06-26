@@ -352,6 +352,7 @@ class _UtilityUpsertDialogState extends State<UtilityUpsertDialog> {
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
           child: Theme(
             data: Theme.of(context).copyWith(
+              // 커서에 물방울 모양 안 보이게
               textSelectionTheme: const TextSelectionThemeData(
                 selectionHandleColor: Colors.transparent,
               ),
