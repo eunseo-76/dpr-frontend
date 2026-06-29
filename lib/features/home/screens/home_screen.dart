@@ -98,11 +98,6 @@ class _HomeScreenState extends State<HomeScreen> {
         label: '생산실적',
         onTap: () => widget.onTabChange(0),
       ),
-      MenuItem(
-        icon: Icons.electric_bolt,
-        label: '전기&용수',
-        onTap: () => widget.onTabChange(2),
-      ),
       if (_isAdmin)
         MenuItem(
           icon: Icons.settings,

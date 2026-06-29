@@ -144,14 +144,6 @@ class _MyPageScreenState extends State<MyPageScreen> {
               ),
               child: Column(
                 children: [
-                  if (_role == 'OWNER') ...[
-                    ListTile(
-                      leading: Icon(Icons.business_outlined, color: Colors.grey[600]),
-                      title: Text('회사', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
-                      subtitle: Text(_companyName, style: const TextStyle(fontSize: 15, color: Colors.black87)),
-                    ),
-                    if (_factoryName != null) _divider(),
-                  ],
                   if (_factoryName != null)
                     ListTile(
                       leading: Icon(Icons.factory_outlined, color: Colors.grey[600]),

@@ -1,7 +1,7 @@
 import 'package:dpr_frontend/core/widgets/floating_nav_bar.dart';
 import 'package:dpr_frontend/features/home/screens/home_screen.dart';
 import 'package:dpr_frontend/features/production/screens/production_screen.dart';
-import 'package:dpr_frontend/features/utility/screens/utility_screen.dart';
+import 'package:dpr_frontend/features/settings/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
 
 class MainScreen extends StatefulWidget {
@@ -21,7 +21,7 @@ class _MainScreenState extends State<MainScreen> {
     _screens = [
       const ProductionScreen(),
       HomeScreen(onTabChange: (index) => setState(() => _currentIndex = index)),
-      const UtilityScreen(),
+      const SettingsScreen(),
     ];
   }
 
@@ -44,7 +44,7 @@ class _MainScreenState extends State<MainScreen> {
                   label: '생산실적',
                 ),
                 FloatingNavItem(icon: Icons.home, label: '홈'),
-                FloatingNavItem(icon: Icons.electric_bolt, label: '전기/용수'),
+                FloatingNavItem(icon: Icons.settings, label: '설정'),
               ],
             ),
           ),

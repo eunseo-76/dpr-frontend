@@ -1,3 +1,4 @@
+import 'package:dpr_frontend/core/services/screen_security_service.dart';
 import 'package:dpr_frontend/features/auth/screens/splash_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await LiquidGlassWidgets.initialize();
+  await ScreenSecurityService.enable();
   runApp(const MyApp());
 }
 

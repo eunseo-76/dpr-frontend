@@ -1,5 +1,8 @@
+import 'package:dpr_frontend/core/utils/shift_checker.dart';
 import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/utils/user_storage.dart';
+import 'package:dpr_frontend/features/settings/models/factory_shift.dart';
+import 'package:dpr_frontend/features/settings/services/factory_service.dart';
 import 'package:dpr_frontend/core/widgets/date_navigator.dart';
 import 'package:dpr_frontend/core/widgets/segmented_toggle.dart';
 import 'package:dpr_frontend/features/client/models/factory_client.dart';
@@ -42,10 +45,15 @@ class _ProductionScreenState extends State<ProductionScreen> {
   bool _isSelectionMode = false;
   Set<int> _selectedRowGroupIds = {};
 
+  FactoryShift? _factoryShift;
+
   final _unitService = UnitService();
   final _clientService = ClientService();
   final _utilityService = UtilityService();
   final _productionService = ProductionService();
+  final _factoryService = FactoryService();
+
+  bool get _canEdit => isEditAllowed(_factoryShift, _selectedDate);
 
   static const _periodTypeMap = {
     '일': 'DAY',
@@ -128,11 +136,15 @@ class _ProductionScreenState extends State<ProductionScreen> {
           periodType: _periodTypeMap[_selectedPeriod]!,
         ),
       ]);
+      final factoryShift = factoryId != null
+          ? await _factoryService.getFactoryShift(factoryId)
+          : null;
       setState(() {
         _units = results[0] as List<Unit>;
         _factoryClients = results[1] as List<FactoryClient>;
         _factoryProcesses = results[2] as List<FactoryProcess>;
         _productions = results[3] as List<Production>;
+        _factoryShift = factoryShift;
       });
     } catch (e) {
       setState(() => _error = e.toString());
@@ -498,7 +510,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
         return ProductionCard(
           title: cardTitle,
           units: _units,
-          onEditTap: _isSelectionMode
+          onEditTap: _isSelectionMode || !_canEdit
               ? null
               : () => _openUpsertDialog(
                     group: group,

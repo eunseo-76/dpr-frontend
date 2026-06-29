@@ -14,6 +14,7 @@ class MasterDataManageScreen extends StatefulWidget {
   final MasterDataService service;
   final List<FieldConfig> fields;
   final bool showAvatar;
+  final void Function(BuildContext, MasterDataEntity?, VoidCallback)? dialogBuilder;
 
   const MasterDataManageScreen({
     super.key,
@@ -21,6 +22,7 @@ class MasterDataManageScreen extends StatefulWidget {
     required this.service,
     required this.fields,
     this.showAvatar = false,
+    this.dialogBuilder,
   });
 
   @override
@@ -74,6 +76,10 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
   }
 
   void _showFormDialog({MasterDataEntity? item}) {
+    if (widget.dialogBuilder != null) {
+      widget.dialogBuilder!(context, item, _loadItems);
+      return;
+    }
     final isEdit = item != null;
 
     final controllers = widget.fields.map((field) {
