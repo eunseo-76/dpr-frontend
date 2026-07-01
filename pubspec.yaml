@@ -44,6 +44,7 @@ dependencies:
   two_dimensional_scrollables: ^0.5.2
   lottie: ^3.3.1
   liquid_glass_widgets: ^0.18.5
+  table_calendar: ^3.1.2
 
 dev_dependencies:
   flutter_test:

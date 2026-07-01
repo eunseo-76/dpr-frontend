@@ -132,8 +132,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _infoRow('이메일', widget.email),
-                          const SizedBox(height: 8),
-                          _infoRow('회사', widget.companyName),
                           if (widget.factoryName != null) ...[
                             const SizedBox(height: 8),
                             _infoRow('공장', widget.factoryName!),

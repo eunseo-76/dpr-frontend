@@ -106,7 +106,10 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
     for (var i = 0; i < widget.rows.length; i++) {
       final row = widget.rows[i];
       final key = '${row.clientId}_${row.unitId}';
-      final value = double.tryParse(_controllers[i].text);
+      final text = _controllers[i].text;
+      final value = text.isEmpty && _initialTexts[i].isNotEmpty
+          ? 0.0
+          : double.tryParse(text);
 
       grouped.putIfAbsent(
         key,

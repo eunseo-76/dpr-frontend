@@ -4,12 +4,14 @@ class FactoryProcess {
   final String factoryName;
   final int processId;
   final String processName;
+  final String? processNickname;
 
   FactoryProcess({
     required this.factoryId,
     required this.factoryName,
     required this.processId,
     required this.processName,
+    this.processNickname,
   });
 
   factory FactoryProcess.fromJson(Map<String, dynamic> json) {
@@ -18,6 +20,7 @@ class FactoryProcess {
       factoryName: json['factoryName'] as String,
       processId: json['processId'] as int,
       processName: json['processName'] as String,
+      processNickname: json['processNickname'] as String?,
     );
   }
 }

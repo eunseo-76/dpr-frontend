@@ -14,6 +14,7 @@ class MasterDataManageScreen extends StatefulWidget {
   final MasterDataService service;
   final List<FieldConfig> fields;
   final bool showAvatar;
+  final void Function(BuildContext, MasterDataEntity?, VoidCallback)? dialogBuilder;
 
   const MasterDataManageScreen({
     super.key,
@@ -21,6 +22,7 @@ class MasterDataManageScreen extends StatefulWidget {
     required this.service,
     required this.fields,
     this.showAvatar = false,
+    this.dialogBuilder,
   });
 
   @override
@@ -74,6 +76,10 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
   }
 
   void _showFormDialog({MasterDataEntity? item}) {
+    if (widget.dialogBuilder != null) {
+      widget.dialogBuilder!(context, item, _loadItems);
+      return;
+    }
     final isEdit = item != null;
 
     final controllers = widget.fields.map((field) {
@@ -120,9 +126,13 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
             onSave: () async {
               bool hasError = false;
               for (var i = 0; i < widget.fields.length; i++) {
-                if (widget.fields[i].required &&
-                    controllers[i].text.trim().isEmpty) {
+                final text = controllers[i].text.trim();
+                final field = widget.fields[i];
+                if (field.required && text.isEmpty) {
                   shakeKeys[i].currentState?.showError('필수 항목입니다');
+                  hasError = true;
+                } else if (field.maxLength != null && text.length > field.maxLength!) {
+                  shakeKeys[i].currentState?.showError('${field.maxLength}글자 이하로 입력하세요');
                   hasError = true;
                 } else {
                   shakeKeys[i].currentState?.clearError();
@@ -160,11 +170,13 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
                   child: ShakeField(
                     key: shakeKeys[i],
                     controller: controllers[i],
+                    maxLength: field.maxLength,
                     style: const TextStyle(fontSize: 16, color: Colors.black87),
                     decoration: InputDecoration(
                       labelText: field.required ? '${field.label} *' : field.label,
                       labelStyle: TextStyle(color: Colors.grey[500]),
                       floatingLabelStyle: const TextStyle(color: Colors.black87),
+                      helperText: field.maxLength != null ? '${field.maxLength}글자 이하로 입력하세요' : null,
                       enabledBorder: UnderlineInputBorder(
                         borderSide: BorderSide(color: Colors.grey[300]!),
                       ),

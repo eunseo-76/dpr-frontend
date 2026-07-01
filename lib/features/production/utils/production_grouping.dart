@@ -32,6 +32,7 @@ class ProductionDayGroup {
   final List<ProductionDayRow> rows;
   final Map<int, double> dailySumByUnit;
   final Map<int, double> cumulativeSumByUnit;
+  final Map<int, double> amountByUnit;
 
   ProductionDayGroup({
     required this.groupId,
@@ -39,6 +40,7 @@ class ProductionDayGroup {
     required this.rows,
     required this.dailySumByUnit,
     required this.cumulativeSumByUnit,
+    required this.amountByUnit,
   });
 }
 
@@ -47,12 +49,23 @@ List<ProductionDayGroup> groupProductionsForDay(
   List<ProductionGroupScaffold> scaffold,
   String groupBy,
 ) {
+  final processNicknames = <int, String>{};
+  final clientNicknames = <int, String>{};
+  for (final p in productions) {
+    if (p.processNickname != null) processNicknames[p.processId] = p.processNickname!;
+    if (p.clientNickname != null) clientNicknames[p.clientId] = p.clientNickname!;
+  }
+
   return scaffold.map((group) {
     final cardProductions = productions.where((p) =>
       groupBy == '공정별'
           ? p.processId == group.groupId
           : p.clientId == group.groupId
     ).toList();
+
+    final groupNickname = groupBy == '공정별'
+        ? processNicknames[group.groupId]
+        : clientNicknames[group.groupId];
 
     final unitRows = group.rows.map((rowScaffold) {
       final matches = cardProductions.where((p) =>
@@ -61,9 +74,13 @@ List<ProductionDayGroup> groupProductionsForDay(
       );
       final production = matches.isEmpty ? null : matches.first;
 
+      final rowNickname = groupBy == '공정별'
+          ? clientNicknames[rowScaffold.rowGroupId]
+          : processNicknames[rowScaffold.rowGroupId];
+
       return ProductionDayRow(
         rowGroupId: rowScaffold.rowGroupId,
-        rowGroupName: rowScaffold.rowGroupName,
+        rowGroupName: rowNickname ?? rowScaffold.rowGroupName,
         shift: rowScaffold.shift,
         unitId: rowScaffold.unitId,
         unitName: rowScaffold.unitName,
@@ -80,18 +97,23 @@ List<ProductionDayGroup> groupProductionsForDay(
 
     final dailySums = <int, double>{};
     final cumulativeSums = <int, double>{};
+    final amountSums = <int, double>{};
     for (final p in cardProductions) {
       dailySums[p.unitId] = (dailySums[p.unitId] ?? 0) + (p.result ?? 0);
       cumulativeSums[p.unitId] =
           (cumulativeSums[p.unitId] ?? 0) + (p.cumulativeResult ?? 0);
+      if (p.amount != null) {
+        amountSums[p.unitId] = (amountSums[p.unitId] ?? 0) + p.amount!;
+      }
     }
 
     return ProductionDayGroup(
       groupId: group.groupId,
-      groupName: group.groupName,
+      groupName: groupNickname ?? group.groupName,
       rows: rows,
       dailySumByUnit: dailySums,
       cumulativeSumByUnit: cumulativeSums,
+      amountByUnit: amountSums,
     );
   }).toList();
 }
