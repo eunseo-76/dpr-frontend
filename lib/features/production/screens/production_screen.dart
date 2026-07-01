@@ -3,6 +3,7 @@ import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/utils/user_storage.dart';
 import 'package:dpr_frontend/features/settings/models/factory_shift.dart';
 import 'package:dpr_frontend/features/settings/services/factory_service.dart';
+import 'package:dpr_frontend/core/widgets/calendar_picker.dart';
 import 'package:dpr_frontend/core/widgets/date_navigator.dart';
 import 'package:dpr_frontend/core/widgets/segmented_toggle.dart';
 import 'package:dpr_frontend/features/client/models/factory_client.dart';
@@ -92,12 +93,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
 
   Future<void> _onCalendarTap() async {
     final d = DateTime.parse(_selectedDate);
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: d,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-    );
+    final picked = await showCalendarPicker(context, d);
     if (picked != null) {
       setState(() => _selectedDate = _dateStr(picked));
       _loadProductions();
@@ -468,6 +464,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
           footer: ProductionCardFooter(
             dailyByUnit: group.dailySumByUnit,
             cumulativeByUnit: group.cumulativeSumByUnit,
+            amountByUnit: group.amountByUnit,
           ),
           table: ProductionPeriodTable(
             rowLabelHeader: rowLabelHeader,
@@ -521,13 +518,14 @@ class _ProductionScreenState extends State<ProductionScreen> {
           footer: ProductionCardFooter(
             dailyByUnit: group.dailySumByUnit,
             cumulativeByUnit: group.cumulativeSumByUnit,
+            amountByUnit: group.amountByUnit,
           ),
           table: ProductionDayTable(
             rowLabelHeader: rowLabelHeader,
             rows: group.rows,
             selectionMode: _isSelectionMode,
             selectedRowGroupIds: _selectedRowGroupIds,
-            onRowGroupLongPress: _enterSelectionMode,
+            onRowGroupLongPress: null, // 삭제 기능 비활성화
             onRowGroupTap: _toggleSelection,
           ),
         );

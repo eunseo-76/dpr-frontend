@@ -9,6 +9,7 @@ class ShakeField extends StatefulWidget {
   final TextStyle? style;
   final ValueChanged<String>? onSubmitted;
   final List<TextInputFormatter>? inputFormatters;
+  final int? maxLength;
 
   const ShakeField({
     super.key,
@@ -19,6 +20,7 @@ class ShakeField extends StatefulWidget {
     this.style,
     this.onSubmitted,
     this.inputFormatters,
+    this.maxLength,
   });
 
   @override
@@ -82,6 +84,10 @@ class ShakeFieldState extends State<ShakeField>
         style: widget.style,
         onSubmitted: widget.onSubmitted,
         inputFormatters: widget.inputFormatters,
+        maxLength: widget.maxLength,
+        maxLengthEnforcement: widget.maxLength != null
+            ? MaxLengthEnforcement.enforced
+            : MaxLengthEnforcement.none,
         decoration: widget.decoration.copyWith(
           errorText: _errorText,
           errorBorder: const UnderlineInputBorder(

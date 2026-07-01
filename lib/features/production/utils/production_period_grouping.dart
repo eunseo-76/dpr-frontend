@@ -32,6 +32,7 @@ class ProductionPeriodGroup {
   final List<ProductionPeriodRow> rows;
   final Map<int, double> dailySumByUnit;
   final Map<int, double> cumulativeSumByUnit;
+  final Map<int, double> amountByUnit;
 
   ProductionPeriodGroup({
     required this.groupId,
@@ -39,6 +40,7 @@ class ProductionPeriodGroup {
     required this.rows,
     required this.dailySumByUnit,
     required this.cumulativeSumByUnit,
+    required this.amountByUnit,
   });
 }
 
@@ -60,6 +62,13 @@ List<ProductionPeriodGroup> groupProductionsForPeriod(
   List<PeriodColumn> columns,
   String groupBy,
 ) {
+  final processNicknames = <int, String>{};
+  final clientNicknames = <int, String>{};
+  for (final p in productions) {
+    if (p.processNickname != null) processNicknames[p.processId] = p.processNickname!;
+    if (p.clientNickname != null) clientNicknames[p.clientId] = p.clientNickname!;
+  }
+
   final Map<String, Production> byKey = {
     for (final p in productions)
       '${p.processId}|${p.clientId}|${p.unitId}|${p.date}': p,
@@ -77,7 +86,14 @@ List<ProductionPeriodGroup> groupProductionsForPeriod(
   }
 
   return scaffold.map((group) {
+    final groupNickname = groupBy == '공정별'
+        ? processNicknames[group.groupId]
+        : clientNicknames[group.groupId];
+
     final unitRows = group.rows.map((rowScaffold) {
+      final rowNickname = groupBy == '공정별'
+          ? clientNicknames[rowScaffold.rowGroupId]
+          : processNicknames[rowScaffold.rowGroupId];
       final values = columns.map((column) {
         double? sum;
         for (final date in column.dates) {
@@ -108,7 +124,7 @@ List<ProductionPeriodGroup> groupProductionsForPeriod(
 
       return ProductionPeriodRow(
         rowGroupId: rowScaffold.rowGroupId,
-        rowGroupName: rowScaffold.rowGroupName,
+        rowGroupName: rowNickname ?? rowScaffold.rowGroupName,
         shift: rowScaffold.shift,
         unitId: rowScaffold.unitId,
         unitName: rowScaffold.unitName,
@@ -127,18 +143,26 @@ List<ProductionPeriodGroup> groupProductionsForPeriod(
     ).toList();
     final dailySums = <int, double>{};
     final cumulativeSums = <int, double>{};
+    final amountSums = <int, double>{};
+    final cumulativeSeen = <String>{};
     for (final p in cardProductions) {
       dailySums[p.unitId] = (dailySums[p.unitId] ?? 0) + (p.result ?? 0);
-      cumulativeSums[p.unitId] =
-          (cumulativeSums[p.unitId] ?? 0) + (p.cumulativeResult ?? 0);
+      final comboKey = '${p.processId}|${p.clientId}|${p.unitId}';
+      if (cumulativeSeen.add(comboKey) && p.cumulativeResult != null) {
+        cumulativeSums[p.unitId] = (cumulativeSums[p.unitId] ?? 0) + p.cumulativeResult!;
+      }
+      if (p.amount != null) {
+        amountSums[p.unitId] = (amountSums[p.unitId] ?? 0) + p.amount!;
+      }
     }
 
     return ProductionPeriodGroup(
       groupId: group.groupId,
-      groupName: group.groupName,
+      groupName: groupNickname ?? group.groupName,
       rows: rows,
       dailySumByUnit: dailySums,
       cumulativeSumByUnit: cumulativeSums,
+      amountByUnit: amountSums,
     );
   }).toList();
 }

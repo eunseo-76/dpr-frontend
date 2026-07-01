@@ -19,11 +19,9 @@ class MenuCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
       child: Column(
         children: items.map((item) {
           return Column(

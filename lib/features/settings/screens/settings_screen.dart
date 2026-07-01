@@ -31,7 +31,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) setState(() => _role = role);
   }
 
-  bool get _canManageInvitations =>
+  bool get _canManage =>
       _role == 'OWNER' || _role == 'MANAGER';
 
   void _openManageScreen(
@@ -59,7 +59,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     const detailFields = [
       FieldConfig(key: 'name', label: '이름', required: true),
-      FieldConfig(key: 'nickname', label: '별칭'),
+      FieldConfig(key: 'nickname', label: '별칭', required: true, maxLength: 4),
       FieldConfig(key: 'address', label: '주소'),
       FieldConfig(key: 'email', label: '이메일'),
       FieldConfig(key: 'phone', label: '전화번호'),
@@ -67,7 +67,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     const simpleFields = [
       FieldConfig(key: 'name', label: '이름', required: true),
-      FieldConfig(key: 'nickname', label: '별칭'),
+      FieldConfig(key: 'nickname', label: '별칭', required: true, maxLength: 4),
     ];
 
     return Scaffold(
@@ -185,7 +185,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
-              if (_canManageInvitations)
+              if (_canManage)
                 MenuItem(
                   icon: Icons.group,
                   label: '초대 계정 관리',

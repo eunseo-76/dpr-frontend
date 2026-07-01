@@ -5,8 +5,10 @@ class Production {
   final int factoryId;
   final int processId;
   final String processName;
+  final String? processNickname;
   final int clientId;
   final String clientName;
+  final String? clientNickname;
   final int unitId;
   final String unitName;
   final double? dayShift;
@@ -26,8 +28,10 @@ class Production {
     required this.factoryId,
     required this.processId,
     required this.processName,
+    this.processNickname,
     required this.clientId,
     required this.clientName,
+    this.clientNickname,
     required this.unitId,
     required this.unitName,
     this.dayShift,
@@ -49,8 +53,10 @@ class Production {
       factoryId: json['factoryId'] as int,
       processId: json['processId'] as int,
       processName: json['processName'] as String,
+      processNickname: json['processNickname'] as String?,
       clientId: json['clientId'] as int,
       clientName: json['clientName'] as String,
+      clientNickname: json['clientNickname'] as String?,
       unitId: json['unitId'] as int,
       unitName: json['unitName'] as String,
       dayShift: (json['dayShift'] as num?)?.toDouble(),
