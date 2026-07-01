@@ -13,9 +13,8 @@ class AuthService {
   Future<LoginResponse> login(LoginRequest request) async {
     final response = await _client.post(ApiConstants.login, request.toJson());
 
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode == 200) {
-      // json String 타입의 response.body(accesstoken)을 map 으로 변환 -> LonginResponse 객체로 변환
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
       final loginResponse = LoginResponse.fromJson(
         body['data'] as Map<String, dynamic>,
       );
@@ -31,7 +30,7 @@ class AuthService {
       );
       return loginResponse;
     }
-    throw Exception('로그인 실패: ${response.statusCode}');
+    throw Exception(body['message'] as String? ?? '로그인에 실패했습니다');
   }
 
   Future<Map<String, dynamic>> verifyInviteCode(String code) async {
@@ -40,23 +39,11 @@ class AuthService {
       queryParams: {'code': code},
     );
 
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode == 200) {
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
       return body['data'] as Map<String, dynamic>;
     }
-
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final errorCode = body['code'] as String? ?? 'UNKNOWN';
-    switch (errorCode) {
-      case 'INVITATION_NOT_FOUND':
-        throw Exception('존재하지 않는 초대코드입니다');
-      case 'INVITATION_EXPIRED':
-        throw Exception('만료된 초대코드입니다');
-      case 'INVITATION_ALREADY_USED':
-        throw Exception('이미 사용된 초대코드입니다');
-      default:
-        throw Exception('초대코드 확인 실패: ${response.statusCode}');
-    }
+    throw Exception(body['message'] as String? ?? '초대코드 확인에 실패했습니다');
   }
 
   Future<LoginResponse> register({
@@ -72,8 +59,8 @@ class AuthService {
       'password': password,
     });
 
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode == 200) {
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
       final loginResponse = LoginResponse.fromJson(
         body['data'] as Map<String, dynamic>,
       );
@@ -89,15 +76,7 @@ class AuthService {
       );
       return loginResponse;
     }
-
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final errorCode = body['code'] as String? ?? 'UNKNOWN';
-    switch (errorCode) {
-      case 'EMAIL_ALREADY_EXISTS':
-        throw Exception('이미 가입된 이메일입니다');
-      default:
-        throw Exception('가입 실패: ${response.statusCode}');
-    }
+    throw Exception(body['message'] as String? ?? '회원가입에 실패했습니다');
   }
 
   Future<void> withdraw(String password) async {
@@ -107,17 +86,8 @@ class AuthService {
     );
 
     if (response.statusCode == 200) return;
-
     final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final errorCode = body['code'] as String? ?? 'UNKNOWN';
-    switch (errorCode) {
-      case 'INVALID_PASSWORD':
-        throw Exception('비밀번호가 일치하지 않습니다');
-      case 'OWNER_CANNOT_WITHDRAW':
-        throw Exception('대표 계정은 탈퇴할 수 없습니다');
-      default:
-        throw Exception('탈퇴 실패: ${response.statusCode}');
-    }
+    throw Exception(body['message'] as String? ?? '탈퇴에 실패했습니다');
   }
 
   Future<void> forgotPassword(String email) async {
@@ -126,7 +96,8 @@ class AuthService {
       {'email': email},
     );
     if (response.statusCode != 200) {
-      throw Exception('요청 실패: ${response.statusCode}');
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      throw Exception(body['message'] as String? ?? '요청에 실패했습니다');
     }
   }
 
@@ -140,17 +111,8 @@ class AuthService {
     );
 
     if (response.statusCode == 200) return;
-
     final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final errorCode = body['code'] as String? ?? 'UNKNOWN';
-    switch (errorCode) {
-      case 'RESET_CODE_NOT_FOUND':
-        throw Exception('인증 코드가 올바르지 않습니다');
-      case 'RESET_CODE_EXPIRED':
-        throw Exception('인증 코드가 만료되었습니다. 다시 요청해주세요');
-      default:
-        throw Exception('코드 확인 실패: ${response.statusCode}');
-    }
+    throw Exception(body['message'] as String? ?? '코드 확인에 실패했습니다');
   }
 
   Future<void> resetPassword({
@@ -165,16 +127,7 @@ class AuthService {
     });
 
     if (response.statusCode == 200) return;
-
     final body = jsonDecode(response.body) as Map<String, dynamic>;
-    final errorCode = body['code'] as String? ?? 'UNKNOWN';
-    switch (errorCode) {
-      case 'RESET_CODE_NOT_FOUND':
-        throw Exception('인증 코드가 올바르지 않습니다');
-      case 'RESET_CODE_EXPIRED':
-        throw Exception('인증 코드가 만료되었습니다. 다시 요청해주세요');
-      default:
-        throw Exception('비밀번호 재설정 실패: ${response.statusCode}');
-    }
+    throw Exception(body['message'] as String? ?? '비밀번호 재설정에 실패했습니다');
   }
 }
