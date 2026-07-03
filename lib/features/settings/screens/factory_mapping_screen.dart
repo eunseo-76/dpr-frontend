@@ -169,6 +169,7 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
 
     try {
       await Future.wait([
+        // 3개 동시 요청
         _mappingService.syncProcesses(factoryId, _checkedProcessIds.toList()),
         _mappingService.syncUnits(factoryId, _checkedUnitIds.toList()),
         _mappingService.syncClients(factoryId, _checkedClientIds.toList()),

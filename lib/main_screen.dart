@@ -19,7 +19,11 @@ class _MainScreenState extends State<MainScreen> {
   bool get _canManageSettings => _role == 'OWNER' || _role == 'MANAGER';
 
   List<Widget> get _screens => [
-    const ProductionScreen(),
+    ProductionScreen(
+      onGoToSettings: _canManageSettings
+          ? () => setState(() => _currentIndex = 2)
+          : null,
+    ),
     HomeScreen(onTabChange: (index) => setState(() => _currentIndex = index)),
     if (_canManageSettings) const SettingsScreen(),
   ];

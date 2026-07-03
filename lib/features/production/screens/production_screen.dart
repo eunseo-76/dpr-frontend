@@ -27,7 +27,9 @@ import 'package:dpr_frontend/core/widgets/wrench_refresh.dart';
 import 'package:flutter/material.dart';
 
 class ProductionScreen extends StatefulWidget {
-  const ProductionScreen({super.key});
+  final VoidCallback? onGoToSettings;
+
+  const ProductionScreen({super.key, this.onGoToSettings});
 
   @override
   State<ProductionScreen> createState() => _ProductionScreenState();
@@ -38,6 +40,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
   List<FactoryClient> _factoryClients = [];
   List<FactoryProcess> _factoryProcesses = [];
   List<Production> _productions = [];
+  int? _factoryId;
   bool _isLoading = true;
   String? _error;
   String _groupBy = '공정별';
@@ -55,6 +58,10 @@ class _ProductionScreenState extends State<ProductionScreen> {
   final _factoryService = FactoryService();
 
   bool get _canEdit => isEditAllowed(_factoryShift, _selectedDate);
+  bool get _hasMasterData =>
+      _factoryProcesses.isNotEmpty &&
+      _factoryClients.isNotEmpty &&
+      _units.isNotEmpty;
 
   static const _periodTypeMap = {
     '일': 'DAY',
@@ -136,6 +143,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
           ? await _factoryService.getFactoryShift(factoryId)
           : null;
       setState(() {
+        _factoryId = factoryId;
         _units = results[0] as List<Unit>;
         _factoryClients = results[1] as List<FactoryClient>;
         _factoryProcesses = results[2] as List<FactoryProcess>;
@@ -238,7 +246,8 @@ class _ProductionScreenState extends State<ProductionScreen> {
     required ProductionGroupScaffold groupScaffold,
     required String rowLabelHeader,
   }) {
-    final factoryId = _factoryProcesses.first.factoryId;
+    final factoryId = _factoryId;
+    if (factoryId == null) return;
 
     final rows = groupScaffold.rows.map((rowScaffold) {
       final match = _productions.where((p) =>
@@ -407,14 +416,50 @@ class _ProductionScreenState extends State<ProductionScreen> {
                   ? const LoadingIndicator()
                   : _error != null
                       ? Center(child: Text('오류: $_error'))
-                      : WrenchRefresh(
-                          onRefresh: _loadProductions,
-                          child: _selectedPeriod == '일'
-                              ? _buildDayView()
-                              : _buildPeriodView(),
-                        ),
+                      : !_hasMasterData
+                          ? _buildEmptyState()
+                          : WrenchRefresh(
+                              onRefresh: _loadProductions,
+                              child: _selectedPeriod == '일'
+                                  ? _buildDayView()
+                                  : _buildPeriodView(),
+                            ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    final canGoToSettings = widget.onGoToSettings != null;
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.settings_outlined, size: 48, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            canGoToSettings
+                ? '공정, 단위, 업체를 먼저 설정해주세요'
+                : '관리자에게 설정을 요청하세요',
+            style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+          ),
+          if (canGoToSettings) ...[
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: widget.onGoToSettings,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black87,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                elevation: 0,
+              ),
+              child: const Text('설정으로 이동'),
+            ),
+          ],
         ],
       ),
     );
@@ -509,12 +554,18 @@ class _ProductionScreenState extends State<ProductionScreen> {
           units: _units,
           onEditTap: _isSelectionMode || !_canEdit
               ? null
-              : () => _openUpsertDialog(
+              : () {
+                  if (!_hasMasterData) {
+                    showToast(context, '공정, 단위, 업체가 모두 설정되어야 입력할 수 있습니다');
+                    return;
+                  }
+                  _openUpsertDialog(
                     group: group,
                     groupScaffold: scaffold
                         .firstWhere((g) => g.groupId == group.groupId),
                     rowLabelHeader: rowLabelHeader,
-                  ),
+                  );
+                },
           footer: ProductionCardFooter(
             dailyByUnit: group.dailySumByUnit,
             cumulativeByUnit: group.cumulativeSumByUnit,
