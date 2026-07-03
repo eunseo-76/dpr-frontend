@@ -1,7 +1,13 @@
+import 'package:dpr_frontend/core/constants/api_constants.dart';
+import 'package:dpr_frontend/core/models/factory_summary.dart';
+import 'package:dpr_frontend/core/services/master_data_service.dart';
 import 'package:dpr_frontend/core/utils/shift_checker.dart';
 import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/utils/user_storage.dart';
+import 'package:dpr_frontend/core/widgets/pill_selector.dart';
 import 'package:dpr_frontend/features/settings/models/factory_shift.dart';
+import 'package:dpr_frontend/features/settings/models/factory_unit.dart';
+import 'package:dpr_frontend/features/settings/services/factory_mapping_service.dart';
 import 'package:dpr_frontend/features/settings/services/factory_service.dart';
 import 'package:dpr_frontend/core/widgets/calendar_picker.dart';
 import 'package:dpr_frontend/core/widgets/date_navigator.dart';
@@ -17,7 +23,6 @@ import 'package:dpr_frontend/features/production/widgets/production_card.dart';
 import 'package:dpr_frontend/features/production/widgets/production_day_table.dart';
 import 'package:dpr_frontend/features/production/widgets/production_period_table.dart';
 import 'package:dpr_frontend/features/unit/models/unit.dart';
-import 'package:dpr_frontend/features/unit/services/unit_service.dart';
 import 'package:dpr_frontend/features/utility/models/factory_process.dart';
 import 'package:dpr_frontend/features/utility/services/utility_service.dart';
 import 'package:dpr_frontend/features/production/widgets/production_upsert_dialog.dart';
@@ -36,11 +41,15 @@ class ProductionScreen extends StatefulWidget {
 }
 
 class _ProductionScreenState extends State<ProductionScreen> {
-  List<Unit> _units = [];
-  List<FactoryClient> _factoryClients = [];
-  List<FactoryProcess> _factoryProcesses = [];
-  List<Production> _productions = [];
-  int? _factoryId;
+  String? _role;
+  List<FactorySummary> _availableFactories = [];
+  int _selectedFactoryIndex = 0;
+
+  List<FactoryUnit> _allFactoryUnits = [];
+  List<FactoryClient> _allFactoryClients = [];
+  List<FactoryProcess> _allFactoryProcesses = [];
+  List<Production> _allProductions = [];
+
   bool _isLoading = true;
   String? _error;
   String _groupBy = '공정별';
@@ -51,11 +60,31 @@ class _ProductionScreenState extends State<ProductionScreen> {
 
   FactoryShift? _factoryShift;
 
-  final _unitService = UnitService();
   final _clientService = ClientService();
   final _utilityService = UtilityService();
   final _productionService = ProductionService();
   final _factoryService = FactoryService();
+  final _factoryMappingService = FactoryMappingService();
+
+  int? get _selectedFactoryId => _availableFactories.isEmpty
+      ? null
+      : _availableFactories[_selectedFactoryIndex].factoryId;
+
+  List<Unit> get _units => _allFactoryUnits
+      .where((u) => u.factoryId == _selectedFactoryId)
+      .map((u) => Unit(id: u.unitId, name: u.unitNickname ?? u.unitName))
+      .toList();
+
+  List<FactoryClient> get _factoryClients => _allFactoryClients
+      .where((c) => c.factoryId == _selectedFactoryId)
+      .toList();
+
+  List<FactoryProcess> get _factoryProcesses => _allFactoryProcesses
+      .where((p) => p.factoryId == _selectedFactoryId)
+      .toList();
+
+  List<Production> get _productions =>
+      _allProductions.where((p) => p.factoryId == _selectedFactoryId).toList();
 
   bool get _canEdit => isEditAllowed(_factoryShift, _selectedDate);
   bool get _hasMasterData =>
@@ -129,9 +158,24 @@ class _ProductionScreenState extends State<ProductionScreen> {
   Future<void> _loadAll() async {
     setState(() { _isLoading = true; _error = null; });
     try {
-      final factoryId = await UserStorage.getFactoryId();
+      final role = await UserStorage.getRole();
+      final factories = role == 'OWNER'
+          ? (await MasterDataService(endpoint: ApiConstants.factory_, idKey: 'factoryId')
+                  .getAll())
+              .map((e) => FactorySummary(factoryId: e.id, factoryName: e.name))
+              .toList()
+          : await UserStorage.getFactories();
+
+      setState(() {
+        _role = role;
+        _availableFactories = factories;
+        _selectedFactoryIndex = 0;
+      });
+
+      if (factories.isEmpty) return;
+
       final results = await Future.wait([
-        _unitService.getUnitList(factoryId: factoryId),
+        _factoryMappingService.getFactoryUnits(),
         _clientService.getFactoryClients(),
         _utilityService.getFactoryProcesses(),
         _productionService.getProductionList(
@@ -139,15 +183,12 @@ class _ProductionScreenState extends State<ProductionScreen> {
           periodType: _periodTypeMap[_selectedPeriod]!,
         ),
       ]);
-      final factoryShift = factoryId != null
-          ? await _factoryService.getFactoryShift(factoryId)
-          : null;
+      final factoryShift = await _factoryService.getFactoryShift(factories.first.factoryId);
       setState(() {
-        _factoryId = factoryId;
-        _units = results[0] as List<Unit>;
-        _factoryClients = results[1] as List<FactoryClient>;
-        _factoryProcesses = results[2] as List<FactoryProcess>;
-        _productions = results[3] as List<Production>;
+        _allFactoryUnits = results[0] as List<FactoryUnit>;
+        _allFactoryClients = results[1] as List<FactoryClient>;
+        _allFactoryProcesses = results[2] as List<FactoryProcess>;
+        _allProductions = results[3] as List<Production>;
         _factoryShift = factoryShift;
       });
     } catch (e) {
@@ -164,12 +205,21 @@ class _ProductionScreenState extends State<ProductionScreen> {
         date: _selectedDate,
         periodType: _periodTypeMap[_selectedPeriod]!,
       );
-      setState(() => _productions = productions);
+      setState(() => _allProductions = productions);
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  void _onFactorySelected(int index) {
+    if (index == _selectedFactoryIndex) return;
+    _exitSelectionMode();
+    setState(() => _selectedFactoryIndex = index);
+    _factoryService.getFactoryShift(_availableFactories[index].factoryId).then((shift) {
+      if (mounted) setState(() => _factoryShift = shift);
+    });
   }
 
 
@@ -246,7 +296,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
     required ProductionGroupScaffold groupScaffold,
     required String rowLabelHeader,
   }) {
-    final factoryId = _factoryId;
+    final factoryId = _selectedFactoryId;
     if (factoryId == null) return;
 
     final rows = groupScaffold.rows.map((rowScaffold) {
@@ -345,6 +395,12 @@ class _ProductionScreenState extends State<ProductionScreen> {
             child: Column(
               children: [
                 SizedBox(height: MediaQuery.of(context).padding.top + kToolbarHeight),
+                if (_availableFactories.isNotEmpty)
+                  PillSelector(
+                    labels: _availableFactories.map((f) => f.factoryName).toList(),
+                    selectedIndex: _selectedFactoryIndex,
+                    onSelected: _onFactorySelected,
+                  ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   child: Row(
@@ -416,16 +472,50 @@ class _ProductionScreenState extends State<ProductionScreen> {
                   ? const LoadingIndicator()
                   : _error != null
                       ? Center(child: Text('오류: $_error'))
-                      : !_hasMasterData
-                          ? _buildEmptyState()
-                          : WrenchRefresh(
-                              onRefresh: _loadProductions,
-                              child: _selectedPeriod == '일'
-                                  ? _buildDayView()
-                                  : _buildPeriodView(),
-                            ),
+                      : _availableFactories.isEmpty
+                          ? _buildNoFactoryState()
+                          : !_hasMasterData
+                              ? _buildEmptyState()
+                              : WrenchRefresh(
+                                  onRefresh: _loadProductions,
+                                  child: _selectedPeriod == '일'
+                                      ? _buildDayView()
+                                      : _buildPeriodView(),
+                                ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoFactoryState() {
+    final isOwner = _role == 'OWNER';
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.factory_outlined, size: 48, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            isOwner ? '등록된 공장이 없습니다' : '배정된 공장이 없습니다. 관리자에게 문의하세요',
+            style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+          ),
+          if (isOwner && widget.onGoToSettings != null) ...[
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: widget.onGoToSettings,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black87,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                elevation: 0,
+              ),
+              child: const Text('설정으로 이동'),
+            ),
+          ],
         ],
       ),
     );

@@ -51,21 +51,24 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
 
   Future<void> _loadInitialData() async {
     final role = await UserStorage.getRole();
-    final factoryId = await UserStorage.getFactoryId();
-    final factories = await MasterDataService(
-      endpoint: ApiConstants.factory_,
-      idKey: 'factoryId',
-    ).getAll();
+    final List<MasterDataEntity> factories;
+    if (role == 'MANAGER') {
+      final myFactories = await UserStorage.getFactories();
+      factories = myFactories
+          .map((f) => MasterDataEntity(id: f.factoryId, name: f.factoryName, data: const {}))
+          .toList();
+    } else {
+      factories = await MasterDataService(
+        endpoint: ApiConstants.factory_,
+        idKey: 'factoryId',
+      ).getAll();
+    }
 
     if (!mounted) return;
     setState(() {
       _currentUserRole = role;
       _factories = factories;
-      if (role == 'MANAGER' && factoryId != null) {
-        _selectedFactoryId = factoryId;
-      } else if (factories.isNotEmpty) {
-        _selectedFactoryId = factories.first.id;
-      }
+      if (factories.isNotEmpty) _selectedFactoryId = factories.first.id;
       _isLoading = false;
     });
   }
@@ -255,11 +258,9 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
                     items: _factories
                         .map((f) => DropdownMenuItem(value: f.id, child: Text(f.name)))
                         .toList(),
-                    onChanged: _isManager
-                        ? null
-                        : (v) {
-                            if (v != null) setState(() => _selectedFactoryId = v);
-                          },
+                    onChanged: (v) {
+                      if (v != null) setState(() => _selectedFactoryId = v);
+                    },
                   ),
                   const SizedBox(height: 8),
                 ],
