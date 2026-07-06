@@ -9,7 +9,9 @@ import 'package:dpr_frontend/features/auth/screens/forgot_password_screen.dart';
 import 'package:dpr_frontend/features/auth/screens/reset_password_screen.dart';
 import 'package:dpr_frontend/features/auth/screens/withdraw_screen.dart';
 import 'package:dpr_frontend/features/auth/services/auth_service.dart';
+import 'package:dpr_frontend/features/auth/services/user_service.dart';
 import 'package:dpr_frontend/core/widgets/name_avatar.dart';
+import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
 import 'package:flutter/material.dart';
 
 class MyPageScreen extends StatefulWidget {
@@ -20,6 +22,7 @@ class MyPageScreen extends StatefulWidget {
 }
 
 class _MyPageScreenState extends State<MyPageScreen> {
+  bool _isLoading = true;
   String _name = '';
   String _position = '';
   String _role = '';
@@ -33,6 +36,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
   }
 
   Future<void> _loadUserInfo() async {
+    await UserService().refreshUserInfo();
     final results = await Future.wait([
       UserStorage.getName(),
       UserStorage.getPosition(),
@@ -47,6 +51,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
         _role = results[2] ?? '';
         _companyName = results[3] ?? '';
         _factories = factories;
+        _isLoading = false;
       });
     }
   }
@@ -115,7 +120,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-      body: ListView(
+      body: _isLoading
+          ? const LoadingIndicator()
+          : ListView(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         children: [
           const SizedBox(height: 16),

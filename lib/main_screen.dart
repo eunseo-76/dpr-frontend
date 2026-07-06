@@ -4,6 +4,7 @@ import 'package:dpr_frontend/features/home/screens/home_screen.dart';
 import 'package:dpr_frontend/features/production/screens/production_screen.dart';
 import 'package:dpr_frontend/features/settings/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -15,6 +16,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 1;
   String? _role;
+  bool _navBarVisible = true;
 
   bool get _canManageSettings => _role == 'OWNER' || _role == 'MANAGER';
 
@@ -51,15 +53,35 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          _screens[_currentIndex],
+          NotificationListener<UserScrollNotification>(
+            onNotification: (notification) {
+              // 생산실적 탭에서 아래로 스크롤하면 메뉴바 숨김, 위로 스크롤하면 다시 표시
+              if (_currentIndex != 0) return false;
+              if (notification.direction == ScrollDirection.reverse && _navBarVisible) {
+                setState(() => _navBarVisible = false);
+              } else if (notification.direction == ScrollDirection.forward && !_navBarVisible) {
+                setState(() => _navBarVisible = true);
+              }
+              return false;
+            },
+            child: _screens[_currentIndex],
+          ),
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
-            child: FloatingNavBar(
-              currentIndex: _currentIndex,
-              onTap: (index) => setState(() => _currentIndex = index),
-              items: _navItems,
+            child: AnimatedSlide(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
+              offset: _navBarVisible ? Offset.zero : const Offset(0, 1.3),
+              child: FloatingNavBar(
+                currentIndex: _currentIndex,
+                onTap: (index) => setState(() {
+                  _currentIndex = index;
+                  _navBarVisible = true;
+                }),
+                items: _navItems,
+              ),
             ),
           ),
         ],

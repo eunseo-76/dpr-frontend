@@ -4,6 +4,7 @@ import 'package:dpr_frontend/core/services/master_data_service.dart';
 import 'package:dpr_frontend/core/utils/shift_checker.dart';
 import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/utils/user_storage.dart';
+import 'package:dpr_frontend/features/auth/services/user_service.dart';
 import 'package:dpr_frontend/core/widgets/pill_selector.dart';
 import 'package:dpr_frontend/features/settings/models/factory_shift.dart';
 import 'package:dpr_frontend/features/settings/models/factory_unit.dart';
@@ -65,6 +66,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
   final _productionService = ProductionService();
   final _factoryService = FactoryService();
   final _factoryMappingService = FactoryMappingService();
+  final _userService = UserService();
 
   int? get _selectedFactoryId => _availableFactories.isEmpty
       ? null
@@ -158,6 +160,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
   Future<void> _loadAll() async {
     setState(() { _isLoading = true; _error = null; });
     try {
+      await _userService.refreshUserInfo();
       final role = await UserStorage.getRole();
       final factories = role == 'OWNER'
           ? (await MasterDataService(endpoint: ApiConstants.factory_, idKey: 'factoryId')
@@ -395,14 +398,18 @@ class _ProductionScreenState extends State<ProductionScreen> {
             child: Column(
               children: [
                 SizedBox(height: MediaQuery.of(context).padding.top + kToolbarHeight),
-                if (_availableFactories.isNotEmpty)
-                  PillSelector(
-                    labels: _availableFactories.map((f) => f.factoryName).toList(),
-                    selectedIndex: _selectedFactoryIndex,
-                    onSelected: _onFactorySelected,
+                if (_availableFactories.length > 1)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: PillSelector(
+                      labels: _availableFactories.map((f) => f.factoryName).toList(),
+                      selectedIndex: _selectedFactoryIndex,
+                      onSelected: _onFactorySelected,
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 5),
+                    ),
                   ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.fromLTRB(16, 5, 16, 12),
                   child: Row(
                     children: [
                       SegmentedToggle(

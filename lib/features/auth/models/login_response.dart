@@ -4,6 +4,7 @@ import 'package:dpr_frontend/core/models/factory_summary.dart';
 class LoginResponse {
   final String accessToken;
   final String name;
+  final String? nickname;
   final String position;
   final String role;
   final int companyId;
@@ -13,6 +14,7 @@ class LoginResponse {
   LoginResponse({
     required this.accessToken,
     required this.name,
+    this.nickname,
     required this.position,
     required this.role,
     required this.companyId,
@@ -24,6 +26,7 @@ class LoginResponse {
     return LoginResponse(
       accessToken: json['accessToken'] as String,
       name: json['name'] as String,
+      nickname: json['nickname'] as String?,
       position: json['position'] as String,
       role: json['role'] as String,
       companyId: json['companyId'] as int,

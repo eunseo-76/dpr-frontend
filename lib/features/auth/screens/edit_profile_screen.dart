@@ -32,11 +32,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _loadCurrentInfo() async {
+    await _userService.refreshUserInfo();
     final name = await UserStorage.getName();
+    final nickname = await UserStorage.getNickname();
     if (mounted) {
       setState(() {
         _initialName = name ?? '';
-        _initialNickname = '';
+        _initialNickname = nickname ?? '';
         _nameController.text = _initialName;
         _nicknameController.text = _initialNickname;
       });
@@ -75,14 +77,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     setState(() => _isLoading = true);
 
+    final nickname = _nicknameController.text.trim();
     try {
       await _userService.updateMe(
         UpdateUserRequest(
           name: name,
-          nickname: _nicknameController.text.trim(),
+          nickname: nickname,
         ),
       );
       await UserStorage.updateName(name);
+      await UserStorage.updateNickname(nickname);
       if (!mounted) return;
       showToast(context, '수정되었습니다', isError: false);
       Navigator.pop(context);

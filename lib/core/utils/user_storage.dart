@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class UserStorage {
   static const _role = 'user_role';
   static const _name = 'user_name';
+  static const _nickname = 'user_nickname';
   static const _email = 'user_email';
   static const _position = 'user_position';
   static const _companyId = 'user_company_id';
@@ -18,11 +19,13 @@ class UserStorage {
     String position,
     int companyId,
     String companyName,
-    List<FactorySummary> factories,
-  ) async {
+    List<FactorySummary> factories, {
+    String? nickname,
+  }) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_role, role);
     await prefs.setString(_name, name);
+    if (nickname != null) await prefs.setString(_nickname, nickname);
     await prefs.setString(_position, position);
     await prefs.setInt(_companyId, companyId);
     await prefs.setString(_companyName, companyName);
@@ -54,6 +57,11 @@ class UserStorage {
     return prefs.getString(_name);
   }
 
+  static Future<String?> getNickname() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_nickname);
+  }
+
   static Future<String?> getPosition() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_position);
@@ -83,12 +91,18 @@ class UserStorage {
     await prefs.setString(_name, name);
   }
 
+  static Future<void> updateNickname(String nickname) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_nickname, nickname);
+  }
+
   static Future<void> clearUserInfo() async {
     final prefs = await SharedPreferences.getInstance();
     // 성능 차이는 없다는데 await 여러 개는 다 병렬로 묶기로
     await Future.wait({
       prefs.remove(_role),
       prefs.remove(_name),
+      prefs.remove(_nickname),
       prefs.remove(_email),
       prefs.remove(_position),
       prefs.remove(_companyId),

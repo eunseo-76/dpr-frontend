@@ -154,6 +154,7 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
                 }
                 if (dialogContext.mounted) Navigator.pop(dialogContext);
                 _loadItems();
+                if (mounted) showToast(context, '저장되었습니다', isError: false);
               } catch (e) {
                 if (dialogContext.mounted) {
                   setDialogState(() => isSaving = false);

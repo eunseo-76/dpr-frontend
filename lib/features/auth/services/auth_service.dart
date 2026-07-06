@@ -26,6 +26,7 @@ class AuthService {
         loginResponse.companyId,
         loginResponse.companyName,
         loginResponse.factories,
+        nickname: loginResponse.nickname,
       );
       return loginResponse;
     }
@@ -71,6 +72,7 @@ class AuthService {
         loginResponse.companyId,
         loginResponse.companyName,
         loginResponse.factories,
+        nickname: loginResponse.nickname,
       );
       return loginResponse;
     }
