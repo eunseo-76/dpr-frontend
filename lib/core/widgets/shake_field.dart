@@ -8,8 +8,11 @@ class ShakeField extends StatefulWidget {
   final TextInputType? keyboardType;
   final TextStyle? style;
   final ValueChanged<String>? onSubmitted;
+  final ValueChanged<String>? onChanged;
   final List<TextInputFormatter>? inputFormatters;
   final int? maxLength;
+  final FocusNode? focusNode;
+  final TextAlign textAlign;
 
   const ShakeField({
     super.key,
@@ -19,8 +22,11 @@ class ShakeField extends StatefulWidget {
     this.keyboardType,
     this.style,
     this.onSubmitted,
+    this.onChanged,
     this.inputFormatters,
     this.maxLength,
+    this.focusNode,
+    this.textAlign = TextAlign.start,
   });
 
   @override
@@ -32,6 +38,7 @@ class ShakeFieldState extends State<ShakeField>
   late final AnimationController _animController;
   late final Animation<double> _offsetAnimation;
   String? _errorText;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -52,15 +59,32 @@ class ShakeFieldState extends State<ShakeField>
     ));
   }
 
+   // message가 빈 문자열이면 에러 공간(세로 여백)은 차지하지 않고 테두리만 빨갛게 표시
   void showError(String message) {
-    setState(() => _errorText = message);
+    setState(() {
+      _hasError = true;
+      _errorText = message.isEmpty ? null : message;
+    });
     _animController.forward(from: 0);
   }
 
   void clearError() {
-    if (_errorText != null) {
-      setState(() => _errorText = null);
+    if (_hasError) {
+      setState(() {
+        _hasError = false;
+        _errorText = null;
+      });
     }
+  }
+
+  InputBorder? _redBorder(InputBorder? base) {
+    if (base is OutlineInputBorder) {
+      return base.copyWith(borderSide: const BorderSide(color: Colors.red));
+    }
+    if (base is UnderlineInputBorder) {
+      return base.copyWith(borderSide: const BorderSide(color: Colors.red));
+    }
+    return const UnderlineInputBorder(borderSide: BorderSide(color: Colors.red));
   }
 
   @override
@@ -79,10 +103,13 @@ class ShakeFieldState extends State<ShakeField>
       ),
       child: TextField(
         controller: widget.controller,
+        focusNode: widget.focusNode,
         obscureText: widget.obscureText,
         keyboardType: widget.keyboardType,
         style: widget.style,
+        textAlign: widget.textAlign,
         onSubmitted: widget.onSubmitted,
+        onChanged: widget.onChanged,
         inputFormatters: widget.inputFormatters,
         maxLength: widget.maxLength,
         maxLengthEnforcement: widget.maxLength != null
@@ -96,6 +123,12 @@ class ShakeFieldState extends State<ShakeField>
           focusedErrorBorder: const UnderlineInputBorder(
             borderSide: BorderSide(color: Colors.red),
           ),
+          enabledBorder: (_hasError && _errorText == null)
+              ? _redBorder(widget.decoration.enabledBorder)
+              : widget.decoration.enabledBorder,
+          focusedBorder: (_hasError && _errorText == null)
+              ? _redBorder(widget.decoration.focusedBorder)
+              : widget.decoration.focusedBorder,
         ),
       ),
     );

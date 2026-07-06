@@ -35,11 +35,6 @@ class DateNavigator extends StatelessWidget {
           onTap: onCalendarTap,
           child: Container(
             padding: const EdgeInsets.only(bottom: 3),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(color: Colors.grey.shade400, width: 1),
-              ),
-            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [

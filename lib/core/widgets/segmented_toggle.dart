@@ -24,7 +24,7 @@ class SegmentedToggle extends StatelessWidget {
         final isLast = entry.key == options.length - 1;
         final isSelected = option == selected;
         return Padding(
-          padding: EdgeInsets.only(right: isLast ? 0 : 8),
+          padding: EdgeInsets.only(right: isLast ? 0 : 7),
           child: GestureDetector(
             onTap: () => onChanged(option),
             child: PopEffect(
@@ -32,7 +32,7 @@ class SegmentedToggle extends StatelessWidget {
               peakScale: 1.15,
               duration: const Duration(milliseconds: 400),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? activeColor.withValues(alpha: 0.1)
@@ -59,7 +59,7 @@ class SegmentedToggle extends StatelessWidget {
                   style: TextStyle(
                     color: isSelected ? activeColor : Colors.black87,
                     fontWeight: FontWeight.w600,
-                    fontSize: 13,
+                    fontSize: 11,
                   ),
                 ),
               ),

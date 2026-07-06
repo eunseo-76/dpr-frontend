@@ -2,6 +2,7 @@ import 'package:dpr_frontend/core/models/master_data_entity.dart';
 import 'package:dpr_frontend/core/services/master_data_service.dart';
 import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/widgets/form_dialog.dart';
+import 'package:dpr_frontend/core/widgets/shake_field.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -39,6 +40,16 @@ class _FactoryFormDialogState extends State<_FactoryFormDialog> {
   final _dayEndMFocus = FocusNode();
   final _nightStartMFocus = FocusNode();
   final _nightEndMFocus = FocusNode();
+
+  final _dayStartHShake = GlobalKey<ShakeFieldState>();
+  final _dayStartMShake = GlobalKey<ShakeFieldState>();
+  final _dayEndHShake = GlobalKey<ShakeFieldState>();
+  final _dayEndMShake = GlobalKey<ShakeFieldState>();
+  final _nightStartHShake = GlobalKey<ShakeFieldState>();
+  final _nightStartMShake = GlobalKey<ShakeFieldState>();
+  final _nightEndHShake = GlobalKey<ShakeFieldState>();
+  final _nightEndMShake = GlobalKey<ShakeFieldState>();
+  final _nameShake = GlobalKey<ShakeFieldState>();
 
   bool _hasNightShift = false;
   bool _isSaving = false;
@@ -114,8 +125,73 @@ class _FactoryFormDialogState extends State<_FactoryFormDialog> {
       _nightStartH.text != _initNightStartH || _nightStartM.text != _initNightStartM ||
       _nightEndH.text != _initNightEndH || _nightEndM.text != _initNightEndM;
 
+  bool _validateDayShift() {
+    bool ok = true;
+    void check(TextEditingController ctrl, GlobalKey<ShakeFieldState> key) {
+      if (ctrl.text.trim().isEmpty) {
+        key.currentState?.showError('');
+        ok = false;
+      } else {
+        key.currentState?.clearError();
+      }
+    }
+    check(_dayStartH, _dayStartHShake);
+    check(_dayStartM, _dayStartMShake);
+    check(_dayEndH, _dayEndHShake);
+    check(_dayEndM, _dayEndMShake);
+    return ok;
+  }
+  bool _validateTimeRanges() {
+    bool ok = true;
+    void checkRange(TextEditingController ctrl, GlobalKey<ShakeFieldState> key, int max) {
+      final text = ctrl.text.trim();
+      if (text.isEmpty) return;
+      final n = int.tryParse(text);
+      if (n == null || n > max) {
+        key.currentState?.showError('');
+        ok = false;
+      }
+    }
+    checkRange(_dayStartH, _dayStartHShake, 23);
+    checkRange(_dayStartM, _dayStartMShake, 59);
+    checkRange(_dayEndH, _dayEndHShake, 23);
+    checkRange(_dayEndM, _dayEndMShake, 59);
+    if (_hasNightShift) {
+      checkRange(_nightStartH, _nightStartHShake, 23);
+      checkRange(_nightStartM, _nightStartMShake, 59);
+      checkRange(_nightEndH, _nightEndHShake, 23);
+      checkRange(_nightEndM, _nightEndMShake, 59);
+    }
+    return ok;
+  }
+
+  // 야간은 자정을 넘겨 종료될 수 있어 순서 검증 대상에서 제외
+  bool _validateDayOrder() {
+    final startMin = int.parse(_dayStartH.text) * 60 + int.parse(_dayStartM.text);
+    final endMin = int.parse(_dayEndH.text) * 60 + int.parse(_dayEndM.text);
+    if (endMin <= startMin) {
+      _dayEndHShake.currentState?.showError('');
+      _dayEndMShake.currentState?.showError('');
+      return false;
+    }
+    return true;
+  }
+
+  bool _validateName() {
+    if (_name.text.trim().isEmpty) {
+      _nameShake.currentState?.showError('필수 항목입니다');
+      return false;
+    }
+    _nameShake.currentState?.clearError();
+    return true;
+  }
+
   Future<void> _save() async {
-    if (_name.text.trim().isEmpty) return;
+    final nameOk = _validateName();
+    final dayShiftOk = _validateDayShift();
+    final rangeOk = _validateTimeRanges();
+    final orderOk = (dayShiftOk && rangeOk) ? _validateDayOrder() : true;
+    if (!nameOk || !dayShiftOk || !rangeOk || !orderOk) return;
     setState(() => _isSaving = true);
     try {
       final body = {
@@ -145,57 +221,94 @@ class _FactoryFormDialogState extends State<_FactoryFormDialog> {
     }
   }
 
-  Widget _textField(TextEditingController ctrl, String label, {bool required = false}) {
+  Widget _textField(TextEditingController ctrl, String label, {bool required = false, GlobalKey<ShakeFieldState>? shakeKey}) {
+    final decoration = InputDecoration(
+      labelText: required ? '$label *' : label,
+      labelStyle: TextStyle(color: Colors.grey[500]),
+      floatingLabelStyle: const TextStyle(color: Colors.black87),
+      enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
+      focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.black87)),
+    );
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: TextField(
-        controller: ctrl,
-        onChanged: (_) => setState(() {}),
-        decoration: InputDecoration(
-          labelText: required ? '$label *' : label,
-          labelStyle: TextStyle(color: Colors.grey[500]),
-          floatingLabelStyle: const TextStyle(color: Colors.black87),
-          enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.grey[300]!)),
-          focusedBorder: const UnderlineInputBorder(borderSide: BorderSide(color: Colors.black87)),
-        ),
-      ),
+      child: shakeKey != null
+          ? ShakeField(
+              key: shakeKey,
+              controller: ctrl,
+              decoration: decoration,
+              onChanged: (v) {
+                setState(() {});
+                if (v.trim().isNotEmpty) shakeKey.currentState?.clearError();
+              },
+            )
+          : TextField(
+              controller: ctrl,
+              onChanged: (_) => setState(() {}),
+              decoration: decoration,
+            ),
     );
   }
 
-  Widget _digitBox(TextEditingController ctrl, {FocusNode? focusNode, FocusNode? nextFocus}) {
+  Widget _digitBox(TextEditingController ctrl, {FocusNode? focusNode, FocusNode? nextFocus, GlobalKey<ShakeFieldState>? shakeKey}) {
+    void onChanged(String v) {
+      setState(() {});
+      shakeKey?.currentState?.clearError();
+      if (v.length == 2 && nextFocus != null) {
+        FocusScope.of(context).requestFocus(nextFocus);
+      }
+    }
+
+    final decoration = InputDecoration(
+      counterText: '',
+      hintText: '00',
+      hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: const BorderSide(color: Colors.blue),
+        borderRadius: BorderRadius.circular(8),
+      ),
+    );
+
     return SizedBox(
       width: 44,
-      child: TextField(
-        controller: ctrl,
-        focusNode: focusNode,
-        keyboardType: TextInputType.number,
-        textAlign: TextAlign.center,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(2)],
-        onChanged: (v) {
-          setState(() {});
-          if (v.length == 2 && nextFocus != null) {
-            FocusScope.of(context).requestFocus(nextFocus);
-          }
-        },
-        decoration: InputDecoration(
-          counterText: '',
-          hintText: '00',
-          hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.grey[300]!),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: Colors.blue),
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      ),
+      child: shakeKey != null
+          ? ShakeField(
+              key: shakeKey,
+              controller: ctrl,
+              focusNode: focusNode,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(2)],
+              onChanged: onChanged,
+              decoration: decoration,
+            )
+          : TextField(
+              controller: ctrl,
+              focusNode: focusNode,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(2)],
+              onChanged: onChanged,
+              decoration: decoration,
+            ),
     );
   }
 
-  Widget _timeField(String label, TextEditingController hCtrl, TextEditingController mCtrl, FocusNode mFocus, {IconData? icon, Color? iconColor}) {
+  Widget _timeField(
+    String label,
+    TextEditingController hCtrl,
+    TextEditingController mCtrl,
+    FocusNode mFocus, {
+    IconData? icon,
+    Color? iconColor,
+    bool required = false,
+    GlobalKey<ShakeFieldState>? hShakeKey,
+    GlobalKey<ShakeFieldState>? mShakeKey,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -204,13 +317,13 @@ class _FactoryFormDialogState extends State<_FactoryFormDialog> {
             Icon(icon, size: 16, color: iconColor),
             const SizedBox(width: 6),
           ],
-          Expanded(child: Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[600]))),
-          _digitBox(hCtrl, nextFocus: mFocus),
+          Expanded(child: Text(required ? '$label *' : label, style: TextStyle(fontSize: 14, color: Colors.grey[600]))),
+          _digitBox(hCtrl, nextFocus: mFocus, shakeKey: hShakeKey),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 6),
             child: Text(':', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[500])),
           ),
-          _digitBox(mCtrl, focusNode: mFocus),
+          _digitBox(mCtrl, focusNode: mFocus, shakeKey: mShakeKey),
         ],
       ),
     );
@@ -230,23 +343,38 @@ class _FactoryFormDialogState extends State<_FactoryFormDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _textField(_name, '이름', required: true),
+              _textField(_name, '이름', required: true, shakeKey: _nameShake),
               _textField(_nickname, '별칭'),
               _textField(_address, '주소'),
               _textField(_email, '이메일'),
               _textField(_phone, '전화번호'),
-              const Divider(height: 24),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('야간 시프트 여부', style: TextStyle(fontSize: 14)),
                 value: _hasNightShift,
                 onChanged: (v) => setState(() => _hasNightShift = v),
               ),
-              _timeField('주간 시작', _dayStartH, _dayStartM, _dayStartMFocus, icon: Icons.wb_sunny, iconColor: Colors.orange),
-              _timeField('주간 종료', _dayEndH, _dayEndM, _dayEndMFocus, icon: Icons.wb_sunny, iconColor: Colors.orange),
+              _timeField(
+                '주간 시작', _dayStartH, _dayStartM, _dayStartMFocus,
+                icon: Icons.wb_sunny, iconColor: Colors.orange,
+                required: true, hShakeKey: _dayStartHShake, mShakeKey: _dayStartMShake,
+              ),
+              _timeField(
+                '주간 종료', _dayEndH, _dayEndM, _dayEndMFocus,
+                icon: Icons.wb_sunny, iconColor: Colors.orange,
+                required: true, hShakeKey: _dayEndHShake, mShakeKey: _dayEndMShake,
+              ),
               if (_hasNightShift) ...[
-                _timeField('야간 시작', _nightStartH, _nightStartM, _nightStartMFocus, icon: Icons.nightlight_round, iconColor: Colors.deepPurple),
-                _timeField('야간 종료', _nightEndH, _nightEndM, _nightEndMFocus, icon: Icons.nightlight_round, iconColor: Colors.deepPurple),
+                _timeField(
+                  '야간 시작', _nightStartH, _nightStartM, _nightStartMFocus,
+                  icon: Icons.nightlight_round, iconColor: Colors.deepPurple,
+                  hShakeKey: _nightStartHShake, mShakeKey: _nightStartMShake,
+                ),
+                _timeField(
+                  '야간 종료', _nightEndH, _nightEndM, _nightEndMFocus,
+                  icon: Icons.nightlight_round, iconColor: Colors.deepPurple,
+                  hShakeKey: _nightEndHShake, mShakeKey: _nightEndMShake,
+                ),
               ],
             ],
           ),

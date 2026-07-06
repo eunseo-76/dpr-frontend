@@ -409,45 +409,53 @@ class _ProductionScreenState extends State<ProductionScreen> {
                     ),
                   ),
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 5, 16, 12),
-                  child: Row(
-                    children: [
-                      SegmentedToggle(
-                        options: const ['공정별', '업체별'],
-                        selected: _groupBy,
-                        onChanged: (value) {
-                          _exitSelectionMode();
-                          setState(() => _groupBy = value);
-                        },
-                      ),
-                      const Spacer(),
-                      Container(
-                        width: 1.5,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(1),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 4,
-                              offset: const Offset(0, 1),
+                  padding: const EdgeInsets.only(top: 5, bottom: 12),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SegmentedToggle(
+                            options: const ['공정별', '업체별'],
+                            selected: _groupBy,
+                            onChanged: (value) {
+                              _exitSelectionMode();
+                              setState(() => _groupBy = value);
+                            },
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            width: 1.5,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(1),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 12),
+                          SegmentedToggle(
+                            options: const ['일', '주', '월', '년'],
+                            selected: _selectedPeriod,
+                            activeColor: Colors.green,
+                            onChanged: (period) {
+                              _exitSelectionMode();
+                              setState(() => _selectedPeriod = period);
+                              _loadProductions();
+                            },
+                          ),
+                        ],
                       ),
-                      const Spacer(),
-                      SegmentedToggle(
-                        options: const ['일', '주', '월', '년'],
-                        selected: _selectedPeriod,
-                        activeColor: Colors.green,
-                        onChanged: (period) {
-                          _exitSelectionMode();
-                          setState(() => _selectedPeriod = period);
-                          _loadProductions();
-                        },
-                      ),
-                    ],
+                    ),
                   ),
                 ),
                 DateNavigator(

@@ -31,8 +31,8 @@ class _FloatingNavBarState extends State<FloatingNavBar>
   late final Animation<double> _scaleX;
   late final Animation<double> _scaleY;
 
-  static const _barHeight = 64.0;
-  static const _indicatorHeight = 42.0;
+  static const _barHeight = 52.0;
+  static const _indicatorHeight = 34.0;
   static const _indicatorRadius = 16.0;
 
   @override
@@ -148,14 +148,14 @@ class _FloatingNavBarState extends State<FloatingNavBar>
                           children: [
                             Icon(
                               entry.value.icon,
-                              size: 22,
+                              size: 20,
                               color: Colors.black87,
                             ),
                             const SizedBox(height: 2),
                             Text(
                               entry.value.label,
                               style: TextStyle(
-                                fontSize: 11,
+                                fontSize: 7,
                                 fontWeight: isSelected
                                     ? FontWeight.w600
                                     : FontWeight.normal,

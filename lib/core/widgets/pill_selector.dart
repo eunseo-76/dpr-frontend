@@ -41,7 +41,7 @@ class PillSelector extends StatelessWidget {
       textStyle: TextStyle(
         color: isSelected ? Colors.blue : Colors.black87,
         fontWeight: FontWeight.w600,
-        fontSize: 13,
+        fontSize: 11,
       ),
     );
   }
@@ -56,13 +56,13 @@ class PillSelector extends StatelessWidget {
           final isSelected = entry.key == selectedIndex;
           final style = _pillStyle(isSelected);
           return Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: 7),
             child: GestureDetector(
               onTap: () => onSelected(entry.key),
               child: PopEffect(
                 trigger: isSelected,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                   decoration: style.decoration,
                   child: Text(entry.value, style: style.textStyle),
                 ),
