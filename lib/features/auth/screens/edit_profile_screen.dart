@@ -51,12 +51,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<bool> _onWillPop() async {
     if (!_hasChanges) return true;
-    return showConfirmDialog(
-      context,
-      title: '변경사항이 있습니다',
-      content: '저장하지 않고 나가시겠습니까?',
-      confirmLabel: '나가기',
-    );
+    return confirmDiscardChanges(context);
   }
 
   @override

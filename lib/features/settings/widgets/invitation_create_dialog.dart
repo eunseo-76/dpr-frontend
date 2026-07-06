@@ -282,14 +282,20 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          IgnorePointer(
-            child: PinCodeField(
-              controller: _codeDisplayController,
-              autofocus: false,
-              gap: 8,
-              itemWidth: 38,
-              itemHeight: 46,
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const gap = 8.0;
+              final itemWidth = ((constraints.maxWidth - gap * 5) / 6).clamp(0, 38.0);
+              return IgnorePointer(
+                child: PinCodeField(
+                  controller: _codeDisplayController,
+                  autofocus: false,
+                  gap: gap,
+                  itemWidth: itemWidth.toDouble(),
+                  itemHeight: 46,
+                ),
+              );
+            },
           ),
           const SizedBox(height: 20),
           PopEffect(

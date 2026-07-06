@@ -2,6 +2,7 @@ import 'package:dpr_frontend/core/services/screen_security_service.dart';
 import 'package:dpr_frontend/features/auth/screens/splash_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
@@ -10,6 +11,12 @@ void main() async {
   await initializeDateFormatting('ko_KR');
   await LiquidGlassWidgets.initialize();
   await ScreenSecurityService.enable();
+  // 상태표시줄이 화면 전환/다이얼로그 시 검정으로 되돌아가는 것 방지
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark,
+    statusBarBrightness: Brightness.light,
+  ));
   runApp(const MyApp());
 }
 

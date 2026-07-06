@@ -21,7 +21,7 @@ class ProductionDayTable extends StatelessWidget {
     this.onRowGroupTap,
   });
 
-  static const _colLabel = 80.0;
+  static const _colLabel = 48.0;
   static const _colShift = 44.0;
   static const _colUnit = 52.0;
   static const _colValue = 120.0;

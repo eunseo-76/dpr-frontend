@@ -162,32 +162,37 @@ class _MasterDataManageScreenState extends State<MasterDataManageScreen> {
                 }
               }
             },
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(widget.fields.length, (i) {
-                final field = widget.fields[i];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: ShakeField(
-                    key: shakeKeys[i],
-                    controller: controllers[i],
-                    maxLength: field.maxLength,
-                    style: const TextStyle(fontSize: 16, color: Colors.black87),
-                    decoration: InputDecoration(
-                      labelText: field.required ? '${field.label} *' : field.label,
-                      labelStyle: TextStyle(color: Colors.grey[500]),
-                      floatingLabelStyle: const TextStyle(color: Colors.black87),
-                      helperText: field.maxLength != null ? '${field.maxLength}글자 이하로 입력하세요' : null,
-                      enabledBorder: UnderlineInputBorder(
-                        borderSide: BorderSide(color: Colors.grey[300]!),
+            content: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.6),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(widget.fields.length, (i) {
+                    final field = widget.fields[i];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: ShakeField(
+                        key: shakeKeys[i],
+                        controller: controllers[i],
+                        maxLength: field.maxLength,
+                        style: const TextStyle(fontSize: 16, color: Colors.black87),
+                        decoration: InputDecoration(
+                          labelText: field.required ? '${field.label} *' : field.label,
+                          labelStyle: TextStyle(color: Colors.grey[500]),
+                          floatingLabelStyle: const TextStyle(color: Colors.black87),
+                          helperText: field.maxLength != null ? '${field.maxLength}글자 이하로 입력하세요' : null,
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          focusedBorder: const UnderlineInputBorder(
+                            borderSide: BorderSide(color: Colors.black87),
+                          ),
+                        ),
                       ),
-                      focusedBorder: const UnderlineInputBorder(
-                        borderSide: BorderSide(color: Colors.black87),
-                      ),
-                    ),
-                  ),
-                );
-              }),
+                    );
+                  }),
+                ),
+              ),
             ),
           );
         },

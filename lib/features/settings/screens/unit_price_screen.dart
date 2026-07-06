@@ -189,12 +189,10 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
     if (index == _selectedFactoryIndex) return;
 
     if (_hasChanges) {
-      final confirmed = await showConfirmDialog(
+      final confirmed = await confirmDiscardChanges(
         context,
-        title: '변경사항이 있습니다',
         content: '저장하지 않고 다른 공장으로 이동하시겠습니까?\n수정한 내용은 사라집니다.',
         confirmLabel: '이동',
-        isDestructive: true,
       );
       if (!confirmed) return;
     }
@@ -210,12 +208,10 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
     if (index == _selectedProcessIndex) return;
 
     if (_hasChanges) {
-      final confirmed = await showConfirmDialog(
+      final confirmed = await confirmDiscardChanges(
         context,
-        title: '변경사항이 있습니다',
         content: '저장하지 않고 다른 공정으로 이동하시겠습니까?\n수정한 내용은 사라집니다.',
         confirmLabel: '이동',
-        isDestructive: true,
       );
       if (!confirmed) return;
     }
@@ -259,7 +255,14 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
     final clients = _factories.isNotEmpty ? _currentClients : <FactoryClient>[];
     final units = _factories.isNotEmpty ? _currentUnits : <FactoryUnit>[];
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shouldPop = !_hasChanges || await confirmDiscardChanges(context);
+        if (shouldPop && context.mounted) Navigator.pop(context);
+      },
+      child: Scaffold(
       extendBodyBehindAppBar: true,
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -454,9 +457,9 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                               flex: 2,
                                               child: LayoutBuilder(
                                                 builder: (context, constraints) {
-                                                  final selectedName = units
-                                                      .firstWhere((u) => u.unitId == editing.unitId)
-                                                      .unitName;
+                                                  final selectedUnit = units
+                                                      .firstWhere((u) => u.unitId == editing.unitId);
+                                                  final selectedName = selectedUnit.unitNickname ?? selectedUnit.unitName;
                                                   return PopupMenuButton<int>(
                                                     initialValue: editing.unitId,
                                                     onSelected: (value) =>
@@ -475,7 +478,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                                       PopupMenuItem(
                                                         value: u.unitId,
                                                         height: 40,
-                                                        child: Text(u.unitName, style: const TextStyle(fontSize: 14)),
+                                                        child: Text(u.unitNickname ?? u.unitName, style: const TextStyle(fontSize: 12)),
                                                       ),
                                                     ).toList(),
                                                     child: InputDecorator(
@@ -499,7 +502,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                                           minHeight: 24,
                                                         ),
                                                       ),
-                                                      child: Text(selectedName, style: const TextStyle(fontSize: 14)),
+                                                      child: Text(selectedName, style: const TextStyle(fontSize: 12)),
                                                     ),
                                                   );
                                                 },
@@ -603,6 +606,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 

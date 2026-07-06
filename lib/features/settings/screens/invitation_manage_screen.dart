@@ -262,21 +262,24 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
             if (_selectedUserIds.isNotEmpty &&
                 _selectedUsers.every((u) => u.role == 'STAFF'))
               _actionIconButton(
-                icon: Icons.move_to_inbox_outlined,
+                icon: Icons.edit_rounded,
                 onTap: _openStaffAssignDialog,
               ),
             if (_selectedUserIds.length == 1 &&
                 _selectedUsers.single.role == 'MANAGER' &&
                 _currentUserRole == 'OWNER')
               _actionIconButton(
-                icon: Icons.edit_location_alt_outlined,
+                icon: Icons.edit_rounded,
                 onTap: _openManagerSyncDialog,
               ),
-            _actionIconButton(
-              icon: Icons.delete_outline,
-              iconColor: Colors.red[400],
-              onTap: _confirmAndDeleteUsers,
-            ),
+            if (_selectedUserIds.isNotEmpty &&
+                (_currentUserRole == 'OWNER' ||
+                    _selectedUsers.every((u) => u.role == 'STAFF')))
+              _actionIconButton(
+                icon: Icons.delete_outline,
+                iconColor: Colors.red[400],
+                onTap: _confirmAndDeleteUsers,
+              ),
           ] else
             _actionIconButton(
               icon: Icons.add,
@@ -425,14 +428,20 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
                   style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 20),
-                IgnorePointer(
-                  child: PinCodeField(
-                    controller: controller,
-                    autofocus: false,
-                    gap: 8,
-                    itemWidth: 38,
-                    itemHeight: 46,
-                  ),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    const gap = 8.0;
+                    final itemWidth = ((constraints.maxWidth - gap * 5) / 6).clamp(0, 38.0);
+                    return IgnorePointer(
+                      child: PinCodeField(
+                        controller: controller,
+                        autofocus: false,
+                        gap: gap,
+                        itemWidth: itemWidth.toDouble(),
+                        itemHeight: 46,
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 20),
                 PopEffect(
@@ -604,20 +613,28 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
                 ],
               ),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _roleChip(user.role),
-                const SizedBox(height: 4),
-                if (user.factories.isNotEmpty)
-                  Wrap(
-                    spacing: 4,
-                    runSpacing: 4,
-                    alignment: WrapAlignment.end,
-                    children:
-                        user.factories.map((f) => _infoChip(f.factoryName)).toList(),
-                  ),
-              ],
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 110),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _roleChip(user.role),
+                  const SizedBox(height: 4),
+                  if (user.factories.isNotEmpty)
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      alignment: WrapAlignment.end,
+                      children: [
+                        ...user.factories
+                            .take(2)
+                            .map((f) => _infoChip(f.factoryName)),
+                        if (user.factories.length > 2)
+                          _infoChip('+${user.factories.length - 2}'),
+                      ],
+                    ),
+                ],
+              ),
             ),
           ],
         ),

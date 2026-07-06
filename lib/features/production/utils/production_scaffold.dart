@@ -38,12 +38,12 @@ List<ProductionGroupScaffold> buildProductionScaffold({
 }) {
   final processes = <int, String>{};
   for (final fp in factoryProcesses) {
-    processes.putIfAbsent(fp.processId, () => fp.processName);
+    processes.putIfAbsent(fp.processId, () => fp.processNickname ?? fp.processName);
   }
 
   final clients = <int, String>{};
   for (final fc in factoryClients) {
-    clients.putIfAbsent(fc.clientId, () => fc.clientName);
+    clients.putIfAbsent(fc.clientId, () => fc.clientNickname ?? fc.clientName);
   }
 
   List<ProductionRowScaffold> buildRows(Map<int, String> rowGroups) {

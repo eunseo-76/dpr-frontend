@@ -48,7 +48,7 @@ class FormDialog extends StatelessWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title),
+            Text(title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
             if (subtitle != null) ...[
               const SizedBox(height: 4),
               Text(

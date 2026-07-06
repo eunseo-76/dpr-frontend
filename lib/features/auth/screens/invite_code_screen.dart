@@ -94,9 +94,17 @@ class _InviteCodeScreenState extends State<InviteCodeScreen> {
                       style: TextStyle(color: Colors.grey[600], fontSize: 14),
                     ),
                     const SizedBox(height: 40),
-                    PinCodeField(
-                      controller: _codeController,
-                      onSubmitted: (_) => _verifyCode(),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        const gap = 8.0;
+                        final itemWidth = ((constraints.maxWidth - gap * 5) / 6).clamp(0, 48.0);
+                        return PinCodeField(
+                          controller: _codeController,
+                          gap: gap,
+                          itemWidth: itemWidth.toDouble(),
+                          onSubmitted: (_) => _verifyCode(),
+                        );
+                      },
                     ),
                     const SizedBox(height: 24),
                     SizedBox(

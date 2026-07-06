@@ -21,7 +21,7 @@ class ProductionPeriodTable extends StatelessWidget {
     this.onDateTap,
   });
 
-  static const _colLabelWidth = 58.0;
+  static const _colLabelWidth = 48.0;
   static const _colShiftWidth = 26.0;
   static const _colUnitWidth = 34.0;
   static const _periodColWidth = 42.0;
