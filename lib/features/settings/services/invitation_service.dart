@@ -41,6 +41,33 @@ class InvitationService {
     }
   }
 
+  Future<void> assignFactory({
+    required List<int> userIds,
+    required int factoryId,
+  }) async {
+    final response = await _client.post(ApiConstants.assignFactory, {
+      'userIds': userIds,
+      'factoryId': factoryId,
+    });
+    if (response.statusCode != 200) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      throw Exception(body['message'] ?? '공장 배치 실패');
+    }
+  }
+
+  Future<void> syncManagerFactories({
+    required int userId,
+    required List<int> factoryIds,
+  }) async {
+    final response = await _client.put('${ApiConstants.users}/$userId/factories', {
+      'ids': factoryIds,
+    });
+    if (response.statusCode != 200) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      throw Exception(body['message'] ?? '담당 공장 수정 실패');
+    }
+  }
+
   Future<Map<String, dynamic>> createInvitation({
     required String email,
     required String role,

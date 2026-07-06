@@ -1,3 +1,5 @@
+import 'package:dpr_frontend/core/models/factory_summary.dart';
+
 // 역직렬화
 class LoginResponse {
   final String accessToken;
@@ -6,8 +8,7 @@ class LoginResponse {
   final String role;
   final int companyId;
   final String companyName;
-  final int? factoryId;
-  final String? factoryName;
+  final List<FactorySummary> factories;
 
   LoginResponse({
     required this.accessToken,
@@ -16,8 +17,7 @@ class LoginResponse {
     required this.role,
     required this.companyId,
     required this.companyName,
-    this.factoryId,
-    this.factoryName,
+    required this.factories,
   });
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
@@ -28,8 +28,9 @@ class LoginResponse {
       role: json['role'] as String,
       companyId: json['companyId'] as int,
       companyName: json['companyName'] as String,
-      factoryId: json['factoryId'] as int?,
-      factoryName: json['factoryName'] as String?,
+      factories: (json['factories'] as List? ?? [])
+          .map((e) => FactorySummary.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
   }
 }

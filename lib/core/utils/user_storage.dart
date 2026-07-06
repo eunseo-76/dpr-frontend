@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:dpr_frontend/core/models/factory_summary.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserStorage {
@@ -7,8 +10,7 @@ class UserStorage {
   static const _position = 'user_position';
   static const _companyId = 'user_company_id';
   static const _companyName = 'user_company_name';
-  static const _factoryId = 'user_factory_id';
-  static const _factoryName = 'user_factory_name';
+  static const _factories = 'user_factories';
 
   static Future<void> saveUserInfo(
     String role,
@@ -16,8 +18,7 @@ class UserStorage {
     String position,
     int companyId,
     String companyName,
-    int? factoryId,
-    String? factoryName,
+    List<FactorySummary> factories,
   ) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_role, role);
@@ -25,8 +26,10 @@ class UserStorage {
     await prefs.setString(_position, position);
     await prefs.setInt(_companyId, companyId);
     await prefs.setString(_companyName, companyName);
-    if (factoryId != null) await prefs.setInt(_factoryId, factoryId);
-    if (factoryName != null) await prefs.setString(_factoryName, factoryName);
+    await prefs.setString(
+      _factories,
+      jsonEncode(factories.map((f) => f.toJson()).toList()),
+    );
   }
 
   // 한 번도 로그인 안 한 경우 sharedPreferences가 비어있음.
@@ -66,14 +69,13 @@ class UserStorage {
     return prefs.getString(_companyName);
   }
 
-  static Future<int?> getFactoryId() async {
+  static Future<List<FactorySummary>> getFactories() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getInt(_factoryId);
-  }
-
-  static Future<String?> getFactoryName() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_factoryName);
+    final raw = prefs.getString(_factories);
+    if (raw == null) return [];
+    return (jsonDecode(raw) as List)
+        .map((e) => FactorySummary.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   static Future<void> updateName(String name) async {
@@ -91,8 +93,7 @@ class UserStorage {
       prefs.remove(_position),
       prefs.remove(_companyId),
       prefs.remove(_companyName),
-      prefs.remove(_factoryId),
-      prefs.remove(_factoryName),
+      prefs.remove(_factories),
     });
   }
 }

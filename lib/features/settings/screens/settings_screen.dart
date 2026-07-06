@@ -107,30 +107,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           MenuCard(
             items: [
-              MenuItem(
-                icon: Icons.factory,
-                label: '공장 관리',
-                onTap: () {
-                  final service = MasterDataService(endpoint: ApiConstants.factory_, idKey: 'factoryId');
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => MasterDataManageScreen(
-                        title: '공장 관리',
-                        service: service,
-                        fields: detailFields,
-                        showAvatar: true,
-                        dialogBuilder: (ctx, item, onRefresh) => showFactoryFormDialog(
-                          ctx,
-                          item: item,
+              if (_role == 'OWNER')
+                MenuItem(
+                  icon: Icons.factory,
+                  label: '공장 관리',
+                  onTap: () {
+                    final service = MasterDataService(endpoint: ApiConstants.factory_, idKey: 'factoryId');
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MasterDataManageScreen(
+                          title: '공장 관리',
                           service: service,
-                          onRefresh: onRefresh,
+                          fields: detailFields,
+                          showAvatar: true,
+                          dialogBuilder: (ctx, item, onRefresh) => showFactoryFormDialog(
+                            ctx,
+                            item: item,
+                            service: service,
+                            onRefresh: onRefresh,
+                          ),
                         ),
                       ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
               MenuItem(
                 icon: Icons.precision_manufacturing,
                 label: '공정 관리',

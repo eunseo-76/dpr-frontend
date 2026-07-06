@@ -1,3 +1,4 @@
+import 'package:dpr_frontend/core/models/factory_summary.dart';
 import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/utils/token_storage.dart';
 import 'package:dpr_frontend/core/utils/user_storage.dart';
@@ -23,7 +24,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
   String _position = '';
   String _role = '';
   String _companyName = '';
-  String? _factoryName;
+  List<FactorySummary> _factories = [];
 
   @override
   void initState() {
@@ -37,15 +38,15 @@ class _MyPageScreenState extends State<MyPageScreen> {
       UserStorage.getPosition(),
       UserStorage.getRole(),
       UserStorage.getCompanyName(),
-      UserStorage.getFactoryName(),
     ]);
+    final factories = await UserStorage.getFactories();
     if (mounted) {
       setState(() {
         _name = results[0] ?? '';
         _position = results[1] ?? '';
         _role = results[2] ?? '';
         _companyName = results[3] ?? '';
-        _factoryName = results[4];
+        _factories = factories;
       });
     }
   }
@@ -135,7 +136,7 @@ class _MyPageScreenState extends State<MyPageScreen> {
           ),
           const SizedBox(height: 24),
           // 소속 정보
-          if (_role == 'OWNER' || _factoryName != null)
+          if (_factories.isNotEmpty)
             Container(
               margin: const EdgeInsets.only(bottom: 16),
               decoration: BoxDecoration(
@@ -144,12 +145,14 @@ class _MyPageScreenState extends State<MyPageScreen> {
               ),
               child: Column(
                 children: [
-                  if (_factoryName != null)
-                    ListTile(
-                      leading: Icon(Icons.factory_outlined, color: Colors.grey[600]),
-                      title: Text('소속', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
-                      subtitle: Text(_factoryName!, style: const TextStyle(fontSize: 15, color: Colors.black87)),
+                  ListTile(
+                    leading: Icon(Icons.factory_outlined, color: Colors.grey[600]),
+                    title: Text('소속', style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                    subtitle: Text(
+                      _factories.map((f) => f.factoryName).join(', '),
+                      style: const TextStyle(fontSize: 15, color: Colors.black87),
                     ),
+                  ),
                 ],
               ),
             ),

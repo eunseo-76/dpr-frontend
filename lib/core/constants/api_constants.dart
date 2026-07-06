@@ -15,6 +15,7 @@ class ApiConstants {
   static const String invite = '/api/auth/invite';
   static const String register = '/api/auth/register';
   static const String users = '/api/users';
+  static const String assignFactory = '/api/users/assign-factory';
   static const String forgotPassword = '/api/auth/forgot-password';
   static const String verifyResetCode = '/api/auth/verify-reset-code';
   static const String resetPassword = '/api/auth/reset-password';

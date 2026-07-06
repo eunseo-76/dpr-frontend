@@ -1,4 +1,5 @@
 import 'package:dpr_frontend/core/utils/toast.dart';
+import 'package:dpr_frontend/core/utils/user_storage.dart';
 import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
 import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
 import 'package:dpr_frontend/core/widgets/name_avatar.dart';
@@ -12,6 +13,8 @@ import 'package:dpr_frontend/features/settings/models/invitation.dart';
 import 'package:dpr_frontend/features/settings/models/user_member.dart';
 import 'package:dpr_frontend/features/settings/services/invitation_service.dart';
 import 'package:dpr_frontend/features/settings/widgets/invitation_create_dialog.dart';
+import 'package:dpr_frontend/features/settings/widgets/manager_factory_sync_dialog.dart';
+import 'package:dpr_frontend/features/settings/widgets/staff_factory_assign_dialog.dart';
 import 'package:flutter/material.dart';
 
 class InvitationManageScreen extends StatefulWidget {
@@ -30,6 +33,10 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
   static const _filterLabels = ['전체', '공장별', '매니저만', '멤버만'];
   bool _isSelectionMode = false;
   final Set<int> _selectedUserIds = {};
+  String? _currentUserRole;
+
+  Iterable<UserMember> get _selectedUsers =>
+      _users.where((u) => _selectedUserIds.contains(u.userId));
 
   @override
   void initState() {
@@ -44,6 +51,7 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
         _service.getUsers(),
         _service.getInvitations(),
       ]);
+      final role = await UserStorage.getRole();
       if (!mounted) return;
       setState(() {
         _users = (results[0] as List<UserMember>)
@@ -51,6 +59,7 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
             .toList();
         final invitations = results[1] as List<Invitation>;
         _pendingInvitations = invitations.where((i) => i.isPending).toList();
+        _currentUserRole = role;
         _isLoading = false;
       });
     } catch (e) {
@@ -117,6 +126,62 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
     } catch (e) {
       if (!mounted) return;
       showToast(context, e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  Widget _actionIconButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    Color? iconColor,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Icon(icon, size: 20, color: iconColor ?? Colors.grey[700]),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openStaffAssignDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (_) => StaffFactoryAssignDialog(userIds: _selectedUserIds.toList()),
+    );
+    if (!mounted) return;
+    if (result == true) {
+      showToast(context, '배치되었습니다', isError: false);
+      _exitSelectionMode();
+      _loadData();
+    }
+  }
+
+  Future<void> _openManagerSyncDialog() async {
+    final manager = _selectedUsers.single;
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (_) => ManagerFactorySyncDialog(manager: manager),
+    );
+    if (!mounted) return;
+    if (result == true) {
+      showToast(context, '담당 공장이 수정되었습니다', isError: false);
+      _exitSelectionMode();
+      _loadData();
     }
   }
 
@@ -193,61 +258,39 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         actions: [
-          if (_isSelectionMode)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: GestureDetector(
-                onTap: _confirmAndDeleteUsers,
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Icon(Icons.delete_outline, size: 20, color: Colors.red[400]),
-                ),
+          if (_isSelectionMode) ...[
+            if (_selectedUserIds.isNotEmpty &&
+                _selectedUsers.every((u) => u.role == 'STAFF'))
+              _actionIconButton(
+                icon: Icons.move_to_inbox_outlined,
+                onTap: _openStaffAssignDialog,
               ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: GestureDetector(
-                onTap: () async {
-                  final result = await showDialog<Map<String, dynamic>>(
-                    context: context,
-                    builder: (_) => const InvitationCreateDialog(),
-                  );
-                  if (!mounted) return;
-                  if (result != null) {
-                    showToast(context, '초대를 보냈습니다', isError: false);
-                    _loadData();
-                  }
-                },
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.1),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Icon(Icons.add, size: 20, color: Colors.grey[700]),
-                ),
+            if (_selectedUserIds.length == 1 &&
+                _selectedUsers.single.role == 'MANAGER' &&
+                _currentUserRole == 'OWNER')
+              _actionIconButton(
+                icon: Icons.edit_location_alt_outlined,
+                onTap: _openManagerSyncDialog,
               ),
+            _actionIconButton(
+              icon: Icons.delete_outline,
+              iconColor: Colors.red[400],
+              onTap: _confirmAndDeleteUsers,
+            ),
+          ] else
+            _actionIconButton(
+              icon: Icons.add,
+              onTap: () async {
+                final result = await showDialog<Map<String, dynamic>>(
+                  context: context,
+                  builder: (_) => const InvitationCreateDialog(),
+                );
+                if (!mounted) return;
+                if (result != null) {
+                  showToast(context, '초대를 보냈습니다', isError: false);
+                  _loadData();
+                }
+              },
             ),
         ],
       ),
@@ -289,8 +332,13 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
       case 1: // 공장별
         final grouped = <String, List<UserMember>>{};
         for (final u in _users) {
-          final key = u.factoryName ?? '공장 미지정';
-          grouped.putIfAbsent(key, () => []).add(u);
+          if (u.factories.isEmpty) {
+            grouped.putIfAbsent('공장 미지정', () => []).add(u);
+          } else {
+            for (final f in u.factories) {
+              grouped.putIfAbsent(f.factoryName, () => []).add(u);
+            }
+          }
         }
         return grouped.entries.expand((e) => [
               Padding(
@@ -561,10 +609,13 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
               children: [
                 _roleChip(user.role),
                 const SizedBox(height: 4),
-                if (user.factoryName != null)
-                  Text(
-                    user.factoryName!,
-                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                if (user.factories.isNotEmpty)
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    alignment: WrapAlignment.end,
+                    children:
+                        user.factories.map((f) => _infoChip(f.factoryName)).toList(),
                   ),
               ],
             ),
