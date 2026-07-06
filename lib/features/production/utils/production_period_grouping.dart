@@ -74,11 +74,6 @@ List<ProductionPeriodGroup> groupProductionsForPeriod(
       '${p.processId}|${p.clientId}|${p.unitId}|${p.date}': p,
   };
 
-  final Map<String, double?> amountByKey = {
-    for (final p in productions)
-      '${p.processId}|${p.clientId}|${p.unitId}|${p.date}': p.amount,
-  };
-
   String lookupKey(int groupId, ProductionRowScaffold row, String date) {
     return groupBy == '공정별'
         ? '$groupId|${row.rowGroupId}|${row.unitId}|$date'
@@ -107,8 +102,11 @@ List<ProductionPeriodGroup> groupProductionsForPeriod(
       final amounts = columns.map((column) {
         double? sum;
         for (final date in column.dates) {
-          final a = amountByKey[lookupKey(group.groupId, rowScaffold, date)];
-          if (a != null) sum = (sum ?? 0) + a;
+          final p = byKey[lookupKey(group.groupId, rowScaffold, date)];
+          final v = rowScaffold.shift == '주' ? p?.dayShift : p?.nightShift;
+          if (v != null && p?.unitPrice != null) {
+            sum = (sum ?? 0) + (v * p!.unitPrice!);
+          }
         }
         return sum;
       }).toList();

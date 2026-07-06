@@ -78,17 +78,21 @@ List<ProductionDayGroup> groupProductionsForDay(
           ? clientNicknames[rowScaffold.rowGroupId]
           : processNicknames[rowScaffold.rowGroupId];
 
+      final value = rowScaffold.shift == '주'
+          ? production?.dayShift
+          : production?.nightShift;
+
       return ProductionDayRow(
         rowGroupId: rowScaffold.rowGroupId,
         rowGroupName: rowNickname ?? rowScaffold.rowGroupName,
         shift: rowScaffold.shift,
         unitId: rowScaffold.unitId,
         unitName: rowScaffold.unitName,
-        value: rowScaffold.shift == '주'
-            ? production?.dayShift
-            : production?.nightShift,
+        value: value,
         unitPrice: production?.unitPrice,
-        amount: production?.amount,
+        amount: (value != null && production?.unitPrice != null)
+            ? value * production!.unitPrice!
+            : null,
         productionId: production?.productionId,
       );
     }).toList();
