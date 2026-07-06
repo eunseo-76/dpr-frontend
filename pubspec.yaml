@@ -38,6 +38,13 @@ dependencies:
   # 추가한 내용
   http: ^1.6.0
   shared_preferences: ^2.5.5
+  data_table_2: ^2.7.2
+  logger: ^2.2.0
+  intl: ^0.20.2
+  two_dimensional_scrollables: ^0.5.2
+  lottie: ^3.3.1
+  liquid_glass_widgets: ^0.18.5
+  table_calendar: ^3.1.2
 
 dev_dependencies:
   flutter_test:
@@ -49,6 +56,11 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: true
+  image_path: "assets/icon/icon.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -61,10 +73,8 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/animations/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
