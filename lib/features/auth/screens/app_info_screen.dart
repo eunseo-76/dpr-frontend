@@ -1,7 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
-class AppInfoScreen extends StatelessWidget {
+class AppInfoScreen extends StatefulWidget {
   const AppInfoScreen({super.key});
+
+  @override
+  State<AppInfoScreen> createState() => _AppInfoScreenState();
+}
+
+class _AppInfoScreenState extends State<AppInfoScreen> {
+  String _version = '';
+
+  @override
+  void initState() {
+    super.initState();
+    PackageInfo.fromPlatform().then((info) {
+      setState(() => _version = 'v${info.version}');
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -12,25 +28,13 @@ class AppInfoScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         children: [
           const SizedBox(height: 32),
-          // TODO: 앱 아이콘 제작 후 Image.asset()으로 교체
           Center(
-            child: Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E3A5F),
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: const Center(
-                child: Text(
-                  'DPR',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2,
-                  ),
-                ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: Image.asset(
+                'assets/icon/icon.png',
+                width: 80,
+                height: 80,
               ),
             ),
           ),
@@ -44,7 +48,7 @@ class AppInfoScreen extends StatelessWidget {
           const SizedBox(height: 4),
           Center(
             child: Text(
-              'v1.0.0',
+              _version,
               style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             ),
           ),
@@ -70,7 +74,7 @@ class AppInfoScreen extends StatelessWidget {
               onTap: () => showLicensePage(
                 context: context,
                 applicationName: '생산일보 (DPR)',
-                applicationVersion: 'v1.0.0',
+                applicationVersion: _version,
               ),
             ),
           ),

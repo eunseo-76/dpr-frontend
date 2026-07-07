@@ -359,7 +359,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                           ),
                                           alignment: Alignment.center,
                                           child: Text(
-                                            entry.value.processName,
+                                            entry.value.processNickname ?? entry.value.processName,
                                             style: TextStyle(
                                               fontWeight: isSelected
                                                   ? FontWeight.w600
