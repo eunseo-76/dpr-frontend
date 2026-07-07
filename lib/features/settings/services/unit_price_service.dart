@@ -2,29 +2,29 @@ import 'dart:convert';
 
 import 'package:dpr_frontend/core/constants/api_constants.dart';
 import 'package:dpr_frontend/core/network/api_client.dart';
-import 'package:dpr_frontend/features/settings/models/unit_price.dart';
+import 'package:dpr_frontend/features/settings/models/process_unit_price.dart';
 
 class UnitPriceService {
   final _client = ApiClient();
 
-  String _endpoint(int factoryId, int processId) =>
-      '${ApiConstants.factory_}/$factoryId/processes/$processId/unit-prices';
+  String _clientEndpoint(int factoryId, int clientId) =>
+      '${ApiConstants.factory_}/$factoryId/clients/$clientId/unit-prices';
 
-  Future<List<UnitPrice>> getUnitPrices(int factoryId, int processId) async {
-    final response = await _client.get(_endpoint(factoryId, processId));
+  Future<List<ProcessUnitPrice>> getUnitPricesByClient(int factoryId, int clientId) async {
+    final response = await _client.get(_clientEndpoint(factoryId, clientId));
     if (response.statusCode == 200) {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       final dataList = body['data'] as List? ?? [];
       return dataList
-          .map((e) => UnitPrice.fromJson(e as Map<String, dynamic>))
+          .map((e) => ProcessUnitPrice.fromJson(e as Map<String, dynamic>))
           .toList();
     }
     throw Exception('단가 조회 실패: ${response.statusCode}');
   }
 
-  Future<void> saveUnitPrices(int factoryId, int processId, List<Map<String, dynamic>> entries) async {
+  Future<void> saveUnitPricesByClient(int factoryId, int clientId, List<Map<String, dynamic>> entries) async {
     final response = await _client.put(
-      '${ApiConstants.factory_}/$factoryId/processes/$processId/unit-prices',
+      _clientEndpoint(factoryId, clientId),
       {'entries': entries},
     );
     if (response.statusCode != 200) {

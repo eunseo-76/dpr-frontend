@@ -30,7 +30,7 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
   List<Invitation> _pendingInvitations = [];
   bool _isLoading = true;
   int _filterIndex = 0;
-  static const _filterLabels = ['전체', '공장별', '매니저만', '멤버만'];
+  static const _filterLabels = ['전체', '공장별', '관리자만', '일반만'];
   bool _isSelectionMode = false;
   final Set<int> _selectedUserIds = {};
   String? _currentUserRole;
@@ -73,8 +73,8 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
   String _roleLabel(String role) {
     return switch (role) {
       'OWNER' => '사장',
-      'MANAGER' => '매니저',
-      'STAFF' => '멤버',
+      'MANAGER' => '관리자',
+      'STAFF' => '일반',
       _ => role,
     };
   }
@@ -161,7 +161,8 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
   Future<void> _openStaffAssignDialog() async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (_) => StaffFactoryAssignDialog(userIds: _selectedUserIds.toList()),
+      builder: (_) =>
+          StaffFactoryAssignDialog(userIds: _selectedUserIds.toList()),
     );
     if (!mounted) return;
     if (result == true) {
@@ -222,8 +223,7 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 32),
                 child: Center(
-                  child: Text('회원이 없습니다',
-                      style: TextStyle(color: Colors.grey)),
+                  child: Text('회원이 없습니다', style: TextStyle(color: Colors.grey)),
                 ),
               )
             else
@@ -239,94 +239,93 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
         if (!didPop) _exitSelectionMode();
       },
       child: Scaffold(
-      extendBodyBehindAppBar: true,
-      backgroundColor: Colors.transparent,
-      appBar: AppBar(
-        leading: _isSelectionMode
-            ? IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: _exitSelectionMode,
-              )
-            : null,
-        title: Text(
-          _isSelectionMode
-              ? '${_selectedUserIds.length}명 선택됨'
-              : '초대 계정 관리',
-          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-        ),
+        extendBodyBehindAppBar: true,
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        actions: [
-          if (_isSelectionMode) ...[
-            if (_selectedUserIds.isNotEmpty &&
-                _selectedUsers.every((u) => u.role == 'STAFF'))
-              _actionIconButton(
-                icon: Icons.edit_rounded,
-                onTap: _openStaffAssignDialog,
-              ),
-            if (_selectedUserIds.length == 1 &&
-                _selectedUsers.single.role == 'MANAGER' &&
-                _currentUserRole == 'OWNER')
-              _actionIconButton(
-                icon: Icons.edit_rounded,
-                onTap: _openManagerSyncDialog,
-              ),
-            if (_selectedUserIds.isNotEmpty &&
-                (_currentUserRole == 'OWNER' ||
-                    _selectedUsers.every((u) => u.role == 'STAFF')))
-              _actionIconButton(
-                icon: Icons.delete_outline,
-                iconColor: Colors.red[400],
-                onTap: _confirmAndDeleteUsers,
-              ),
-          ] else
-            _actionIconButton(
-              icon: Icons.add,
-              onTap: () async {
-                final result = await showDialog<Map<String, dynamic>>(
-                  context: context,
-                  builder: (_) => const InvitationCreateDialog(),
-                );
-                if (!mounted) return;
-                if (result != null) {
-                  showToast(context, '초대를 보냈습니다', isError: false);
-                  _loadData();
-                }
-              },
-            ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Container(
-            height: MediaQuery.of(context).padding.top + kToolbarHeight,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Colors.white, Colors.grey[100]!],
-              ),
-            ),
+        appBar: AppBar(
+          leading: _isSelectionMode
+              ? IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: _exitSelectionMode,
+                )
+              : null,
+          title: Text(
+            _isSelectionMode ? '${_selectedUserIds.length}명 선택됨' : '초대 계정 관리',
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
           ),
-          Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Color(0xFFEFF0F4),
-                border: Border(
-                    top: BorderSide(color: Color(0xFFB0B8C8), width: 2)),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          actions: [
+            if (_isSelectionMode) ...[
+              if (_selectedUserIds.isNotEmpty &&
+                  _selectedUsers.every((u) => u.role == 'STAFF'))
+                _actionIconButton(
+                  icon: Icons.edit_rounded,
+                  onTap: _openStaffAssignDialog,
+                ),
+              if (_selectedUserIds.length == 1 &&
+                  _selectedUsers.single.role == 'MANAGER' &&
+                  _currentUserRole == 'OWNER')
+                _actionIconButton(
+                  icon: Icons.edit_rounded,
+                  onTap: _openManagerSyncDialog,
+                ),
+              if (_selectedUserIds.isNotEmpty &&
+                  (_currentUserRole == 'OWNER' ||
+                      _selectedUsers.every((u) => u.role == 'STAFF')))
+                _actionIconButton(
+                  icon: Icons.delete_outline,
+                  iconColor: Colors.red[400],
+                  onTap: _confirmAndDeleteUsers,
+                ),
+            ] else
+              _actionIconButton(
+                icon: Icons.add,
+                onTap: () async {
+                  final result = await showDialog<Map<String, dynamic>>(
+                    context: context,
+                    builder: (_) => const InvitationCreateDialog(),
+                  );
+                  if (!mounted) return;
+                  if (result != null) {
+                    showToast(context, '초대를 보냈습니다', isError: false);
+                    _loadData();
+                  }
+                },
+              ),
+          ],
+        ),
+        body: Column(
+          children: [
+            Container(
+              height: MediaQuery.of(context).padding.top + kToolbarHeight,
+              decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
-                  end: Alignment(0, -0.95),
-                  colors: [Color(0xFFDFE4F0), Color(0xFFEFF0F4)],
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.white, Colors.grey[100]!],
                 ),
               ),
-              child: body,
             ),
-          ),
-        ],
+            Expanded(
+              child: Container(
+                decoration: const BoxDecoration(
+                  color: Color(0xFFEFF0F4),
+                  border: Border(
+                    top: BorderSide(color: Color(0xFFB0B8C8), width: 2),
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment(0, -0.95),
+                    colors: [Color(0xFFDFE4F0), Color(0xFFEFF0F4)],
+                  ),
+                ),
+                child: body,
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
     );
   }
 
@@ -343,27 +342,34 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
             }
           }
         }
-        return grouped.entries.expand((e) => [
-              Padding(
-                padding: const EdgeInsets.only(top: 12, bottom: 8),
-                child: Text(e.key,
+        return grouped.entries
+            .expand(
+              (e) => [
+                Padding(
+                  padding: const EdgeInsets.only(top: 12, bottom: 8),
+                  child: Text(
+                    e.key,
                     style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black54)),
-              ),
-              ...e.value.map(_buildUserCard),
-            ]).toList();
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+                ...e.value.map(_buildUserCard),
+              ],
+            )
+            .toList();
       case 2: // 매니저
         final filtered = _users.where((u) => u.role == 'MANAGER').toList();
         if (filtered.isEmpty) {
-          return [_emptyMessage('매니저가 없습니다')];
+          return [_emptyMessage('관리자가 없습니다')];
         }
         return filtered.map(_buildUserCard).toList();
       case 3: // 멤버
         final filtered = _users.where((u) => u.role == 'STAFF').toList();
         if (filtered.isEmpty) {
-          return [_emptyMessage('멤버가 없습니다')];
+          return [_emptyMessage('일반이 없습니다')];
         }
         return filtered.map(_buildUserCard).toList();
       default: // 전체
@@ -414,97 +420,118 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
       builder: (_) {
         bool copyTrigger = false;
         return StatefulBuilder(
-        builder: (ctx, setDialogState) {
-          return AlertDialog(
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            insetPadding: const EdgeInsets.symmetric(horizontal: 20),
-            title: const Text('초대코드', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  inv.email,
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-                ),
-                const SizedBox(height: 20),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    const gap = 8.0;
-                    final itemWidth = ((constraints.maxWidth - gap * 5) / 6).clamp(0, 38.0);
-                    return IgnorePointer(
-                      child: PinCodeField(
-                        controller: controller,
-                        autofocus: false,
-                        gap: gap,
-                        itemWidth: itemWidth.toDouble(),
-                        itemHeight: 46,
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 20),
-                PopEffect(
-                  trigger: copyTrigger,
-                  animateOnDeactivate: true,
-                  peakScale: 1.15,
-                  child: GestureDetector(
-                    onTap: () async {
-                      setDialogState(() => copyTrigger = !copyTrigger);
-                      await Clipboard.setData(ClipboardData(text: inv.inviteCode));
-                      if (mounted) showToast(context, '초대코드가 복사되었습니다', isError: false);
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.1),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
+          builder: (ctx, setDialogState) {
+            return AlertDialog(
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              insetPadding: const EdgeInsets.symmetric(horizontal: 20),
+              title: const Text(
+                '초대코드',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      inv.email,
+                      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                    ),
+                    const SizedBox(height: 20),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        const gap = 8.0;
+                        final itemWidth = ((constraints.maxWidth - gap * 5) / 6)
+                            .clamp(0, 38.0);
+                        return IgnorePointer(
+                          child: PinCodeField(
+                            controller: controller,
+                            autofocus: false,
+                            gap: gap,
+                            itemWidth: itemWidth.toDouble(),
+                            itemHeight: 46,
                           ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.content_copy, size: 16, color: Colors.grey[700]),
-                          const SizedBox(width: 6),
-                          Text(
-                            '복사',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[700],
-                              fontWeight: FontWeight.w500,
-                            ),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    PopEffect(
+                      trigger: copyTrigger,
+                      animateOnDeactivate: true,
+                      peakScale: 1.15,
+                      child: GestureDetector(
+                        onTap: () async {
+                          setDialogState(() => copyTrigger = !copyTrigger);
+                          await Clipboard.setData(
+                            ClipboardData(text: inv.inviteCode),
+                          );
+                          if (mounted)
+                            showToast(context, '초대코드가 복사되었습니다', isError: false);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 10,
                           ),
-                        ],
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.1),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.content_copy,
+                                size: 16,
+                                color: Colors.grey[700],
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '복사',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[700],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 4),
-              ],
-            ),
-            actions: [
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black87,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                  ),
-                  child: const Text('닫기'),
+                    const SizedBox(height: 4),
+                  ],
                 ),
               ),
-            ],
-            actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-          );
-        },
+              actions: [
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black87,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text('닫기'),
+                  ),
+                ),
+              ],
+              actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+            );
+          },
         );
       },
     ).then((_) => controller.dispose());
@@ -514,56 +541,62 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
     return GestureDetector(
       onTap: () => _showInviteCodeDialog(inv),
       child: Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  inv.email,
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w500),
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    inv.email,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(8),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    '대기중',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.orange.shade700,
+                    ),
+                  ),
                 ),
-                child: Text(
-                  '대기중',
-                  style:
-                      TextStyle(fontSize: 11, color: Colors.orange.shade700),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              _roleChip(inv.role),
-              if (inv.factoryName != null) ...[
-                const SizedBox(width: 6),
-                _infoChip(inv.factoryName!),
               ],
-              const Spacer(),
-              Text(
-                _remainingTime(inv.expiresAt),
-                style: TextStyle(fontSize: 11, color: Colors.grey[500]),
-              ),
-            ],
-          ),
-        ],
-      ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _roleChip(inv.role),
+                if (inv.factoryName != null) ...[
+                  const SizedBox(width: 6),
+                  _infoChip(inv.factoryName!),
+                ],
+                const Spacer(),
+                Text(
+                  _remainingTime(inv.expiresAt),
+                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -603,7 +636,9 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
                   Text(
                     user.name,
                     style: const TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w500),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const SizedBox(height: 2),
                   Text(

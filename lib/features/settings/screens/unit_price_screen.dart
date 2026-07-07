@@ -6,7 +6,7 @@ import 'package:dpr_frontend/core/models/master_data_entity.dart';
 import 'package:dpr_frontend/core/services/master_data_service.dart';
 import 'package:dpr_frontend/features/client/models/factory_client.dart';
 import 'package:dpr_frontend/features/settings/models/factory_unit.dart';
-import 'package:dpr_frontend/features/settings/models/unit_price.dart';
+import 'package:dpr_frontend/features/settings/models/process_unit_price.dart';
 import 'package:dpr_frontend/features/settings/services/factory_mapping_service.dart';
 import 'package:dpr_frontend/features/settings/services/unit_price_service.dart';
 import 'package:dpr_frontend/features/utility/models/factory_process.dart';
@@ -40,9 +40,9 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
   List<FactoryUnit> _factoryUnits = [];
 
   int _selectedFactoryIndex = 0;
-  int _selectedProcessIndex = 0;
+  int _selectedClientIndex = 0;
 
-  List<UnitPrice> _unitPrices = [];
+  List<ProcessUnitPrice> _unitPrices = [];
   Map<int, _EditingEntry> _editingEntries = {};
 
   @override
@@ -58,13 +58,13 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
           .where((fp) => fp.factoryId == _currentFactoryId)
           .toList();
 
-  int get _currentProcessId =>
-      _currentProcesses[_selectedProcessIndex].processId;
-
   List<FactoryClient> get _currentClients =>
       _factoryClients
           .where((fc) => fc.factoryId == _currentFactoryId)
           .toList();
+
+  int get _currentClientId =>
+      _currentClients[_selectedClientIndex].clientId;
 
   List<FactoryUnit> get _currentUnits =>
       _factoryUnits.where((fu) => fu.factoryId == _currentFactoryId).toList();
@@ -90,7 +90,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
         _factoryUnits = results[3] as List<FactoryUnit>;
       });
 
-      if (_factories.isNotEmpty && _currentProcesses.isNotEmpty) {
+      if (_factories.isNotEmpty && _currentClients.isNotEmpty) {
         await _loadUnitPrices();
       }
     } catch (e) {
@@ -101,14 +101,14 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
   }
 
   Future<void> _loadUnitPrices() async {
-    if (_currentProcesses.isEmpty) return;
+    if (_currentClients.isEmpty) return;
 
     setState(() => _isPriceLoading = true);
 
     try {
-      final prices = await _unitPriceService.getUnitPrices(
+      final prices = await _unitPriceService.getUnitPricesByClient(
         _currentFactoryId,
-        _currentProcessId,
+        _currentClientId,
       );
       setState(() {
         _unitPrices = prices;
@@ -133,10 +133,10 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
       return;
     }
 
-    for (final client in _currentClients) {
+    for (final process in _currentProcesses) {
       final existing =
           _unitPrices
-              .where((up) => up.clientId == client.clientId)
+              .where((up) => up.processId == process.processId)
               .firstOrNull;
 
       if (existing != null) {
@@ -144,12 +144,12 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
             existing.price == existing.price.toInt()
                 ? existing.price.toInt().toString()
                 : existing.price.toString();
-        newEntries[client.clientId] = _EditingEntry(
+        newEntries[process.processId] = _EditingEntry(
           unitId: existing.unitId,
           priceText: priceText,
         );
       } else {
-        newEntries[client.clientId] = _EditingEntry(
+        newEntries[process.processId] = _EditingEntry(
           unitId: units.first.unitId,
           priceText: '0',
         );
@@ -160,13 +160,13 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
   }
 
   bool get _hasChanges {
-    for (final client in _currentClients) {
-      final editing = _editingEntries[client.clientId];
+    for (final process in _currentProcesses) {
+      final editing = _editingEntries[process.processId];
       if (editing == null) continue;
 
       final existing =
           _unitPrices
-              .where((up) => up.clientId == client.clientId)
+              .where((up) => up.processId == process.processId)
               .firstOrNull;
 
       if (existing != null) {
@@ -199,24 +199,24 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
 
     setState(() {
       _selectedFactoryIndex = index;
-      _selectedProcessIndex = 0;
+      _selectedClientIndex = 0;
     });
     _loadUnitPrices();
   }
 
-  Future<void> _onProcessSelected(int index) async {
-    if (index == _selectedProcessIndex) return;
+  Future<void> _onClientSelected(int index) async {
+    if (index == _selectedClientIndex) return;
 
     if (_hasChanges) {
       final confirmed = await confirmDiscardChanges(
         context,
-        content: '저장하지 않고 다른 공정으로 이동하시겠습니까?\n수정한 내용은 사라집니다.',
+        content: '저장하지 않고 다른 업체로 이동하시겠습니까?\n수정한 내용은 사라집니다.',
         confirmLabel: '이동',
       );
       if (!confirmed) return;
     }
 
-    setState(() => _selectedProcessIndex = index);
+    setState(() => _selectedClientIndex = index);
     _loadUnitPrices();
   }
 
@@ -225,7 +225,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
         _editingEntries.entries
             .map(
               (e) => {
-                'clientId': e.key,
+                'processId': e.key,
                 'unitId': e.value.unitId,
                 'price':
                     double.tryParse(e.value.priceController.text) ?? 0,
@@ -236,9 +236,9 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
     setState(() => _isPriceLoading = true);
 
     try {
-      await _unitPriceService.saveUnitPrices(
+      await _unitPriceService.saveUnitPricesByClient(
         _currentFactoryId,
-        _currentProcessId,
+        _currentClientId,
         entries,
       );
       if (mounted) showToast(context, '저장되었습니다', isError: false);
@@ -310,24 +310,24 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                       ? Center(child: Text('오류: $_error'))
                       : _factories.isEmpty
                           ? const Center(child: Text('등록된 공장이 없습니다'))
-                          : processes.isEmpty
+                          : clients.isEmpty
                 ? const FractionallySizedBox(
                     heightFactor: 0.5,
                     alignment: Alignment.topCenter,
                     child: Center(
                       child: Text(
-                        '이 공장에 등록된 공정이 없습니다.\n[공장별 항목 관리] 메뉴에서 공정을 추가해주세요.',
+                        '이 공장에 등록된 업체가 없습니다.\n[공장별 항목 관리] 메뉴에서 업체를 추가해주세요.',
                         textAlign: TextAlign.center,
                       ),
                     ),
                   )
-                : clients.isEmpty && !_isPriceLoading
+                : processes.isEmpty && !_isPriceLoading
                     ? const FractionallySizedBox(
                         heightFactor: 0.5,
                         alignment: Alignment.topCenter,
                         child: Center(
                           child: Text(
-                            '이 공장에 등록된 업체가 없습니다.\n[공장별 항목 관리] 메뉴에서 업체를 추가해주세요.',
+                            '이 공장에 등록된 공정이 없습니다.\n[공장별 항목 관리] 메뉴에서 공정을 추가해주세요.',
                             textAlign: TextAlign.center,
                           ),
                         ),
@@ -336,14 +336,14 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                             children: [
                               Row(
-                                children: processes.asMap().entries.map((entry) {
-                                  final isSelected = entry.key == _selectedProcessIndex;
-                                  final isLast = entry.key == processes.length - 1;
+                                children: clients.asMap().entries.map((entry) {
+                                  final isSelected = entry.key == _selectedClientIndex;
+                                  final isLast = entry.key == clients.length - 1;
                                   return Expanded(
                                     child: Padding(
                                       padding: EdgeInsets.only(right: isLast ? 0 : 2),
                                       child: GestureDetector(
-                                        onTap: () => _onProcessSelected(entry.key),
+                                        onTap: () => _onClientSelected(entry.key),
                                         child: WobbleEffect(
                                           trigger: isSelected,
                                           child: Container(
@@ -359,7 +359,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                           ),
                                           alignment: Alignment.center,
                                           child: Text(
-                                            entry.value.processNickname ?? entry.value.processName,
+                                            entry.value.clientNickname ?? entry.value.clientName,
                                             style: TextStyle(
                                               fontWeight: isSelected
                                                   ? FontWeight.w600
@@ -381,7 +381,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                 decoration: BoxDecoration(
                                   color: Colors.white,
                                   borderRadius: BorderRadius.only(
-                                    topLeft: _selectedProcessIndex == 0
+                                    topLeft: _selectedClientIndex == 0
                                         ? Radius.zero
                                         : const Radius.circular(12),
                                     topRight: const Radius.circular(12),
@@ -399,14 +399,14 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                         child: LoadingIndicator(size: 90),
                                       )
                                     : Column(
-                                        key: ValueKey(_selectedProcessIndex),
+                                        key: ValueKey(_selectedClientIndex),
                                   children: [
                                     const Row(
                                       children: [
                                         Expanded(
                                           flex: 2,
                                           child: Text(
-                                            '업체',
+                                            '공정',
                                             style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                             ),
@@ -435,9 +435,9 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                       ],
                                     ),
                                     const Divider(),
-                                    ...clients.map((client) {
+                                    ...processes.map((process) {
                                       final editing =
-                                          _editingEntries[client.clientId];
+                                          _editingEntries[process.processId];
                                       if (editing == null) {
                                         return const SizedBox.shrink();
                                       }
@@ -450,7 +450,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                           children: [
                                             Expanded(
                                               flex: 2,
-                                              child: Text(client.clientName),
+                                              child: Text(process.processNickname ?? process.processName),
                                             ),
                                             const SizedBox(width: 8),
                                             Expanded(

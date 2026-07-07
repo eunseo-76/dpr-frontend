@@ -1,23 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:package_info_plus/package_info_plus.dart';
 
-class AppInfoScreen extends StatefulWidget {
+class AppInfoScreen extends StatelessWidget {
+  // TODO: 릴리스 태그 붙일 때마다 여기 버전 문자열 직접 갱신
+  static const _version = 'v0.0.4';
+
   const AppInfoScreen({super.key});
-
-  @override
-  State<AppInfoScreen> createState() => _AppInfoScreenState();
-}
-
-class _AppInfoScreenState extends State<AppInfoScreen> {
-  String _version = '';
-
-  @override
-  void initState() {
-    super.initState();
-    PackageInfo.fromPlatform().then((info) {
-      setState(() => _version = 'v${info.version}');
-    });
-  }
 
   @override
   Widget build(BuildContext context) {

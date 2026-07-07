@@ -181,6 +181,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       decoration: InputDecoration(
                         hintText: '비밀번호',
                         hintStyle: TextStyle(color: Colors.grey[400]),
+                        errorMaxLines: 2,
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: Colors.grey[300]!),
                         ),
@@ -206,6 +207,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       decoration: InputDecoration(
                         hintText: '비밀번호 확인',
                         hintStyle: TextStyle(color: Colors.grey[400]),
+                        errorMaxLines: 2,
                         enabledBorder: UnderlineInputBorder(
                           borderSide: BorderSide(color: Colors.grey[300]!),
                         ),

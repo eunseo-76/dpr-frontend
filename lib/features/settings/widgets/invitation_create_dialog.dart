@@ -55,7 +55,13 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
     if (role == 'MANAGER') {
       final myFactories = await UserStorage.getFactories();
       factories = myFactories
-          .map((f) => MasterDataEntity(id: f.factoryId, name: f.factoryName, data: const {}))
+          .map(
+            (f) => MasterDataEntity(
+              id: f.factoryId,
+              name: f.factoryName,
+              data: const {},
+            ),
+          )
           .toList();
     } else {
       factories = await MasterDataService(
@@ -141,23 +147,34 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   _createdInviteCode != null ? '초대코드' : '초대하기',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
           ),
           IconButton(
             icon: const Icon(Icons.close),
-            onPressed: () => Navigator.pop(context, _createdInviteCode != null ? {'inviteCode': _createdInviteCode} : null),
+            onPressed: () => Navigator.pop(
+              context,
+              _createdInviteCode != null
+                  ? {'inviteCode': _createdInviteCode}
+                  : null,
+            ),
           ),
         ],
       ),
       contentPadding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-      content: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        child: _createdInviteCode != null
-            ? _buildCodeView()
-            : _buildFormView(),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: _createdInviteCode != null
+              ? _buildCodeView()
+              : _buildFormView(),
+        ),
       ),
       actionsPadding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
       actions: [
@@ -184,8 +201,10 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('이메일',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                  const Text(
+                    '이메일',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
                   const SizedBox(height: 6),
                   ShakeField(
                     key: _emailKey,
@@ -197,14 +216,19 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 12),
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('직급',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                  const Text(
+                    '직급',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
                   const SizedBox(height: 6),
                   ShakeField(
                     key: _positionKey,
@@ -215,48 +239,69 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
                       hintStyle: TextStyle(color: Colors.grey[400]),
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 12),
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('역할',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                  const Text(
+                    '역할',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
                     initialValue: _selectedRole,
                     decoration: InputDecoration(
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 12),
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     items: [
-                      const DropdownMenuItem(value: 'STAFF', child: Text('멤버')),
+                      const DropdownMenuItem(value: 'STAFF', child: Text('일반')),
                       if (!_isManager)
-                        const DropdownMenuItem(value: 'MANAGER', child: Text('매니저')),
+                        const DropdownMenuItem(
+                          value: 'MANAGER',
+                          child: Text('관리자'),
+                        ),
                     ],
                     onChanged: (v) {
                       if (v != null) setState(() => _selectedRole = v);
                     },
                   ),
                   const SizedBox(height: 16),
-                  const Text('공장',
-                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                  const Text(
+                    '공장',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<int>(
                     initialValue: _selectedFactoryId,
                     decoration: InputDecoration(
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 12),
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
                       border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8)),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     items: _factories
-                        .map((f) => DropdownMenuItem(value: f.id, child: Text(f.name)))
+                        .map(
+                          (f) => DropdownMenuItem(
+                            value: f.id,
+                            child: Text(f.name),
+                          ),
+                        )
                         .toList(),
                     onChanged: (v) {
                       if (v != null) setState(() => _selectedFactoryId = v);
@@ -285,7 +330,10 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
           LayoutBuilder(
             builder: (context, constraints) {
               const gap = 8.0;
-              final itemWidth = ((constraints.maxWidth - gap * 5) / 6).clamp(0, 38.0);
+              final itemWidth = ((constraints.maxWidth - gap * 5) / 6).clamp(
+                0,
+                38.0,
+              );
               return IgnorePointer(
                 child: PinCodeField(
                   controller: _codeDisplayController,
@@ -305,7 +353,10 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
             child: GestureDetector(
               onTap: _copyCode,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
@@ -352,7 +403,8 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: const Text('취소'),
             ),
@@ -366,14 +418,17 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
               child: _isSaving
                   ? const SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white),
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Text('초대'),
             ),
@@ -388,7 +443,8 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
       key: const ValueKey('code-actions'),
       width: double.infinity,
       child: ElevatedButton(
-        onPressed: () => Navigator.pop(context, {'inviteCode': _createdInviteCode}),
+        onPressed: () =>
+            Navigator.pop(context, {'inviteCode': _createdInviteCode}),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.black87,
           foregroundColor: Colors.white,

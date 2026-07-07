@@ -376,14 +376,17 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
         content: SizedBox(
           width: double.maxFinite,
           height: tableHeight.clamp(0, maxTableHeight),
-          child: TableView.builder(
-            columnCount: _columnCount,
-            rowCount: _rowCount,
-            pinnedRowCount: 1,
-            pinnedColumnCount: 1,
-            columnBuilder: _buildColumnSpan,
-            rowBuilder: _buildRowSpan,
-            cellBuilder: (context, vicinity) => _buildCell(context, vicinity),
+          child: ScrollConfiguration(
+            behavior: ScrollConfiguration.of(context).copyWith(overscroll: false),
+            child: TableView.builder(
+              columnCount: _columnCount,
+              rowCount: _rowCount,
+              pinnedRowCount: 1,
+              pinnedColumnCount: 1,
+              columnBuilder: _buildColumnSpan,
+              rowBuilder: _buildRowSpan,
+              cellBuilder: (context, vicinity) => _buildCell(context, vicinity),
+            ),
           ),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
