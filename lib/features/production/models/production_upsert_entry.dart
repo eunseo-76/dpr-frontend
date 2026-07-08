@@ -5,6 +5,8 @@ class ProductionUpsertEntry {
   final int unitId;
   final double? dayShift;
   final double? nightShift;
+  final double? wipDayShift;
+  final double? wipNightShift;
 
   ProductionUpsertEntry({
     required this.factoryId,
@@ -13,6 +15,8 @@ class ProductionUpsertEntry {
     required this.unitId,
     this.dayShift,
     this.nightShift,
+    this.wipDayShift,
+    this.wipNightShift,
   });
 
   Map<String, dynamic> toJson() => {
@@ -22,5 +26,7 @@ class ProductionUpsertEntry {
         'unitId': unitId,
         'dayShift': dayShift,
         'nightShift': nightShift,
+        'wipDayShift': wipDayShift,
+        'wipNightShift': wipNightShift,
       };
 }

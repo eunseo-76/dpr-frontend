@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dpr_frontend/core/utils/label_store.dart';
 import 'package:dpr_frontend/core/utils/number_format.dart';
 import 'package:dpr_frontend/core/widgets/section_card.dart';
 import 'package:dpr_frontend/features/unit/models/unit.dart';
@@ -6,12 +7,12 @@ import 'package:dpr_frontend/features/unit/models/unit.dart';
 class ProductionCardFooter {
   final Map<int, double> dailyByUnit;
   final Map<int, double> cumulativeByUnit;
-  final Map<int, double> amountByUnit;
+  final Map<int, double>? amountByUnit;
 
   ProductionCardFooter({
     required this.dailyByUnit,
     required this.cumulativeByUnit,
-    required this.amountByUnit,
+    this.amountByUnit,
   });
 }
 
@@ -21,6 +22,7 @@ class ProductionCard extends StatelessWidget {
   final List<Unit> units;
   final ProductionCardFooter? footer;
   final VoidCallback? onEditTap;
+  final bool wrapInCard;
 
   const ProductionCard({
     super.key,
@@ -29,6 +31,7 @@ class ProductionCard extends StatelessWidget {
     required this.units,
     this.footer,
     this.onEditTap,
+    this.wrapInCard = true,
   });
 
   @override
@@ -36,6 +39,7 @@ class ProductionCard extends StatelessWidget {
     return SectionCard(
       title: title,
       onEditTap: onEditTap,
+      wrapInCard: wrapInCard,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -50,13 +54,16 @@ class ProductionCard extends StatelessWidget {
   }
 
   Widget _buildFooter() {
+    final amountByUnit = footer!.amountByUnit;
     return Column(
       children: [
-        _footerRow('기간별 합계 실적', footer!.dailyByUnit),
+        _footerRow(LabelStore.get('PRODUCTION_HEADER_SUM', '합계'), footer!.dailyByUnit),
         _receiptDivider(),
-        _footerRow('누적실적', footer!.cumulativeByUnit),
-        _receiptDivider(),
-        _footerAmountRow('총 금액', footer!.amountByUnit),
+        _footerRow(LabelStore.get('PRODUCTION_HEADER_CUMULATIVE_SUM', '누적합계'), footer!.cumulativeByUnit),
+        if (amountByUnit != null) ...[
+          _receiptDivider(),
+          _footerAmountRow(LabelStore.get('PRODUCTION_HEADER_AMOUNT', '총 금액'), amountByUnit),
+        ],
       ],
     );
   }

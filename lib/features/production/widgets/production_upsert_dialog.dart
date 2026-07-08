@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dpr_frontend/core/utils/label_store.dart';
 import 'package:dpr_frontend/core/utils/validators.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
 import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
@@ -14,6 +15,7 @@ class ProductionUpsertRow {
   final String shift;
   final String unitName;
   final double? value;
+  final double? wip;
 
   ProductionUpsertRow({
     required this.factoryId,
@@ -25,6 +27,7 @@ class ProductionUpsertRow {
     required this.shift,
     required this.unitName,
     this.value,
+    this.wip,
   });
 }
 
@@ -50,7 +53,9 @@ class ProductionUpsertDialog extends StatefulWidget {
 
 class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
   late final List<TextEditingController> _controllers;
+  late final List<TextEditingController> _wipControllers;
   late final List<String> _initialTexts;
+  late final List<String> _initialWipTexts;
   bool _hasChanges = false;
   bool _isSaving = false;
 
@@ -58,23 +63,26 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
 
-  int get _columnCount => 4;
+  int get _columnCount => 5;
   int get _rowCount => 1 + widget.rows.length;
 
   @override
   void initState() {
     super.initState();
     _initialTexts = widget.rows.map((r) => _formatInitial(r.value)).toList();
+    _initialWipTexts = widget.rows.map((r) => _formatInitial(r.wip)).toList();
     _controllers =
         _initialTexts.map((t) => TextEditingController(text: t)).toList();
-    for (final c in _controllers) {
+    _wipControllers =
+        _initialWipTexts.map((t) => TextEditingController(text: t)).toList();
+    for (final c in [..._controllers, ..._wipControllers]) {
       c.addListener(_onChanged);
     }
   }
 
   @override
   void dispose() {
-    for (final c in _controllers) {
+    for (final c in [..._controllers, ..._wipControllers]) {
       c.dispose();
     }
     super.dispose();
@@ -90,7 +98,8 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
   void _onChanged() {
     bool changed = false;
     for (var i = 0; i < widget.rows.length; i++) {
-      if (_controllers[i].text != _initialTexts[i]) {
+      if (_controllers[i].text != _initialTexts[i] ||
+          _wipControllers[i].text != _initialWipTexts[i]) {
         changed = true;
         break;
       }
@@ -110,6 +119,10 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
       final value = text.isEmpty && _initialTexts[i].isNotEmpty
           ? 0.0
           : double.tryParse(text);
+      final wipText = _wipControllers[i].text;
+      final wip = wipText.isEmpty && _initialWipTexts[i].isNotEmpty
+          ? 0.0
+          : double.tryParse(wipText);
 
       grouped.putIfAbsent(
         key,
@@ -123,8 +136,10 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
 
       if (row.shift == '주') {
         grouped[key]!['dayShift'] = value;
+        grouped[key]!['wipDayShift'] = wip;
       } else {
         grouped[key]!['nightShift'] = value;
+        grouped[key]!['wipNightShift'] = wip;
       }
     }
 
@@ -132,7 +147,14 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
     for (final g in grouped.values) {
       final dayShift = g['dayShift'] as double?;
       final nightShift = g['nightShift'] as double?;
-      if (dayShift == null && nightShift == null) continue;
+      final wipDayShift = g['wipDayShift'] as double?;
+      final wipNightShift = g['wipNightShift'] as double?;
+      if (dayShift == null &&
+          nightShift == null &&
+          wipDayShift == null &&
+          wipNightShift == null) {
+        continue;
+      }
 
       entries.add(ProductionUpsertEntry(
         factoryId: g['factoryId'] as int,
@@ -141,6 +163,8 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
         unitId: g['unitId'] as int,
         dayShift: dayShift,
         nightShift: nightShift,
+        wipDayShift: wipDayShift,
+        wipNightShift: wipNightShift,
       ));
     }
 
@@ -190,10 +214,11 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
 
   TableSpan _buildColumnSpan(int column) {
     final frac = switch (column) {
-      0 => 0.28,
-      1 => 0.12,
-      2 => 0.15,
-      _ => 0.45,
+      0 => 0.24,
+      1 => 0.10,
+      2 => 0.13,
+      3 => 0.265,
+      _ => 0.265,
     };
     return TableSpan(
       extent: FractionalTableSpanExtent(frac),
@@ -223,7 +248,13 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
 
     Widget child;
     if (vicinity.row == 0) {
-      final headers = [widget.rowLabelHeader, '구분', '단위', '값'];
+      final headers = [
+        widget.rowLabelHeader,
+        LabelStore.get('PRODUCTION_HEADER_TYPE', '구분'),
+        LabelStore.get('PRODUCTION_HEADER_UNIT', '단위'),
+        LabelStore.get('PRODUCTION_HEADER_VALUE', '값'),
+        LabelStore.get('PRODUCTION_HEADER_WIP', '재공'),
+      ];
       child = Container(
         alignment: Alignment.centerLeft,
         padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -253,46 +284,10 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
             alignment: Alignment.center,
             child: Text(row.unitName, style: const TextStyle(fontSize: 13)),
           );
+        case 3:
+          child = _inputCell(context, _controllers[dataIndex]);
         default:
-          child = Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-            child: Theme(
-              data: Theme.of(context).copyWith(
-                textSelectionTheme: const TextSelectionThemeData(
-                  selectionHandleColor: Colors.transparent,
-                ),
-              ),
-              child: TextField(
-              controller: _controllers[dataIndex],
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
-              inputFormatters: [PositiveDecimalFormatter()],
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 13),
-              decoration: InputDecoration(
-                isDense: true,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 6,
-                ),
-                hintText: '-',
-                hintStyle: TextStyle(color: Colors.grey[400]),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.grey[300]!),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                  borderSide: const BorderSide(color: Colors.blue, width: 2),
-                ),
-              ),
-            ),
-            ),
-          );
+          child = _inputCell(context, _wipControllers[dataIndex]);
       }
     }
 
@@ -300,6 +295,45 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
       rowMergeStart: merge?.$1,
       rowMergeSpan: merge?.$2,
       child: child,
+    );
+  }
+
+  Widget _inputCell(BuildContext context, TextEditingController controller) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          textSelectionTheme: const TextSelectionThemeData(
+            selectionHandleColor: Colors.transparent,
+          ),
+        ),
+        child: TextField(
+          controller: controller,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          inputFormatters: [PositiveDecimalFormatter()],
+          textAlign: TextAlign.center,
+          style: const TextStyle(fontSize: 13),
+          decoration: InputDecoration(
+            isDense: true,
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            hintText: '-',
+            hintStyle: TextStyle(color: Colors.grey[400]),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide(color: Colors.grey[300]!),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: const BorderSide(color: Colors.blue, width: 2),
+            ),
+          ),
+        ),
+      ),
     );
   }
 

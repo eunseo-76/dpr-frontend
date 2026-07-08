@@ -247,7 +247,7 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: !_hasChanges,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         final shouldPop = !_hasChanges || await confirmDiscardChanges(context);

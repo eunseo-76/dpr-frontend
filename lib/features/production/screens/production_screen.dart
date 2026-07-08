@@ -30,6 +30,8 @@ import 'package:dpr_frontend/features/production/widgets/production_upsert_dialo
 import 'package:dpr_frontend/features/utility/utils/utility_period_columns.dart';
 import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
 import 'package:dpr_frontend/core/widgets/wrench_refresh.dart';
+import 'package:dpr_frontend/core/widgets/folder_tab_selector.dart';
+import 'package:dpr_frontend/core/utils/label_store.dart';
 import 'package:flutter/material.dart';
 
 class ProductionScreen extends StatefulWidget {
@@ -61,6 +63,8 @@ class _ProductionScreenState extends State<ProductionScreen> {
 
   FactoryShift? _factoryShift;
 
+  int _selectedCardIndex = 0;
+
   final _clientService = ClientService();
   final _utilityService = UtilityService();
   final _productionService = ProductionService();
@@ -89,6 +93,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
       _allProductions.where((p) => p.factoryId == _selectedFactoryId).toList();
 
   bool get _canEdit => isEditAllowed(_factoryShift, _selectedDate);
+  bool get _showAmount => _role != 'STAFF';
   bool get _hasMasterData =>
       _factoryProcesses.isNotEmpty &&
       _factoryClients.isNotEmpty &&
@@ -177,6 +182,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
 
       if (factories.isEmpty) return;
 
+      final labelsFuture = LabelStore.load();
       final results = await Future.wait([
         _factoryMappingService.getFactoryUnits(),
         _clientService.getFactoryClients(),
@@ -187,6 +193,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
         ),
       ]);
       final factoryShift = await _factoryService.getFactoryShift(factories.first.factoryId);
+      await labelsFuture;
       setState(() {
         _allFactoryUnits = results[0] as List<FactoryUnit>;
         _allFactoryClients = results[1] as List<FactoryClient>;
@@ -219,7 +226,10 @@ class _ProductionScreenState extends State<ProductionScreen> {
   void _onFactorySelected(int index) {
     if (index == _selectedFactoryIndex) return;
     _exitSelectionMode();
-    setState(() => _selectedFactoryIndex = index);
+    setState(() {
+      _selectedFactoryIndex = index;
+      _selectedCardIndex = 0;
+    });
     _factoryService.getFactoryShift(_availableFactories[index].factoryId).then((shift) {
       if (mounted) setState(() => _factoryShift = shift);
     });
@@ -327,6 +337,9 @@ class _ProductionScreenState extends State<ProductionScreen> {
         value: rowScaffold.shift == '주'
             ? production?.dayShift
             : production?.nightShift,
+        wip: rowScaffold.shift == '주'
+            ? production?.wipDayShift
+            : production?.wipNightShift,
       );
     }).toList();
 
@@ -423,7 +436,10 @@ class _ProductionScreenState extends State<ProductionScreen> {
                             selected: _groupBy,
                             onChanged: (value) {
                               _exitSelectionMode();
-                              setState(() => _groupBy = value);
+                              setState(() {
+                                _groupBy = value;
+                                _selectedCardIndex = 0;
+                              });
                             },
                           ),
                           const SizedBox(width: 12),
@@ -593,28 +609,44 @@ class _ProductionScreenState extends State<ProductionScreen> {
 
     final columnLabels = columns.map((c) => c.label).toList();
     final columnTooltips = columns.map((c) => c.tooltip).toList();
-    final periodGroups =
-        groupProductionsForPeriod(_productions, scaffold, columns, _groupBy);
-    final rowLabelHeader = _groupBy == '공정별' ? '업체' : '공정';
+    final periodGroups = groupProductionsForPeriod(
+      _productions,
+      scaffold,
+      columns,
+      _groupBy,
+      showAmount: _showAmount,
+    );
+    final rowLabelHeader = _groupBy == '공정별'
+        ? LabelStore.get('PRODUCTION_HEADER_CLIENT', '업체')
+        : LabelStore.get('PRODUCTION_HEADER_PROCESS', '공정');
 
     final columnDates = _selectedPeriod == '주'
         ? columns.map((c) => c.dates.first).toList()
         : null;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
-      children: periodGroups.map((group) {
-        final cardTitle = _groupBy == '공정별'
-            ? '${group.groupName} 공정'
-            : group.groupName;
+    if (periodGroups.isEmpty) return const SizedBox.shrink();
+    final selectedIndex =
+        _selectedCardIndex < periodGroups.length ? _selectedCardIndex : 0;
+    final group = periodGroups[selectedIndex];
+    final cardTitle = _groupBy == '공정별'
+        ? '${group.groupName} 공정'
+        : group.groupName;
 
-        return ProductionCard(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
+      child: FolderTabSelector(
+        labels: periodGroups.map((g) => g.groupName).toList(),
+        selectedIndex: selectedIndex,
+        onSelected: (index) => setState(() => _selectedCardIndex = index),
+        child: ProductionCard(
+          key: ValueKey(group.groupId),
+          wrapInCard: false,
           title: cardTitle,
           units: _units,
           footer: ProductionCardFooter(
             dailyByUnit: group.dailySumByUnit,
             cumulativeByUnit: group.cumulativeSumByUnit,
-            amountByUnit: group.amountByUnit,
+            amountByUnit: _showAmount ? group.amountByUnit : null,
           ),
           table: ProductionPeriodTable(
             rowLabelHeader: rowLabelHeader,
@@ -632,8 +664,8 @@ class _ProductionScreenState extends State<ProductionScreen> {
                   }
                 : null,
           ),
-        );
-      }).toList(),
+        ),
+      ),
     );
   }
 
@@ -644,17 +676,33 @@ class _ProductionScreenState extends State<ProductionScreen> {
       units: _units,
       groupBy: _groupBy,
     );
-    final dayGroups = groupProductionsForDay(_productions, scaffold, _groupBy);
-    final rowLabelHeader = _groupBy == '공정별' ? '업체' : '공정';
+    final dayGroups = groupProductionsForDay(
+      _productions,
+      scaffold,
+      _groupBy,
+      showAmount: _showAmount,
+    );
+    final rowLabelHeader = _groupBy == '공정별'
+        ? LabelStore.get('PRODUCTION_HEADER_CLIENT', '업체')
+        : LabelStore.get('PRODUCTION_HEADER_PROCESS', '공정');
 
-    return ListView(
+    if (dayGroups.isEmpty) return const SizedBox.shrink();
+    final selectedIndex =
+        _selectedCardIndex < dayGroups.length ? _selectedCardIndex : 0;
+    final group = dayGroups[selectedIndex];
+    final cardTitle = _groupBy == '공정별'
+        ? '${group.groupName} 공정'
+        : group.groupName;
+
+    return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
-      children: dayGroups.map((group) {
-        final cardTitle = _groupBy == '공정별'
-            ? '${group.groupName} 공정'
-            : group.groupName;
-
-        return ProductionCard(
+      child: FolderTabSelector(
+        labels: dayGroups.map((g) => g.groupName).toList(),
+        selectedIndex: selectedIndex,
+        onSelected: (index) => setState(() => _selectedCardIndex = index),
+        child: ProductionCard(
+          key: ValueKey(group.groupId),
+          wrapInCard: false,
           title: cardTitle,
           units: _units,
           onEditTap: _isSelectionMode || !_canEdit
@@ -674,7 +722,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
           footer: ProductionCardFooter(
             dailyByUnit: group.dailySumByUnit,
             cumulativeByUnit: group.cumulativeSumByUnit,
-            amountByUnit: group.amountByUnit,
+            amountByUnit: _showAmount ? group.amountByUnit : null,
           ),
           table: ProductionDayTable(
             rowLabelHeader: rowLabelHeader,
@@ -684,8 +732,8 @@ class _ProductionScreenState extends State<ProductionScreen> {
             onRowGroupLongPress: null, // 삭제 기능 비활성화
             onRowGroupTap: _toggleSelection,
           ),
-        );
-      }).toList(),
+        ),
+      ),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
+import 'package:dpr_frontend/core/utils/label_store.dart';
 import 'package:dpr_frontend/core/utils/number_format.dart';
 import 'package:dpr_frontend/features/production/utils/production_grouping.dart';
 
@@ -25,12 +26,13 @@ class ProductionDayTable extends StatelessWidget {
   static const _colShift = 44.0;
   static const _colUnit = 52.0;
   static const _colValue = 120.0;
+  static const _colWip = 120.0;
   static const _colTotal = 120.0;
   static const _rowHeight = 36.0;
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
 
-  int get _columnCount => 5;
+  int get _columnCount => 6;
   int get _rowCount => 1 + rows.length;
 
   bool _rowGroupHasData(int rowGroupId) {
@@ -89,7 +91,8 @@ class ProductionDayTable extends StatelessWidget {
       1 => _colShift,
       2 => _colUnit,
       3 => _colValue,
-      4 => _colTotal,
+      4 => _colWip,
+      5 => _colTotal,
       _ => _colValue,
     };
     return TableSpan(
@@ -149,7 +152,14 @@ class ProductionDayTable extends StatelessWidget {
     final column = vicinity.column;
 
     if (isHeader) {
-      final headers = [rowLabelHeader, '구분', '단위', '값', '합계'];
+      final headers = [
+        rowLabelHeader,
+        LabelStore.get('PRODUCTION_HEADER_TYPE', '구분'),
+        LabelStore.get('PRODUCTION_HEADER_UNIT', '단위'),
+        LabelStore.get('PRODUCTION_HEADER_VALUE', '값'),
+        LabelStore.get('PRODUCTION_HEADER_WIP', '재공'),
+        LabelStore.get('PRODUCTION_HEADER_SUM', '합계'),
+      ];
       return _styledCell(headers[column], isHeader: true);
     }
 
@@ -157,6 +167,8 @@ class ProductionDayTable extends StatelessWidget {
     if (column == 0) return _styledCell(row.rowGroupName, wrap: true);
     if (column == 1) return _styledCell(row.shift);
     if (column == 2) return _styledCell(row.unitName);
+    if (column == 3) return _styledCell(_fmt(row.value));
+    if (column == 4) return _styledCell(_fmt(row.wip));
     return _styledCell(_fmt(row.value));
   }
 
