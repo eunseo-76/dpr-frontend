@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
+import 'package:dpr_frontend/core/utils/label_store.dart';
 import 'package:dpr_frontend/core/utils/number_format.dart';
 import 'package:dpr_frontend/features/production/utils/production_period_grouping.dart';
 
@@ -127,8 +128,12 @@ class ProductionPeriodTable extends StatelessWidget {
 
     if (isHeader) {
       if (column == 0) return _styledCell(rowLabelHeader, isHeader: true);
-      if (column == 1) return _styledCell('구분', isHeader: true);
-      if (column == 2) return _styledCell('단위', isHeader: true);
+      if (column == 1) {
+        return _styledCell(LabelStore.get('PRODUCTION_HEADER_TYPE', '구분'), isHeader: true);
+      }
+      if (column == 2) {
+        return _styledCell(LabelStore.get('PRODUCTION_HEADER_UNIT', '단위'), isHeader: true);
+      }
       final dateIndex = column - 3;
       final label = columnLabels[dateIndex];
       final tip = columnTooltips != null ? columnTooltips![dateIndex] : null;
@@ -175,7 +180,7 @@ class ProductionPeriodTable extends StatelessWidget {
         children: List.generate(_rowCount, (i) {
           final isHeader = i == 0;
           if (isHeader) {
-            return _fixedCell('합계', isHeader: true);
+            return _fixedCell(LabelStore.get('PRODUCTION_HEADER_SUM', '합계'), isHeader: true);
           }
           final row = rows[i - 1];
           if (row.total != 0 && row.total.abs() >= 10000) {

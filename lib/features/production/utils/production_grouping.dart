@@ -8,6 +8,7 @@ class ProductionDayRow {
   final int unitId;
   final String unitName;
   final double? value;
+  final double? wip;
   final double? unitPrice;
   final int? productionId;
 
@@ -20,6 +21,7 @@ class ProductionDayRow {
     required this.unitId,
     required this.unitName,
     this.value,
+    this.wip,
     this.unitPrice,
     this.amount,
     this.productionId,
@@ -47,8 +49,9 @@ class ProductionDayGroup {
 List<ProductionDayGroup> groupProductionsForDay(
   List<Production> productions,
   List<ProductionGroupScaffold> scaffold,
-  String groupBy,
-) {
+  String groupBy, {
+  required bool showAmount,
+}) {
   final processNicknames = <int, String>{};
   final clientNicknames = <int, String>{};
   for (final p in productions) {
@@ -81,6 +84,9 @@ List<ProductionDayGroup> groupProductionsForDay(
       final value = rowScaffold.shift == '주'
           ? production?.dayShift
           : production?.nightShift;
+      final wip = rowScaffold.shift == '주'
+          ? production?.wipDayShift
+          : production?.wipNightShift;
 
       return ProductionDayRow(
         rowGroupId: rowScaffold.rowGroupId,
@@ -89,6 +95,7 @@ List<ProductionDayGroup> groupProductionsForDay(
         unitId: rowScaffold.unitId,
         unitName: rowScaffold.unitName,
         value: value,
+        wip: wip,
         unitPrice: production?.unitPrice,
         amount: (value != null && production?.unitPrice != null)
             ? value * production!.unitPrice!
@@ -97,7 +104,7 @@ List<ProductionDayGroup> groupProductionsForDay(
       );
     }).toList();
 
-    final rows = _injectAmountRows(unitRows);
+    final rows = _injectAmountRows(unitRows, showAmount: showAmount);
 
     final dailySums = <int, double>{};
     final cumulativeSums = <int, double>{};
@@ -122,7 +129,10 @@ List<ProductionDayGroup> groupProductionsForDay(
   }).toList();
 }
 
-List<ProductionDayRow> _injectAmountRows(List<ProductionDayRow> unitRows) {
+List<ProductionDayRow> _injectAmountRows(
+  List<ProductionDayRow> unitRows, {
+  required bool showAmount,
+}) {
   final result = <ProductionDayRow>[];
   int i = 0;
   while (i < unitRows.length) {
@@ -138,13 +148,20 @@ List<ProductionDayRow> _injectAmountRows(List<ProductionDayRow> unitRows) {
     }
 
     result.addAll(shiftRows);
+    if (!showAmount) continue;
 
     double amountSum = 0;
     bool hasAmount = false;
+    double wipAmountSum = 0;
+    bool hasWipAmount = false;
     for (final r in shiftRows) {
       if (r.amount != null) {
         amountSum += r.amount!;
         hasAmount = true;
+      }
+      if (r.wip != null && r.unitPrice != null) {
+        wipAmountSum += r.wip! * r.unitPrice!;
+        hasWipAmount = true;
       }
     }
 
@@ -155,6 +172,7 @@ List<ProductionDayRow> _injectAmountRows(List<ProductionDayRow> unitRows) {
       unitId: -1,
       unitName: '금액',
       value: hasAmount ? amountSum : null,
+      wip: hasWipAmount ? wipAmountSum : null,
     ));
   }
   return result;

@@ -12,7 +12,7 @@ import 'package:dpr_frontend/features/settings/services/unit_price_service.dart'
 import 'package:dpr_frontend/features/utility/models/factory_process.dart';
 import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
 import 'package:dpr_frontend/core/widgets/pill_selector.dart';
-import 'package:dpr_frontend/core/widgets/wobble_effect.dart';
+import 'package:dpr_frontend/core/widgets/folder_tab_selector.dart';
 import 'package:flutter/material.dart';
 
 class UnitPriceScreen extends StatefulWidget {
@@ -256,7 +256,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
     final units = _factories.isNotEmpty ? _currentUnits : <FactoryUnit>[];
 
     return PopScope(
-      canPop: false,
+      canPop: !_hasChanges,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         final shouldPop = !_hasChanges || await confirmDiscardChanges(context);
@@ -335,71 +335,20 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                     : ListView(
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                             children: [
-                              Row(
-                                children: clients.asMap().entries.map((entry) {
-                                  final isSelected = entry.key == _selectedClientIndex;
-                                  final isLast = entry.key == clients.length - 1;
-                                  return Expanded(
-                                    child: Padding(
-                                      padding: EdgeInsets.only(right: isLast ? 0 : 2),
-                                      child: GestureDetector(
-                                        onTap: () => _onClientSelected(entry.key),
-                                        child: WobbleEffect(
-                                          trigger: isSelected,
-                                          child: Container(
-                                          padding: const EdgeInsets.symmetric(vertical: 10),
-                                          decoration: BoxDecoration(
-                                            color: isSelected
-                                                ? Colors.white
-                                                : Colors.grey[200],
-                                            borderRadius: const BorderRadius.only(
-                                              topLeft: Radius.circular(10),
-                                              topRight: Radius.circular(10),
-                                            ),
-                                          ),
-                                          alignment: Alignment.center,
-                                          child: Text(
-                                            entry.value.clientNickname ?? entry.value.clientName,
-                                            style: TextStyle(
-                                              fontWeight: isSelected
-                                                  ? FontWeight.w600
-                                                  : FontWeight.normal,
-                                              color: isSelected
-                                                  ? Colors.blue
-                                                  : Colors.grey[600],
-                                              fontSize: 13,
-                                            ),
-                                          ),
-                                        ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.only(
-                                    topLeft: _selectedClientIndex == 0
-                                        ? Radius.zero
-                                        : const Radius.circular(12),
-                                    topRight: const Radius.circular(12),
-                                    bottomLeft: const Radius.circular(12),
-                                    bottomRight: const Radius.circular(12),
-                                  ),
-                                ),
-                                padding: const EdgeInsets.all(16),
-                                child: AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 250),
-                                  child: _isPriceLoading
-                                    ? const SizedBox(
-                                        key: ValueKey('loading'),
-                                        height: 120,
-                                        child: LoadingIndicator(size: 90),
-                                      )
-                                    : Column(
-                                        key: ValueKey(_selectedClientIndex),
+                              FolderTabSelector(
+                                labels: clients
+                                    .map((c) => c.clientNickname ?? c.clientName)
+                                    .toList(),
+                                selectedIndex: _selectedClientIndex,
+                                onSelected: _onClientSelected,
+                                child: _isPriceLoading
+                                  ? const SizedBox(
+                                      key: ValueKey('loading'),
+                                      height: 120,
+                                      child: LoadingIndicator(size: 90),
+                                    )
+                                  : Column(
+                                      key: ValueKey(_selectedClientIndex),
                                   children: [
                                     const Row(
                                       children: [
@@ -537,7 +486,6 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                                       );
                                     }),
                                   ],
-                                ),
                                 ),
                               ),
                               if (!_isPriceLoading) ...[

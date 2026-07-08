@@ -13,10 +13,14 @@ class Production {
   final String unitName;
   final double? dayShift;
   final double? nightShift;
+  final double? wipDayShift;
+  final double? wipNightShift;
   final double? result;
+  final double? wipResult;
   final double? cumulativeResult;
   final double? unitPrice;
   final double? amount;
+  final double? wipAmount;
   final String createdName;
   final String? updatedAt;
   final String status;
@@ -36,10 +40,14 @@ class Production {
     required this.unitName,
     this.dayShift,
     this.nightShift,
+    this.wipDayShift,
+    this.wipNightShift,
     this.result,
+    this.wipResult,
     this.cumulativeResult,
     this.unitPrice,
     this.amount,
+    this.wipAmount,
     required this.createdName,
     this.updatedAt,
     required this.status,
@@ -61,10 +69,14 @@ class Production {
       unitName: json['unitName'] as String,
       dayShift: (json['dayShift'] as num?)?.toDouble(),
       nightShift: (json['nightShift'] as num?)?.toDouble(),
+      wipDayShift: (json['wipDayShift'] as num?)?.toDouble(),
+      wipNightShift: (json['wipNightShift'] as num?)?.toDouble(),
       result: (json['result'] as num?)?.toDouble(),
+      wipResult: (json['wipResult'] as num?)?.toDouble(),
       cumulativeResult: (json['cumulativeResult'] as num?)?.toDouble(),
       unitPrice: (json['unitPrice'] as num?)?.toDouble(),
       amount: (json['amount'] as num?)?.toDouble(),
+      wipAmount: (json['wipAmount'] as num?)?.toDouble(),
       createdName: json['createdName'] as String,
       updatedAt: json['updatedAt'] as String?,
       status: json['status'] as String,

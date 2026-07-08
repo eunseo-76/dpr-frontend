@@ -60,8 +60,9 @@ List<ProductionPeriodGroup> groupProductionsForPeriod(
   List<Production> productions,
   List<ProductionGroupScaffold> scaffold,
   List<PeriodColumn> columns,
-  String groupBy,
-) {
+  String groupBy, {
+  required bool showAmount,
+}) {
   final processNicknames = <int, String>{};
   final clientNicknames = <int, String>{};
   for (final p in productions) {
@@ -133,7 +134,7 @@ List<ProductionPeriodGroup> groupProductionsForPeriod(
       );
     }).toList();
 
-    final rows = _injectAmountRows(unitRows, columns.length);
+    final rows = _injectAmountRows(unitRows, columns.length, showAmount: showAmount);
 
     final cardProductions = productions.where((p) => groupBy == '공정별'
         ? p.processId == group.groupId
@@ -166,7 +167,10 @@ List<ProductionPeriodGroup> groupProductionsForPeriod(
 }
 
 List<ProductionPeriodRow> _injectAmountRows(
-    List<ProductionPeriodRow> unitRows, int columnCount) {
+  List<ProductionPeriodRow> unitRows,
+  int columnCount, {
+  required bool showAmount,
+}) {
   final result = <ProductionPeriodRow>[];
   int i = 0;
   while (i < unitRows.length) {
@@ -182,6 +186,7 @@ List<ProductionPeriodRow> _injectAmountRows(
     }
 
     result.addAll(shiftRows);
+    if (!showAmount) continue;
 
     final amountValues = List.generate(columnCount, (col) {
       double? sum;

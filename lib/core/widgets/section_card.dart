@@ -7,6 +7,7 @@ class SectionCard extends StatelessWidget {
   final Widget child;
   final Widget? footer;
   final VoidCallback? onEditTap;
+  final bool wrapInCard;
 
   const SectionCard({
     super.key,
@@ -14,39 +15,44 @@ class SectionCard extends StatelessWidget {
     required this.child,
     this.footer,
     this.onEditTap,
+    this.wrapInCard = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            if (onEditTap != null)
+              _FloatingEditButton(onTap: onEditTap!),
+          ],
+        ),
+        const SizedBox(height: 16),
+        child,
+        if (footer != null) ...[
+          const SizedBox(height: 8),
+          const SizedBox(height: 8),
+          const SizedBox(height: 4),
+          footer!,
+        ],
+      ],
+    );
+
+    if (!wrapInCard) return content;
+
     return Card(
       color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                if (onEditTap != null)
-                  _FloatingEditButton(onTap: onEditTap!),
-              ],
-            ),
-            const SizedBox(height: 16),
-            child,
-            if (footer != null) ...[
-              const SizedBox(height: 8),
-              const SizedBox(height: 8),
-              const SizedBox(height: 4),
-              footer!,
-            ],
-          ],
-        ),
+        child: content,
       ),
     );
   }

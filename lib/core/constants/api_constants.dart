@@ -20,4 +20,5 @@ class ApiConstants {
   static const String verifyResetCode = '/api/auth/verify-reset-code';
   static const String resetPassword = '/api/auth/reset-password';
   static const String invitations = '/api/invitations';
+  static const String labels = '/api/labels';
 }
