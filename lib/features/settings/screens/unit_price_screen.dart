@@ -332,7 +332,9 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                           ),
                         ),
                       )
-                    : ListView(
+                    : SafeArea(
+                        top: false,
+                        child: ListView(
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                             children: [
                               FolderTabSelector(
@@ -550,6 +552,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
                               ],
                             ],
                           ),
+            ),
             ),
           ),
         ],

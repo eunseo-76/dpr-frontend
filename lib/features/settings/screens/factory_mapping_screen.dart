@@ -301,7 +301,9 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
                       ? Center(child: Text('오류: $_error'))
                       : _factories.isEmpty
                           ? const Center(child: Text('등록된 공장이 없습니다'))
-                          : ListView(
+                          : SafeArea(
+                              top: false,
+                              child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
               children: [
                 _buildCheckboxSection(
@@ -411,6 +413,7 @@ class _FactoryMappingScreenState extends State<FactoryMappingScreen> {
                   ],
                 ),
               ],
+            ),
             ),
             ),
           ),

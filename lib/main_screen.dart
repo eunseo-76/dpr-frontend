@@ -74,13 +74,16 @@ class _MainScreenState extends State<MainScreen> {
               duration: const Duration(milliseconds: 250),
               curve: Curves.easeOut,
               offset: _navBarVisible ? Offset.zero : const Offset(0, 1.3),
-              child: FloatingNavBar(
-                currentIndex: _currentIndex,
-                onTap: (index) => setState(() {
-                  _currentIndex = index;
-                  _navBarVisible = true;
-                }),
-                items: _navItems,
+              child: SafeArea(
+                top: false,
+                child: FloatingNavBar(
+                  currentIndex: _currentIndex,
+                  onTap: (index) => setState(() {
+                    _currentIndex = index;
+                    _navBarVisible = true;
+                  }),
+                  items: _navItems,
+                ),
               ),
             ),
           ),
