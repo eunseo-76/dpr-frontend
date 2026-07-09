@@ -27,7 +27,7 @@ class ProductionDayTable extends StatelessWidget {
   static const _colUnit = 52.0;
   static const _colValue = 120.0;
   static const _colWip = 120.0;
-  static const _colTotal = 120.0;
+  static const _colMonthCumulative = 120.0;
   static const _rowHeight = 36.0;
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
@@ -92,7 +92,7 @@ class ProductionDayTable extends StatelessWidget {
       2 => _colUnit,
       3 => _colValue,
       4 => _colWip,
-      5 => _colTotal,
+      5 => _colMonthCumulative,
       _ => _colValue,
     };
     return TableSpan(
@@ -154,22 +154,29 @@ class ProductionDayTable extends StatelessWidget {
     if (isHeader) {
       final headers = [
         rowLabelHeader,
-        LabelStore.get('PRODUCTION_HEADER_TYPE', '구분'),
-        LabelStore.get('PRODUCTION_HEADER_UNIT', '단위'),
-        LabelStore.get('PRODUCTION_HEADER_VALUE', '값'),
-        LabelStore.get('PRODUCTION_HEADER_WIP', '재공'),
-        LabelStore.get('PRODUCTION_HEADER_SUM', '합계'),
+        LabelStore.get('PRODUCTION_TABLE_HEADER_TYPE', '구분'),
+        LabelStore.get('PRODUCTION_TABLE_HEADER_UNIT', '단위'),
+        LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE', '실적'),
+        LabelStore.get('PRODUCTION_TABLE_HEADER_WIP', '재공'),
+        LabelStore.get('PRODUCTION_TABLE_MONTH_CUMULATIVE_SUM', '당월 누적 실적 합계'),
       ];
       return _styledCell(headers[column], isHeader: true);
     }
 
     final row = rows[vicinity.row - 1];
+    final isAmountRow = row.unitName == '금액';
     if (column == 0) return _styledCell(row.rowGroupName, wrap: true);
     if (column == 1) return _styledCell(row.shift);
     if (column == 2) return _styledCell(row.unitName);
-    if (column == 3) return _styledCell(_fmt(row.value));
-    if (column == 4) return _styledCell(_fmt(row.wip));
-    return _styledCell(_fmt(row.value));
+    if (column == 3) {
+      return _styledCell(isAmountRow ? formatManwon(row.value) : _fmt(row.value));
+    }
+    if (column == 4) {
+      return _styledCell(isAmountRow ? formatManwon(row.wip) : _fmt(row.wip));
+    }
+    return _styledCell(
+      isAmountRow ? formatManwon(row.monthlyCumulativeAmount) : _fmt(row.monthlyCumulativeResult),
+    );
   }
 
   Widget _styledCell(String text, {bool isHeader = false, bool wrap = false}) {

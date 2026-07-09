@@ -18,6 +18,8 @@ class Production {
   final double? result;
   final double? wipResult;
   final double? cumulativeResult;
+  final double? monthlyCumulativeResult;
+  final double? monthlyCumulativeAmount;
   final double? unitPrice;
   final double? amount;
   final double? wipAmount;
@@ -45,6 +47,8 @@ class Production {
     this.result,
     this.wipResult,
     this.cumulativeResult,
+    this.monthlyCumulativeResult,
+    this.monthlyCumulativeAmount,
     this.unitPrice,
     this.amount,
     this.wipAmount,
@@ -74,6 +78,8 @@ class Production {
       result: (json['result'] as num?)?.toDouble(),
       wipResult: (json['wipResult'] as num?)?.toDouble(),
       cumulativeResult: (json['cumulativeResult'] as num?)?.toDouble(),
+      monthlyCumulativeResult: (json['monthlyCumulativeResult'] as num?)?.toDouble(),
+      monthlyCumulativeAmount: (json['monthlyCumulativeAmount'] as num?)?.toDouble(),
       unitPrice: (json['unitPrice'] as num?)?.toDouble(),
       amount: (json['amount'] as num?)?.toDouble(),
       wipAmount: (json['wipAmount'] as num?)?.toDouble(),

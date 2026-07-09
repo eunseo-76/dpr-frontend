@@ -57,12 +57,12 @@ class ProductionCard extends StatelessWidget {
     final amountByUnit = footer!.amountByUnit;
     return Column(
       children: [
-        _footerRow(LabelStore.get('PRODUCTION_HEADER_SUM', '합계'), footer!.dailyByUnit),
+        _footerRow(LabelStore.get('PRODUCTION_SUMMARY_PERIOD_SUM', '기간별 실적 합계'), footer!.dailyByUnit),
         _receiptDivider(),
-        _footerRow(LabelStore.get('PRODUCTION_HEADER_CUMULATIVE_SUM', '누적합계'), footer!.cumulativeByUnit),
+        _footerRow(LabelStore.get('PRODUCTION_SUMMARY_CUMULATIVE_SUM', '누적 실적 합계'), footer!.cumulativeByUnit),
         if (amountByUnit != null) ...[
           _receiptDivider(),
-          _footerAmountRow(LabelStore.get('PRODUCTION_HEADER_AMOUNT', '총 금액'), amountByUnit),
+          _footerAmountRow(LabelStore.get('PRODUCTION_SUMMARY_AMOUNT_SUM', '총 금액'), amountByUnit),
         ],
       ],
     );

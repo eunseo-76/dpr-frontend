@@ -129,10 +129,10 @@ class ProductionPeriodTable extends StatelessWidget {
     if (isHeader) {
       if (column == 0) return _styledCell(rowLabelHeader, isHeader: true);
       if (column == 1) {
-        return _styledCell(LabelStore.get('PRODUCTION_HEADER_TYPE', '구분'), isHeader: true);
+        return _styledCell(LabelStore.get('PRODUCTION_TABLE_HEADER_TYPE', '구분'), isHeader: true);
       }
       if (column == 2) {
-        return _styledCell(LabelStore.get('PRODUCTION_HEADER_UNIT', '단위'), isHeader: true);
+        return _styledCell(LabelStore.get('PRODUCTION_TABLE_HEADER_UNIT', '단위'), isHeader: true);
       }
       final dateIndex = column - 3;
       final label = columnLabels[dateIndex];
@@ -164,6 +164,9 @@ class ProductionPeriodTable extends StatelessWidget {
     if (column == 1) return _styledCell(row.shift);
     if (column == 2) return _styledCell(row.unitName);
     final value = row.values[column - 3];
+    if (row.unitName == '금액') {
+      return _styledCell(formatManwon(value));
+    }
     if (value != null && value != 0 && value.abs() >= 10000) {
       return _compactCell(value);
     }
@@ -180,9 +183,12 @@ class ProductionPeriodTable extends StatelessWidget {
         children: List.generate(_rowCount, (i) {
           final isHeader = i == 0;
           if (isHeader) {
-            return _fixedCell(LabelStore.get('PRODUCTION_HEADER_SUM', '합계'), isHeader: true);
+            return _fixedCell(LabelStore.get('PRODUCTION_TABLE_HEADER_SUM', '실적 합계'), isHeader: true);
           }
           final row = rows[i - 1];
+          if (row.unitName == '금액') {
+            return _fixedCell(formatManwon(row.total));
+          }
           if (row.total != 0 && row.total.abs() >= 10000) {
             return _fixedCompactCell(row.total);
           }
