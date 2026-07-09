@@ -13,6 +13,8 @@ class ProductionDayRow {
   final int? productionId;
 
   final double? amount;
+  final double? monthlyCumulativeResult;
+  final double? monthlyCumulativeAmount;
 
   ProductionDayRow({
     required this.rowGroupId,
@@ -24,6 +26,8 @@ class ProductionDayRow {
     this.wip,
     this.unitPrice,
     this.amount,
+    this.monthlyCumulativeResult,
+    this.monthlyCumulativeAmount,
     this.productionId,
   });
 }
@@ -100,6 +104,8 @@ List<ProductionDayGroup> groupProductionsForDay(
         amount: (value != null && production?.unitPrice != null)
             ? value * production!.unitPrice!
             : null,
+        monthlyCumulativeResult: production?.monthlyCumulativeResult,
+        monthlyCumulativeAmount: production?.monthlyCumulativeAmount,
         productionId: production?.productionId,
       );
     }).toList();
@@ -154,6 +160,8 @@ List<ProductionDayRow> _injectAmountRows(
     bool hasAmount = false;
     double wipAmountSum = 0;
     bool hasWipAmount = false;
+    double monthlyCumulativeAmountSum = 0;
+    bool hasMonthlyCumulativeAmount = false;
     for (final r in shiftRows) {
       if (r.amount != null) {
         amountSum += r.amount!;
@@ -162,6 +170,10 @@ List<ProductionDayRow> _injectAmountRows(
       if (r.wip != null && r.unitPrice != null) {
         wipAmountSum += r.wip! * r.unitPrice!;
         hasWipAmount = true;
+      }
+      if (r.monthlyCumulativeAmount != null) {
+        monthlyCumulativeAmountSum += r.monthlyCumulativeAmount!;
+        hasMonthlyCumulativeAmount = true;
       }
     }
 
@@ -173,6 +185,7 @@ List<ProductionDayRow> _injectAmountRows(
       unitName: '금액',
       value: hasAmount ? amountSum : null,
       wip: hasWipAmount ? wipAmountSum : null,
+      monthlyCumulativeAmount: hasMonthlyCumulativeAmount ? monthlyCumulativeAmountSum : null,
     ));
   }
   return result;

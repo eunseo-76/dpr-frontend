@@ -4,6 +4,11 @@ String formatNumber(double value) {
   return NumberFormat('#,##0.###').format(value);
 }
 
+String formatManwon(double? value) {
+  if (value == null || value == 0) return '-';
+  return '${NumberFormat('#,##0.##').format(value / 10000)}만';
+}
+
 String formatCompact(double value) {
   final abs = value.abs();
   if (abs >= 100000000) {

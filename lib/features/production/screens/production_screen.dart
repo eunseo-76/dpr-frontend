@@ -617,8 +617,8 @@ class _ProductionScreenState extends State<ProductionScreen> {
       showAmount: _showAmount,
     );
     final rowLabelHeader = _groupBy == '공정별'
-        ? LabelStore.get('PRODUCTION_HEADER_CLIENT', '업체')
-        : LabelStore.get('PRODUCTION_HEADER_PROCESS', '공정');
+        ? LabelStore.get('PRODUCTION_TABLE_HEADER_CLIENT', '업체')
+        : LabelStore.get('PRODUCTION_TABLE_HEADER_PROCESS', '공정');
 
     final columnDates = _selectedPeriod == '주'
         ? columns.map((c) => c.dates.first).toList()
@@ -683,8 +683,8 @@ class _ProductionScreenState extends State<ProductionScreen> {
       showAmount: _showAmount,
     );
     final rowLabelHeader = _groupBy == '공정별'
-        ? LabelStore.get('PRODUCTION_HEADER_CLIENT', '업체')
-        : LabelStore.get('PRODUCTION_HEADER_PROCESS', '공정');
+        ? LabelStore.get('PRODUCTION_TABLE_HEADER_CLIENT', '업체')
+        : LabelStore.get('PRODUCTION_TABLE_HEADER_PROCESS', '공정');
 
     if (dayGroups.isEmpty) return const SizedBox.shrink();
     final selectedIndex =

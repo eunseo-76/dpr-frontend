@@ -250,10 +250,10 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
     if (vicinity.row == 0) {
       final headers = [
         widget.rowLabelHeader,
-        LabelStore.get('PRODUCTION_HEADER_TYPE', '구분'),
-        LabelStore.get('PRODUCTION_HEADER_UNIT', '단위'),
-        LabelStore.get('PRODUCTION_HEADER_VALUE', '값'),
-        LabelStore.get('PRODUCTION_HEADER_WIP', '재공'),
+        LabelStore.get('PRODUCTION_TABLE_HEADER_TYPE', '구분'),
+        LabelStore.get('PRODUCTION_TABLE_HEADER_UNIT', '단위'),
+        LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE', '실적'),
+        LabelStore.get('PRODUCTION_TABLE_HEADER_WIP', '재공'),
       ];
       child = Container(
         alignment: Alignment.centerLeft,
