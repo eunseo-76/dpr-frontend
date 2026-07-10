@@ -16,12 +16,17 @@ import 'package:dpr_frontend/core/widgets/segmented_toggle.dart';
 import 'package:dpr_frontend/features/client/models/factory_client.dart';
 import 'package:dpr_frontend/features/client/services/client_service.dart';
 import 'package:dpr_frontend/features/production/models/production.dart';
+import 'package:dpr_frontend/features/production/models/production_overview.dart';
 import 'package:dpr_frontend/features/production/services/production_service.dart';
 import 'package:dpr_frontend/features/production/utils/production_grouping.dart';
+import 'package:dpr_frontend/features/production/utils/production_overview_grouping.dart';
 import 'package:dpr_frontend/features/production/utils/production_period_grouping.dart';
 import 'package:dpr_frontend/features/production/utils/production_scaffold.dart';
+import 'package:dpr_frontend/core/widgets/section_card.dart';
 import 'package:dpr_frontend/features/production/widgets/production_card.dart';
 import 'package:dpr_frontend/features/production/widgets/production_day_table.dart';
+import 'package:dpr_frontend/features/production/widgets/production_overview_summary.dart';
+import 'package:dpr_frontend/features/production/widgets/production_overview_table.dart';
 import 'package:dpr_frontend/features/production/widgets/production_period_table.dart';
 import 'package:dpr_frontend/features/unit/models/unit.dart';
 import 'package:dpr_frontend/features/utility/models/factory_process.dart';
@@ -64,6 +69,12 @@ class _ProductionScreenState extends State<ProductionScreen> {
   FactoryShift? _factoryShift;
 
   int _selectedCardIndex = 0;
+
+  DateTime? _overviewRangeStart;
+  DateTime? _overviewRangeEnd;
+  ProductionOverview? _overviewData;
+  bool _overviewLoading = false;
+  String? _overviewError;
 
   final _clientService = ClientService();
   final _utilityService = UtilityService();
@@ -162,6 +173,67 @@ class _ProductionScreenState extends State<ProductionScreen> {
     }
   }
 
+  Future<void> _onOverviewCalendarTap() async {
+    final initial = (_overviewRangeStart != null && _overviewRangeEnd != null)
+        ? DateTimeRange(start: _overviewRangeStart!, end: _overviewRangeEnd!)
+        : null;
+    final picked = await showCalendarRangePicker(context, initial);
+    if (picked != null) {
+      setState(() {
+        _overviewRangeStart = picked.start;
+        _overviewRangeEnd = picked.end;
+      });
+      _loadOverview();
+    }
+  }
+
+  String _overviewDisplayLabel() {
+    if (_overviewRangeStart == null || _overviewRangeEnd == null) {
+      return '기간을 선택하세요';
+    }
+    String fmt(DateTime d) =>
+        '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}';
+    return '${fmt(_overviewRangeStart!)} ~ ${fmt(_overviewRangeEnd!)}';
+  }
+
+  void _navigateOverviewRange(int direction) {
+    final start = _overviewRangeStart;
+    final end = _overviewRangeEnd;
+    if (start == null || end == null) return;
+
+    final spanDays = end.difference(start).inDays + 1;
+    setState(() {
+      _overviewRangeStart = start.add(Duration(days: direction * spanDays));
+      _overviewRangeEnd = end.add(Duration(days: direction * spanDays));
+    });
+    _loadOverview();
+  }
+
+  Future<void> _loadOverview() async {
+    final factoryId = _selectedFactoryId;
+    if (factoryId == null ||
+        _overviewRangeStart == null ||
+        _overviewRangeEnd == null) {
+      return;
+    }
+    setState(() {
+      _overviewLoading = true;
+      _overviewError = null;
+    });
+    try {
+      final data = await _productionService.getProductionOverview(
+        factoryId: factoryId,
+        dateFrom: _dateStr(_overviewRangeStart!),
+        dateTo: _dateStr(_overviewRangeEnd!),
+      );
+      setState(() => _overviewData = data);
+    } catch (e) {
+      setState(() => _overviewError = e.toString());
+    } finally {
+      setState(() => _overviewLoading = false);
+    }
+  }
+
   Future<void> _loadAll() async {
     setState(() { _isLoading = true; _error = null; });
     try {
@@ -233,6 +305,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
     _factoryService.getFactoryShift(_availableFactories[index].factoryId).then((shift) {
       if (mounted) setState(() => _factoryShift = shift);
     });
+    if (_selectedPeriod == '전체보기') _loadOverview();
   }
 
 
@@ -431,42 +504,60 @@ class _ProductionScreenState extends State<ProductionScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          SegmentedToggle(
-                            options: const ['공정별', '업체별'],
-                            selected: _groupBy,
-                            onChanged: (value) {
-                              _exitSelectionMode();
-                              setState(() {
-                                _groupBy = value;
-                                _selectedCardIndex = 0;
-                              });
-                            },
-                          ),
-                          const SizedBox(width: 12),
-                          Container(
-                            width: 1.5,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(1),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.1),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 1),
-                                ),
-                              ],
+                          if (_selectedPeriod != '전체보기') ...[
+                            SegmentedToggle(
+                              options: const ['공정별', '업체별'],
+                              selected: _groupBy,
+                              onChanged: (value) {
+                                _exitSelectionMode();
+                                setState(() {
+                                  _groupBy = value;
+                                  _selectedCardIndex = 0;
+                                });
+                              },
                             ),
-                          ),
-                          const SizedBox(width: 12),
+                            const SizedBox(width: 12),
+                            Container(
+                              width: 1.5,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[300],
+                                borderRadius: BorderRadius.circular(1),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.1),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                          ],
                           SegmentedToggle(
-                            options: const ['일'],
+                            options: const ['일', '전체보기'],
                             selected: _selectedPeriod,
                             activeColor: Colors.green,
                             onChanged: (period) {
                               _exitSelectionMode();
-                              setState(() => _selectedPeriod = period);
-                              _loadProductions();
+                              setState(() {
+                                _selectedPeriod = period;
+                                if (period == '전체보기' &&
+                                    (_overviewRangeStart == null ||
+                                        _overviewRangeEnd == null)) {
+                                  final d = DateTime.parse(_selectedDate);
+                                  final monday =
+                                      d.subtract(Duration(days: d.weekday - 1));
+                                  _overviewRangeStart = monday;
+                                  _overviewRangeEnd =
+                                      monday.add(const Duration(days: 6));
+                                }
+                              });
+                              if (period == '전체보기') {
+                                _loadOverview();
+                              } else {
+                                _loadProductions();
+                              }
                             },
                           ),
                         ],
@@ -475,10 +566,18 @@ class _ProductionScreenState extends State<ProductionScreen> {
                   ),
                 ),
                 DateNavigator(
-                  label: _displayLabel(),
-                  onPrevious: () => _navigateDate(-1),
-                  onNext: () => _navigateDate(1),
-                  onCalendarTap: _onCalendarTap,
+                  label: _selectedPeriod == '전체보기'
+                      ? _overviewDisplayLabel()
+                      : _displayLabel(),
+                  onPrevious: _selectedPeriod == '전체보기'
+                      ? () => _navigateOverviewRange(-1)
+                      : () => _navigateDate(-1),
+                  onNext: _selectedPeriod == '전체보기'
+                      ? () => _navigateOverviewRange(1)
+                      : () => _navigateDate(1),
+                  onCalendarTap: _selectedPeriod == '전체보기'
+                      ? _onOverviewCalendarTap
+                      : _onCalendarTap,
                 ),
               ],
             ),
@@ -499,20 +598,20 @@ class _ProductionScreenState extends State<ProductionScreen> {
                   ],
                 ),
               ),
-              child: _isLoading
-                  ? const LoadingIndicator()
-                  : _error != null
-                      ? Center(child: Text('오류: $_error'))
-                      : _availableFactories.isEmpty
-                          ? _buildNoFactoryState()
-                          : !_hasMasterData
-                              ? _buildEmptyState()
-                              : WrenchRefresh(
-                                  onRefresh: _loadProductions,
-                                  child: _selectedPeriod == '일'
-                                      ? _buildDayView()
-                                      : _buildPeriodView(),
-                                ),
+              child: _selectedPeriod == '전체보기'
+                  ? _buildOverviewSection()
+                  : _isLoading
+                      ? const LoadingIndicator()
+                      : _error != null
+                          ? Center(child: Text('오류: $_error'))
+                          : _availableFactories.isEmpty
+                              ? _buildNoFactoryState()
+                              : !_hasMasterData
+                                  ? _buildEmptyState()
+                                  : WrenchRefresh(
+                                      onRefresh: _loadProductions,
+                                      child: _buildDayView(),
+                                    ),
             ),
           ),
         ],
@@ -732,6 +831,72 @@ class _ProductionScreenState extends State<ProductionScreen> {
             onRowGroupLongPress: null, // 삭제 기능 비활성화
             onRowGroupTap: _toggleSelection,
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOverviewSection() {
+    if (_availableFactories.isEmpty) return _buildNoFactoryState();
+
+    if (_overviewRangeStart == null || _overviewRangeEnd == null) {
+      return Center(
+        child: Text(
+          '상단 캘린더 아이콘을 눌러 기간을 선택하세요',
+          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        ),
+      );
+    }
+    if (_overviewLoading) return const LoadingIndicator();
+    if (_overviewError != null) {
+      return Center(child: Text('오류: $_overviewError'));
+    }
+
+    final data = _overviewData;
+    if (data == null || data.rows.isEmpty) {
+      return Center(
+        child: Text(
+          '선택한 기간에 데이터가 없습니다',
+          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        ),
+      );
+    }
+
+    return _buildOverviewView(data);
+  }
+
+  Widget _buildOverviewView(ProductionOverview data) {
+    final clientNames = {
+      for (final c in _factoryClients) c.clientId: c.clientNickname ?? c.clientName,
+    };
+    final processNames = {
+      for (final p in _factoryProcesses) p.processId: p.processNickname ?? p.processName,
+    };
+    final unitNames = {for (final u in _units) u.id: u.name};
+
+    final tableRows = buildOverviewTableRows(
+      data.rows,
+      clientNames: clientNames,
+      processNames: processNames,
+      unitNames: unitNames,
+    );
+    final summaryEntries = buildProcessSummaryDisplay(
+      data.processSummary,
+      processNames: processNames,
+      unitNames: unitNames,
+    );
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
+      child: SectionCard(
+        title: _availableFactories[_selectedFactoryIndex].factoryName,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ProductionOverviewSummary(entries: summaryEntries),
+            const SizedBox(height: 12),
+            ProductionOverviewTable(rows: tableRows),
+          ],
         ),
       ),
     );

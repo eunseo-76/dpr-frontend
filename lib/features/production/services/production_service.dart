@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:dpr_frontend/core/constants/api_constants.dart';
 import 'package:dpr_frontend/core/network/api_client.dart';
 import 'package:dpr_frontend/features/production/models/production.dart';
+import 'package:dpr_frontend/features/production/models/production_overview.dart';
 import 'package:dpr_frontend/features/production/models/production_upsert_entry.dart';
 
 class ProductionService {
@@ -41,6 +42,27 @@ class ProductionService {
       return body['data'] as int;
     }
     throw Exception('생산실적 저장 실패: ${response.statusCode}');
+  }
+
+  Future<ProductionOverview> getProductionOverview({
+    required int factoryId,
+    required String dateFrom,
+    required String dateTo,
+  }) async {
+    final response = await _client.get(
+      ApiConstants.productionOverview,
+      queryParams: {
+        'factoryId': factoryId.toString(),
+        'dateFrom': dateFrom,
+        'dateTo': dateTo,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      return ProductionOverview.fromJson(body['data'] as Map<String, dynamic>);
+    }
+    throw Exception('생산실적 전체보기 조회 실패: ${response.statusCode}');
   }
 
   Future<void> deleteProductions(List<int> productionIds) async {

@@ -3,6 +3,7 @@ class ApiConstants {
 
   static const String login = '/api/auth/login';
   static const String production = '/api/productions';
+  static const String productionOverview = '/api/productions/overview';
   static const String factory_ = '/api/factories';
   static const String process = '/api/processes';
   static const String unit = '/api/units';

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:dpr_frontend/core/utils/label_store.dart';
 import 'package:dpr_frontend/core/utils/number_format.dart';
+import 'package:dpr_frontend/core/widgets/dashed_divider.dart';
 import 'package:dpr_frontend/core/widgets/section_card.dart';
 import 'package:dpr_frontend/features/unit/models/unit.dart';
 
@@ -66,35 +67,13 @@ class ProductionCard extends StatelessWidget {
     return Column(
       children: [
         _footerRow(LabelStore.get('PRODUCTION_SUMMARY_PERIOD_SUM', '기간별 실적 합계'), footer!.dailyByUnit),
-        _receiptDivider(),
+        const DashedDivider(),
         _footerRow(LabelStore.get('PRODUCTION_SUMMARY_CUMULATIVE_SUM', '누적 실적 합계'), footer!.cumulativeByUnit),
         if (amountByUnit != null) ...[
-          _receiptDivider(),
+          const DashedDivider(),
           _footerAmountRow(LabelStore.get('PRODUCTION_SUMMARY_AMOUNT_SUM', '총 금액'), amountByUnit),
         ],
       ],
-    );
-  }
-
-  Widget _receiptDivider() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: LayoutBuilder(
-        builder: (_, constraints) {
-          final count = (constraints.maxWidth / 7).floor();
-          return Row(
-            children: List.generate(
-              count,
-              (_) => Container(
-                width: 3,
-                height: 1,
-                margin: const EdgeInsets.only(right: 4),
-                color: Colors.grey[400],
-              ),
-            ),
-          );
-        },
-      ),
     );
   }
 
