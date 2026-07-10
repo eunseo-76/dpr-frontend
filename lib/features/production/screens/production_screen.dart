@@ -460,7 +460,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
                           ),
                           const SizedBox(width: 12),
                           SegmentedToggle(
-                            options: const ['일', '주', '월', '년'],
+                            options: const ['일'],
                             selected: _selectedPeriod,
                             activeColor: Colors.green,
                             onChanged: (period) {

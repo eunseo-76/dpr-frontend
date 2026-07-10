@@ -47,6 +47,14 @@ class ProductionCard extends StatelessWidget {
             _buildFooter(),
             const SizedBox(height: 12),
           ],
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(
+              LabelStore.get('PRODUCTION_TABLE_AMOUNT_UNIT_HINT', '단위: 만원'),
+              style: TextStyle(fontSize: 11, color: Colors.grey[700]),
+            ),
+          ),
+          const SizedBox(height: 4),
           table,
         ],
       ),
@@ -104,8 +112,8 @@ class ProductionCard extends StatelessWidget {
             children: entries.map((u) => Padding(
               padding: const EdgeInsets.only(left: 8),
               child: Text.rich(TextSpan(children: [
-                TextSpan(text: u.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                TextSpan(text: ' ${formatNumber(values[u.id]!)}', style: const TextStyle(fontSize: 12)),
+                TextSpan(text: formatNumber(values[u.id]!), style: const TextStyle(fontSize: 12)),
+                TextSpan(text: ' ${u.name}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
               ])),
             )).toList(),
           ),
@@ -126,8 +134,8 @@ class ProductionCard extends StatelessWidget {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: entries.map((u) => Text.rich(TextSpan(children: [
-                  TextSpan(text: u.name, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  TextSpan(text: '  ₩${formatNumber(values[u.id]!)}', style: const TextStyle(fontSize: 12)),
+                  TextSpan(text: '₩${formatNumber(values[u.id]!)}', style: const TextStyle(fontSize: 12)),
+                  TextSpan(text: '  ${u.name}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 ]))).toList(),
               ),
       ],

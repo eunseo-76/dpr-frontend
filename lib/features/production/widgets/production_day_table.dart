@@ -25,9 +25,7 @@ class ProductionDayTable extends StatelessWidget {
   static const _colLabel = 48.0;
   static const _colShift = 44.0;
   static const _colUnit = 52.0;
-  static const _colValue = 120.0;
-  static const _colWip = 120.0;
-  static const _colMonthCumulative = 120.0;
+  static const _minDataColWidth = 60.0;
   static const _rowHeight = 36.0;
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
@@ -41,59 +39,67 @@ class ProductionDayTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: _rowCount * _rowHeight,
-      child: TableView.builder(
-        columnCount: _columnCount,
-        rowCount: _rowCount,
-        pinnedColumnCount: 3,
-        verticalDetails: const ScrollableDetails.vertical(
-          physics: NeverScrollableScrollPhysics(),
-        ),
-        horizontalDetails: const ScrollableDetails.horizontal(
-          physics: ClampingScrollPhysics(), // 가로 overscroll 방지
-        ),
-        columnBuilder: _buildColumnSpan,
-        rowBuilder: _buildRowSpan,
-        cellBuilder: (context, vicinity) {
-          final merge = _cellMerge(vicinity);
-          Widget child = _buildCell(vicinity);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const pinnedWidth = _colLabel + _colShift + _colUnit;
+        final dataColWidth =
+            ((constraints.maxWidth - pinnedWidth) / 3).clamp(
+          _minDataColWidth,
+          double.infinity,
+        );
 
-          if (vicinity.row > 0) {
-            final dataRow = rows[vicinity.row - 1];
-            if (_rowGroupHasData(dataRow.rowGroupId)) {
-              child = GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onLongPress: selectionMode
-                    ? () => onRowGroupTap?.call(dataRow.rowGroupId)
-                    : () => onRowGroupLongPress?.call(dataRow.rowGroupId),
-                onTap: selectionMode
-                    ? () => onRowGroupTap?.call(dataRow.rowGroupId)
-                    : null,
+        return SizedBox(
+          height: _rowCount * _rowHeight,
+          child: TableView.builder(
+            columnCount: _columnCount,
+            rowCount: _rowCount,
+            pinnedColumnCount: 3,
+            verticalDetails: const ScrollableDetails.vertical(
+              physics: NeverScrollableScrollPhysics(),
+            ),
+            horizontalDetails: const ScrollableDetails.horizontal(
+              physics: ClampingScrollPhysics(), // 가로 overscroll 방지
+            ),
+            columnBuilder: (column) => _buildColumnSpan(column, dataColWidth),
+            rowBuilder: _buildRowSpan,
+            cellBuilder: (context, vicinity) {
+              final merge = _cellMerge(vicinity);
+              Widget child = _buildCell(vicinity);
+
+              if (vicinity.row > 0) {
+                final dataRow = rows[vicinity.row - 1];
+                if (_rowGroupHasData(dataRow.rowGroupId)) {
+                  child = GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onLongPress: selectionMode
+                        ? () => onRowGroupTap?.call(dataRow.rowGroupId)
+                        : () => onRowGroupLongPress?.call(dataRow.rowGroupId),
+                    onTap: selectionMode
+                        ? () => onRowGroupTap?.call(dataRow.rowGroupId)
+                        : null,
+                    child: child,
+                  );
+                }
+              }
+
+              return TableViewCell(
+                rowMergeStart: merge?.$1,
+                rowMergeSpan: merge?.$2,
                 child: child,
               );
-            }
-          }
-
-          return TableViewCell(
-            rowMergeStart: merge?.$1,
-            rowMergeSpan: merge?.$2,
-            child: child,
-          );
-        },
-      ),
+            },
+          ),
+        );
+      },
     );
   }
 
-  TableSpan _buildColumnSpan(int column) {
+  TableSpan _buildColumnSpan(int column, double dataColWidth) {
     final width = switch (column) {
       0 => _colLabel,
       1 => _colShift,
       2 => _colUnit,
-      3 => _colValue,
-      4 => _colWip,
-      5 => _colMonthCumulative,
-      _ => _colValue,
+      _ => dataColWidth,
     };
     return TableSpan(
       extent: FixedTableSpanExtent(width),
