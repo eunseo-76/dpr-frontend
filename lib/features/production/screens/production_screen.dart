@@ -884,6 +884,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
       data.processSummary,
       processNames: processNames,
       unitNames: unitNames,
+      unitOrder: _units.map((u) => u.id).toList(),
     );
 
     return SingleChildScrollView(

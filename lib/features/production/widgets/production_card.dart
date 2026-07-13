@@ -51,7 +51,7 @@ class ProductionCard extends StatelessWidget {
           Align(
             alignment: Alignment.centerRight,
             child: Text(
-              LabelStore.get('PRODUCTION_TABLE_AMOUNT_UNIT_HINT', '단위: 만원'),
+              LabelStore.get('PRODUCTION_TABLE_AMOUNT_UNIT_HINT', '금액 단위: 만'),
               style: TextStyle(fontSize: 11, color: Colors.grey[700]),
             ),
           ),
@@ -113,7 +113,7 @@ class ProductionCard extends StatelessWidget {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: entries.map((u) => Text.rich(TextSpan(children: [
-                  TextSpan(text: '₩${formatNumber(values[u.id]!)}', style: const TextStyle(fontSize: 12)),
+                  TextSpan(text: '₩${formatManwon(values[u.id]!)}', style: const TextStyle(fontSize: 12)),
                   TextSpan(text: '  ${u.name}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                 ]))).toList(),
               ),

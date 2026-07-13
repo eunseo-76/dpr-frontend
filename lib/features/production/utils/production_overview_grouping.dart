@@ -71,8 +71,18 @@ List<ProcessSummaryDisplayEntry> buildProcessSummaryDisplay(
   List<ProcessSummaryEntry> entries, {
   required Map<int, String> processNames,
   required Map<int, String> unitNames,
+  required List<int> unitOrder,
 }) {
-  final sorted = [...entries]..sort((a, b) => a.processId.compareTo(b.processId));
+  int unitRank(int unitId) {
+    final index = unitOrder.indexOf(unitId);
+    return index == -1 ? unitOrder.length : index;
+  }
+
+  final sorted = [...entries]..sort((a, b) {
+    final byProcess = a.processId.compareTo(b.processId);
+    if (byProcess != 0) return byProcess;
+    return unitRank(a.unitId).compareTo(unitRank(b.unitId));
+  });
 
   final merged = sameAsPrevious(sorted, (e) => e.processId);
 

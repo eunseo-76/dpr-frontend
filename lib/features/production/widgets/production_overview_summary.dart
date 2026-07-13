@@ -39,19 +39,19 @@ class ProductionOverviewSummary extends StatelessWidget {
             ),
           ),
           SizedBox(
-            width: 44,
-            child: Text(
-              entry.unitName,
+            width: 90,
+            child: Text.rich(
+              TextSpan(children: [
+                TextSpan(
+                  text: formatNumber(entry.result),
+                  style: const TextStyle(fontSize: 12),
+                ),
+                TextSpan(
+                  text: ' ${entry.unitName}',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ]),
               textAlign: TextAlign.right,
-              style: const TextStyle(fontSize: 12),
-            ),
-          ),
-          SizedBox(
-            width: 64,
-            child: Text(
-              formatNumber(entry.result),
-              textAlign: TextAlign.right,
-              style: const TextStyle(fontSize: 12),
             ),
           ),
         ],
