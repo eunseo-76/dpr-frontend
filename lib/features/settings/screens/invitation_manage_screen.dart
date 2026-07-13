@@ -1,6 +1,7 @@
 import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/utils/user_storage.dart';
 import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
+import 'package:dpr_frontend/core/widgets/factory_tag.dart';
 import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
 import 'package:dpr_frontend/core/widgets/name_avatar.dart';
 import 'package:dpr_frontend/core/widgets/pin_code_field.dart';
@@ -586,7 +587,7 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
                 _roleChip(inv.role),
                 if (inv.factoryName != null) ...[
                   const SizedBox(width: 6),
-                  _infoChip(inv.factoryName!),
+                  FactoryTag(label: inv.factoryName!),
                 ],
                 const Spacer(),
                 Text(
@@ -663,9 +664,9 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
                       children: [
                         ...user.factories
                             .take(2)
-                            .map((f) => _infoChip(f.factoryName)),
+                            .map((f) => FactoryTag(label: f.factoryName)),
                         if (user.factories.length > 2)
-                          _infoChip('+${user.factories.length - 2}'),
+                          FactoryTag(label: '+${user.factories.length - 2}'),
                       ],
                     ),
                 ],
@@ -697,17 +698,4 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
     );
   }
 
-  Widget _infoChip(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(fontSize: 11, color: Colors.grey[700]),
-      ),
-    );
-  }
 }

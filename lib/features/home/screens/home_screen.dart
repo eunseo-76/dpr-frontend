@@ -1,4 +1,6 @@
+import 'package:dpr_frontend/core/models/factory_summary.dart';
 import 'package:dpr_frontend/core/utils/user_storage.dart';
+import 'package:dpr_frontend/core/widgets/factory_tag.dart';
 import 'package:dpr_frontend/core/widgets/menu_card.dart';
 import 'package:dpr_frontend/core/widgets/name_avatar.dart';
 import 'package:dpr_frontend/features/auth/screens/my_page_screen.dart';
@@ -18,6 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String _name = '';
   String _position = '';
   String _role = '';
+  List<FactorySummary> _factories = [];
 
   @override
   void initState() {
@@ -29,11 +32,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final name = await UserStorage.getName();
     final position = await UserStorage.getPosition();
     final role = await UserStorage.getRole();
+    final factories = await UserStorage.getFactories();
     if (mounted) {
       setState(() {
         _name = name ?? '';
         _position = position ?? '';
         _role = role ?? '';
+        _factories = factories;
       });
     }
   }
@@ -68,23 +73,35 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           NameAvatar(name: _name, size: 48, fontSize: 20),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _name,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    Text(
+                      _name,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (_role != 'OWNER')
+                      ..._factories.map(
+                        (f) => FactoryTag(label: f.factoryName),
+                      ),
+                  ],
                 ),
-              ),
-              Text(
-                _position,
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-              ),
-            ],
+                Text(
+                  _position,
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+              ],
+            ),
           ),
-          const Spacer(),
           Icon(Icons.chevron_right, color: Colors.grey[400]),
         ],
       ),

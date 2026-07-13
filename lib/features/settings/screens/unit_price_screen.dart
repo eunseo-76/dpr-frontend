@@ -144,8 +144,10 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
             existing.price == existing.price.toInt()
                 ? existing.price.toInt().toString()
                 : existing.price.toString();
+        final unitStillMapped =
+            units.any((u) => u.unitId == existing.unitId);
         newEntries[process.processId] = _EditingEntry(
-          unitId: existing.unitId,
+          unitId: unitStillMapped ? existing.unitId : units.first.unitId,
           priceText: priceText,
         );
       } else {
@@ -172,7 +174,7 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
       if (existing != null) {
         final currentPrice =
             double.tryParse(editing.priceController.text) ?? 0;
-        if (editing.unitId != existing.unitId ||
+        if (editing.unitId != editing.initialUnitId ||
             currentPrice != existing.price) {
           return true;
         }
@@ -572,8 +574,10 @@ class _UnitPriceScreenState extends State<UnitPriceScreen> {
 
 class _EditingEntry {
   int unitId;
+  final int initialUnitId;
   final TextEditingController priceController;
 
   _EditingEntry({required this.unitId, required String priceText})
-      : priceController = TextEditingController(text: priceText);
+      : initialUnitId = unitId,
+        priceController = TextEditingController(text: priceText);
 }

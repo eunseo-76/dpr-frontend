@@ -3,7 +3,10 @@
     "allow": [
       "Bash(dart format *)",
       "Bash(flutter analyze *)",
-      "PowerShell(flutter analyze *)"
+      "PowerShell(flutter analyze *)",
+      "Bash(gh run *)",
+      "PowerShell(gh run *)",
+      "Bash(git ls-remote *)"
     ]
   },
   "outputStyle": "Learning"
