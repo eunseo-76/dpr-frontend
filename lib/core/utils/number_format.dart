@@ -6,7 +6,8 @@ String formatNumber(double value) {
 
 String formatManwon(double? value) {
   if (value == null || value == 0) return '-';
-  return NumberFormat('#,##0.####').format(value / 10000);
+  final truncated = (value / 1000).truncate() / 10;
+  return NumberFormat('#,##0.#').format(truncated);
 }
 
 String formatCompact(double value) {
