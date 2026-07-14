@@ -604,10 +604,14 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
 
   Widget _buildUserCard(UserMember user) {
     final isSelected = _selectedUserIds.contains(user.userId);
+    final isSelectable =
+        !(_currentUserRole == 'MANAGER' && user.role == 'MANAGER');
 
     return GestureDetector(
-      onLongPress: () => _enterSelectionMode(user.userId),
-      onTap: _isSelectionMode ? () => _toggleSelection(user.userId) : null,
+      onLongPress: isSelectable ? () => _enterSelectionMode(user.userId) : null,
+      onTap: _isSelectionMode && isSelectable
+          ? () => _toggleSelection(user.userId)
+          : null,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.only(bottom: 8),
@@ -622,10 +626,12 @@ class _InvitationManageScreenState extends State<InvitationManageScreen> {
         child: Row(
           children: [
             if (_isSelectionMode) ...[
-              RoundedCheckbox(
-                value: isSelected,
-                onChanged: (_) => _toggleSelection(user.userId),
-              ),
+              isSelectable
+                  ? RoundedCheckbox(
+                      value: isSelected,
+                      onChanged: (_) => _toggleSelection(user.userId),
+                    )
+                  : const SizedBox(width: 22),
               const SizedBox(width: 10),
             ],
             NameAvatar(name: user.name, size: 36, fontSize: 14),

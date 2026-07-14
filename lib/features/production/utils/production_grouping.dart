@@ -92,6 +92,13 @@ List<ProductionDayGroup> groupProductionsForDay(
           ? production?.wipDayShift
           : production?.wipNightShift;
 
+      final monthlyCumulativeResult = rowScaffold.shift == '주'
+          ? production?.dayMonthlyCumulativeResult
+          : production?.nightMonthlyCumulativeResult;
+      final monthlyCumulativeAmount = rowScaffold.shift == '주'
+          ? production?.dayMonthlyCumulativeAmount
+          : production?.nightMonthlyCumulativeAmount;
+
       return ProductionDayRow(
         rowGroupId: rowScaffold.rowGroupId,
         rowGroupName: rowNickname ?? rowScaffold.rowGroupName,
@@ -104,8 +111,8 @@ List<ProductionDayGroup> groupProductionsForDay(
         amount: (value != null && production?.unitPrice != null)
             ? value * production!.unitPrice!
             : null,
-        monthlyCumulativeResult: production?.monthlyCumulativeResult,
-        monthlyCumulativeAmount: production?.monthlyCumulativeAmount,
+        monthlyCumulativeResult: monthlyCumulativeResult,
+        monthlyCumulativeAmount: monthlyCumulativeAmount,
         productionId: production?.productionId,
       );
     }).toList();
@@ -117,8 +124,9 @@ List<ProductionDayGroup> groupProductionsForDay(
     final amountSums = <int, double>{};
     for (final p in cardProductions) {
       dailySums[p.unitId] = (dailySums[p.unitId] ?? 0) + (p.result ?? 0);
-      cumulativeSums[p.unitId] =
-          (cumulativeSums[p.unitId] ?? 0) + (p.cumulativeResult ?? 0);
+      cumulativeSums[p.unitId] = (cumulativeSums[p.unitId] ?? 0) +
+          (p.dayMonthlyCumulativeResult ?? 0) +
+          (p.nightMonthlyCumulativeResult ?? 0);
       if (p.amount != null) {
         amountSums[p.unitId] = (amountSums[p.unitId] ?? 0) + p.amount!;
       }
