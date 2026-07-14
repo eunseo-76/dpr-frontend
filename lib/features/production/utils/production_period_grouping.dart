@@ -147,8 +147,11 @@ List<ProductionPeriodGroup> groupProductionsForPeriod(
     for (final p in cardProductions) {
       dailySums[p.unitId] = (dailySums[p.unitId] ?? 0) + (p.result ?? 0);
       final comboKey = '${p.processId}|${p.clientId}|${p.unitId}';
-      if (cumulativeSeen.add(comboKey) && p.cumulativeResult != null) {
-        cumulativeSums[p.unitId] = (cumulativeSums[p.unitId] ?? 0) + p.cumulativeResult!;
+      if (cumulativeSeen.add(comboKey) &&
+          (p.dayCumulativeResult != null || p.nightCumulativeResult != null)) {
+        cumulativeSums[p.unitId] = (cumulativeSums[p.unitId] ?? 0) +
+            (p.dayCumulativeResult ?? 0) +
+            (p.nightCumulativeResult ?? 0);
       }
       if (p.amount != null) {
         amountSums[p.unitId] = (amountSums[p.unitId] ?? 0) + p.amount!;

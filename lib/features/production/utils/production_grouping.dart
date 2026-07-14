@@ -92,6 +92,27 @@ List<ProductionDayGroup> groupProductionsForDay(
           ? production?.wipDayShift
           : production?.wipNightShift;
 
+      // 야-누적 = 오늘 주+야를 모두 반영한 당월 누적, 주-누적 = 그중 오늘 야간분을 뺀 "야간 반영 직전" 상태.
+      final combinedMonthlyResult = production == null
+          ? null
+          : (production.dayMonthlyCumulativeResult ?? 0) +
+              (production.nightMonthlyCumulativeResult ?? 0);
+      final combinedMonthlyAmount = production == null
+          ? null
+          : (production.dayMonthlyCumulativeAmount ?? 0) +
+              (production.nightMonthlyCumulativeAmount ?? 0);
+      final nightResultToday = production?.nightShift ?? 0;
+      final nightAmountToday = (production?.nightShift != null && production?.unitPrice != null)
+          ? production!.nightShift! * production.unitPrice!
+          : 0.0;
+
+      final monthlyCumulativeResult = rowScaffold.shift == '주'
+          ? (combinedMonthlyResult == null ? null : combinedMonthlyResult - nightResultToday)
+          : combinedMonthlyResult;
+      final monthlyCumulativeAmount = rowScaffold.shift == '주'
+          ? (combinedMonthlyAmount == null ? null : combinedMonthlyAmount - nightAmountToday)
+          : combinedMonthlyAmount;
+
       return ProductionDayRow(
         rowGroupId: rowScaffold.rowGroupId,
         rowGroupName: rowNickname ?? rowScaffold.rowGroupName,
@@ -104,8 +125,8 @@ List<ProductionDayGroup> groupProductionsForDay(
         amount: (value != null && production?.unitPrice != null)
             ? value * production!.unitPrice!
             : null,
-        monthlyCumulativeResult: production?.monthlyCumulativeResult,
-        monthlyCumulativeAmount: production?.monthlyCumulativeAmount,
+        monthlyCumulativeResult: monthlyCumulativeResult,
+        monthlyCumulativeAmount: monthlyCumulativeAmount,
         productionId: production?.productionId,
       );
     }).toList();
@@ -117,8 +138,9 @@ List<ProductionDayGroup> groupProductionsForDay(
     final amountSums = <int, double>{};
     for (final p in cardProductions) {
       dailySums[p.unitId] = (dailySums[p.unitId] ?? 0) + (p.result ?? 0);
-      cumulativeSums[p.unitId] =
-          (cumulativeSums[p.unitId] ?? 0) + (p.cumulativeResult ?? 0);
+      cumulativeSums[p.unitId] = (cumulativeSums[p.unitId] ?? 0) +
+          (p.dayCumulativeResult ?? 0) +
+          (p.nightCumulativeResult ?? 0);
       if (p.amount != null) {
         amountSums[p.unitId] = (amountSums[p.unitId] ?? 0) + p.amount!;
       }

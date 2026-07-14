@@ -17,9 +17,12 @@ class Production {
   final double? wipNightShift;
   final double? result;
   final double? wipResult;
-  final double? cumulativeResult;
-  final double? monthlyCumulativeResult;
-  final double? monthlyCumulativeAmount;
+  final double? dayCumulativeResult;
+  final double? nightCumulativeResult;
+  final double? dayMonthlyCumulativeResult;
+  final double? nightMonthlyCumulativeResult;
+  final double? dayMonthlyCumulativeAmount;
+  final double? nightMonthlyCumulativeAmount;
   final double? unitPrice;
   final double? amount;
   final double? wipAmount;
@@ -46,9 +49,12 @@ class Production {
     this.wipNightShift,
     this.result,
     this.wipResult,
-    this.cumulativeResult,
-    this.monthlyCumulativeResult,
-    this.monthlyCumulativeAmount,
+    this.dayCumulativeResult,
+    this.nightCumulativeResult,
+    this.dayMonthlyCumulativeResult,
+    this.nightMonthlyCumulativeResult,
+    this.dayMonthlyCumulativeAmount,
+    this.nightMonthlyCumulativeAmount,
     this.unitPrice,
     this.amount,
     this.wipAmount,
@@ -77,9 +83,12 @@ class Production {
       wipNightShift: (json['wipNightShift'] as num?)?.toDouble(),
       result: (json['result'] as num?)?.toDouble(),
       wipResult: (json['wipResult'] as num?)?.toDouble(),
-      cumulativeResult: (json['cumulativeResult'] as num?)?.toDouble(),
-      monthlyCumulativeResult: (json['monthlyCumulativeResult'] as num?)?.toDouble(),
-      monthlyCumulativeAmount: (json['monthlyCumulativeAmount'] as num?)?.toDouble(),
+      dayCumulativeResult: (json['dayCumulativeResult'] as num?)?.toDouble(),
+      nightCumulativeResult: (json['nightCumulativeResult'] as num?)?.toDouble(),
+      dayMonthlyCumulativeResult: (json['dayMonthlyCumulativeResult'] as num?)?.toDouble(),
+      nightMonthlyCumulativeResult: (json['nightMonthlyCumulativeResult'] as num?)?.toDouble(),
+      dayMonthlyCumulativeAmount: (json['dayMonthlyCumulativeAmount'] as num?)?.toDouble(),
+      nightMonthlyCumulativeAmount: (json['nightMonthlyCumulativeAmount'] as num?)?.toDouble(),
       unitPrice: (json['unitPrice'] as num?)?.toDouble(),
       amount: (json['amount'] as num?)?.toDouble(),
       wipAmount: (json['wipAmount'] as num?)?.toDouble(),
