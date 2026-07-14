@@ -822,6 +822,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
             dailyByUnit: group.dailySumByUnit,
             cumulativeByUnit: group.cumulativeSumByUnit,
             amountByUnit: _showAmount ? group.amountByUnit : null,
+            cumulativeAmountByUnit: _showAmount ? group.cumulativeAmountByUnit : null,
           ),
           table: ProductionDayTable(
             rowLabelHeader: rowLabelHeader,
