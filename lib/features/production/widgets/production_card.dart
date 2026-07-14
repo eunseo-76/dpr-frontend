@@ -9,11 +9,13 @@ class ProductionCardFooter {
   final Map<int, double> dailyByUnit;
   final Map<int, double> cumulativeByUnit;
   final Map<int, double>? amountByUnit;
+  final Map<int, double>? cumulativeAmountByUnit;
 
   ProductionCardFooter({
     required this.dailyByUnit,
     required this.cumulativeByUnit,
     this.amountByUnit,
+    this.cumulativeAmountByUnit,
   });
 }
 
@@ -63,44 +65,24 @@ class ProductionCard extends StatelessWidget {
   }
 
   Widget _buildFooter() {
-    final amountByUnit = footer!.amountByUnit;
     return Column(
       children: [
-        _footerRow(LabelStore.get('PRODUCTION_SUMMARY_PERIOD_SUM', '기간별 실적 합계'), footer!.dailyByUnit),
+        _footerRow(
+          LabelStore.get('PRODUCTION_SUMMARY_PERIOD_SUM', '기간별 실적 합계'),
+          footer!.dailyByUnit,
+          amounts: footer!.amountByUnit,
+        ),
         const DashedDivider(),
-        _footerRow(LabelStore.get('PRODUCTION_SUMMARY_CUMULATIVE_SUM', '누적 실적 합계'), footer!.cumulativeByUnit),
-        if (amountByUnit != null) ...[
-          const DashedDivider(),
-          _footerAmountRow(LabelStore.get('PRODUCTION_SUMMARY_AMOUNT_SUM', '총 금액'), amountByUnit),
-        ],
+        _footerRow(
+          LabelStore.get('PRODUCTION_SUMMARY_CUMULATIVE_SUM', '누적 실적 합계'),
+          footer!.cumulativeByUnit,
+          amounts: footer!.cumulativeAmountByUnit,
+        ),
       ],
     );
   }
 
-  Widget _footerRow(String label, Map<int, double> values) {
-    final entries = units.where((u) => (values[u.id] ?? 0) != 0).toList();
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 12)),
-        if (entries.isEmpty)
-          const Text('-', style: TextStyle(fontSize: 12))
-        else
-          Row(
-            children: entries.map((u) => Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: Text.rich(TextSpan(children: [
-                TextSpan(text: formatNumber(values[u.id]!), style: const TextStyle(fontSize: 12)),
-                TextSpan(text: ' ${u.name}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-              ])),
-            )).toList(),
-          ),
-      ],
-    );
-  }
-
-  Widget _footerAmountRow(String label, Map<int, double> values) {
+  Widget _footerRow(String label, Map<int, double> values, {Map<int, double>? amounts}) {
     final entries = units.where((u) => (values[u.id] ?? 0) != 0).toList();
 
     return Row(
@@ -108,15 +90,29 @@ class ProductionCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(fontSize: 12)),
-        entries.isEmpty
-            ? const Text('-', style: TextStyle(fontSize: 12))
-            : Column(
+        if (entries.isEmpty)
+          const Text('-', style: TextStyle(fontSize: 12))
+        else
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: entries.map((u) => Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
-                children: entries.map((u) => Text.rich(TextSpan(children: [
-                  TextSpan(text: '₩${formatManwon(values[u.id]!)}', style: const TextStyle(fontSize: 12)),
-                  TextSpan(text: '  ${u.name}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                ]))).toList(),
+                children: [
+                  Text.rich(TextSpan(children: [
+                    TextSpan(text: formatNumber(values[u.id]!), style: const TextStyle(fontSize: 12)),
+                    TextSpan(text: ' ${u.name}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ])),
+                  if (amounts != null)
+                    Text.rich(TextSpan(children: [
+                      TextSpan(text: formatManwon(amounts[u.id]), style: const TextStyle(fontSize: 12)),
+                      const TextSpan(text: ' 원', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ])),
+                ],
               ),
+            )).toList(),
+          ),
       ],
     );
   }

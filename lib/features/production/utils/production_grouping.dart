@@ -39,6 +39,7 @@ class ProductionDayGroup {
   final Map<int, double> dailySumByUnit;
   final Map<int, double> cumulativeSumByUnit;
   final Map<int, double> amountByUnit;
+  final Map<int, double> cumulativeAmountByUnit;
 
   ProductionDayGroup({
     required this.groupId,
@@ -47,6 +48,7 @@ class ProductionDayGroup {
     required this.dailySumByUnit,
     required this.cumulativeSumByUnit,
     required this.amountByUnit,
+    required this.cumulativeAmountByUnit,
   });
 }
 
@@ -122,6 +124,7 @@ List<ProductionDayGroup> groupProductionsForDay(
     final dailySums = <int, double>{};
     final cumulativeSums = <int, double>{};
     final amountSums = <int, double>{};
+    final cumulativeAmountSums = <int, double>{};
     for (final p in cardProductions) {
       dailySums[p.unitId] = (dailySums[p.unitId] ?? 0) + (p.result ?? 0);
       cumulativeSums[p.unitId] = (cumulativeSums[p.unitId] ?? 0) +
@@ -129,6 +132,11 @@ List<ProductionDayGroup> groupProductionsForDay(
           (p.nightMonthlyCumulativeResult ?? 0);
       if (p.amount != null) {
         amountSums[p.unitId] = (amountSums[p.unitId] ?? 0) + p.amount!;
+      }
+      if (p.dayMonthlyCumulativeAmount != null || p.nightMonthlyCumulativeAmount != null) {
+        cumulativeAmountSums[p.unitId] = (cumulativeAmountSums[p.unitId] ?? 0) +
+            (p.dayMonthlyCumulativeAmount ?? 0) +
+            (p.nightMonthlyCumulativeAmount ?? 0);
       }
     }
 
@@ -139,6 +147,7 @@ List<ProductionDayGroup> groupProductionsForDay(
       dailySumByUnit: dailySums,
       cumulativeSumByUnit: cumulativeSums,
       amountByUnit: amountSums,
+      cumulativeAmountByUnit: cumulativeAmountSums,
     );
   }).toList();
 }
