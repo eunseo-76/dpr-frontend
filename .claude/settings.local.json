@@ -1,5 +1,8 @@
 {
   "permissions": {
+    "deny": [
+      "Read(android/key.properties)"
+    ],
     "allow": [
       "Bash(dart format *)",
       "Bash(flutter analyze *)",

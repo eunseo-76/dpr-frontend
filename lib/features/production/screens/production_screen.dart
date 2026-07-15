@@ -742,6 +742,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
           wrapInCard: false,
           title: cardTitle,
           units: _units,
+          sumAmounts: _groupBy == '업체별',
           footer: ProductionCardFooter(
             dailyByUnit: group.dailySumByUnit,
             cumulativeByUnit: group.cumulativeSumByUnit,
@@ -818,6 +819,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
                     rowLabelHeader: rowLabelHeader,
                   );
                 },
+          sumAmounts: _groupBy == '업체별',
           footer: ProductionCardFooter(
             dailyByUnit: group.dailySumByUnit,
             cumulativeByUnit: group.cumulativeSumByUnit,
@@ -875,17 +877,19 @@ class _ProductionScreenState extends State<ProductionScreen> {
     };
     final unitNames = {for (final u in _units) u.id: u.name};
 
-    final tableRows = buildOverviewTableRows(
+    final unitOrder = _units.map((u) => u.id).toList();
+    final pivotData = buildOverviewPivotRows(
       data.rows,
       clientNames: clientNames,
       processNames: processNames,
       unitNames: unitNames,
+      unitOrder: unitOrder,
     );
     final summaryEntries = buildProcessSummaryDisplay(
       data.processSummary,
       processNames: processNames,
       unitNames: unitNames,
-      unitOrder: _units.map((u) => u.id).toList(),
+      unitOrder: unitOrder,
     );
 
     return SingleChildScrollView(
@@ -897,7 +901,10 @@ class _ProductionScreenState extends State<ProductionScreen> {
           children: [
             ProductionOverviewSummary(entries: summaryEntries),
             const SizedBox(height: 12),
-            ProductionOverviewTable(rows: tableRows),
+            ProductionOverviewTable(
+              rows: pivotData.rows,
+              unitColumns: pivotData.unitColumns,
+            ),
           ],
         ),
       ),

@@ -1,13 +1,13 @@
 import 'package:intl/intl.dart';
 
 String formatNumber(double value) {
-  return NumberFormat('#,##0.###').format(value);
+  return NumberFormat('#,##0').format(value.round());
 }
 
 String formatManwon(double? value) {
   if (value == null || value == 0) return '-';
-  final truncated = (value / 1000).truncate() / 10;
-  return NumberFormat('#,##0.#').format(truncated);
+  final manwon = (value / 10000).round();
+  return NumberFormat('#,##0').format(manwon);
 }
 
 String formatCompact(double value) {

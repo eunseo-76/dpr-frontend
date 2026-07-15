@@ -1,19 +1,35 @@
 import 'package:dpr_frontend/features/production/models/production_overview.dart';
 
-class OverviewTableRow {
+class OverviewPivotRow {
+  final int clientId;
   final String clientName;
+  final int processId;
   final String processName;
-  final String unitName;
-  final double result;
+  final Map<int, double> resultByUnit; // unitId -> 실적
   final int clientGroupIndex; // 같은 값이면 같은 업체 그룹 (표에서 셀 병합에 사용)
 
-  OverviewTableRow({
+  OverviewPivotRow({
+    required this.clientId,
     required this.clientName,
+    required this.processId,
     required this.processName,
-    required this.unitName,
-    required this.result,
+    required this.resultByUnit,
     required this.clientGroupIndex,
   });
+}
+
+class OverviewUnitColumn {
+  final int unitId;
+  final String unitName;
+
+  OverviewUnitColumn({required this.unitId, required this.unitName});
+}
+
+class OverviewPivotData {
+  final List<OverviewPivotRow> rows;
+  final List<OverviewUnitColumn> unitColumns;
+
+  OverviewPivotData({required this.rows, required this.unitColumns});
 }
 
 class ProcessSummaryDisplayEntry {
@@ -39,32 +55,58 @@ List<bool> sameAsPrevious<T>(List<T> items, Object Function(T item) keyOf) {
   );
 }
 
-List<OverviewTableRow> buildOverviewTableRows(
+OverviewPivotData buildOverviewPivotRows(
   List<ProductionOverviewRow> rows, {
   required Map<int, String> clientNames,
   required Map<int, String> processNames,
   required Map<int, String> unitNames,
+  required List<int> unitOrder,
 }) {
-  final sorted = [...rows]..sort((a, b) {
-    final byClient = a.clientId.compareTo(b.clientId);
-    if (byClient != 0) return byClient;
-    return a.processId.compareTo(b.processId);
-  });
+  final grouped = <String, List<ProductionOverviewRow>>{};
+  for (final r in rows) {
+    grouped.putIfAbsent('${r.clientId}_${r.processId}', () => []).add(r);
+  }
 
-  final merged = sameAsPrevious(sorted, (r) => r.clientId);
+  final entries = grouped.values.toList()
+    ..sort((a, b) {
+      final byClient = a.first.clientId.compareTo(b.first.clientId);
+      if (byClient != 0) return byClient;
+      return a.first.processId.compareTo(b.first.processId);
+    });
 
-  int groupIndex = -1;
-  return List.generate(sorted.length, (i) {
-    if (!merged[i]) groupIndex++;
-    final r = sorted[i];
-    return OverviewTableRow(
-      clientName: clientNames[r.clientId] ?? r.clientName,
-      processName: processNames[r.processId] ?? r.processName,
-      unitName: unitNames[r.unitId] ?? r.unitName,
-      result: r.result,
-      clientGroupIndex: groupIndex,
+  final clientMerged = sameAsPrevious(entries, (e) => e.first.clientId);
+
+  int clientGroupIdx = -1;
+  final pivotRows = List.generate(entries.length, (i) {
+    if (!clientMerged[i]) clientGroupIdx++;
+    final group = entries[i];
+    final first = group.first;
+    return OverviewPivotRow(
+      clientId: first.clientId,
+      clientName: clientNames[first.clientId] ?? first.clientName,
+      processId: first.processId,
+      processName: processNames[first.processId] ?? first.processName,
+      resultByUnit: {for (final r in group) r.unitId: r.result},
+      clientGroupIndex: clientGroupIdx,
     );
   });
+
+  int unitRank(int unitId) {
+    final index = unitOrder.indexOf(unitId);
+    return index == -1 ? unitOrder.length : index;
+  }
+
+  final dataUnitNames = {for (final r in rows) r.unitId: r.unitName};
+  final presentUnitIds = rows.map((r) => r.unitId).toSet().toList()
+    ..sort((a, b) => unitRank(a).compareTo(unitRank(b)));
+  final unitColumns = presentUnitIds
+      .map((id) => OverviewUnitColumn(
+            unitId: id,
+            unitName: unitNames[id] ?? dataUnitNames[id] ?? '',
+          ))
+      .toList();
+
+  return OverviewPivotData(rows: pivotRows, unitColumns: unitColumns);
 }
 
 List<ProcessSummaryDisplayEntry> buildProcessSummaryDisplay(

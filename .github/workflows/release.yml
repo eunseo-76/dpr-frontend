@@ -44,6 +44,16 @@ jobs:
         id: version
         run: echo "name=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
 
+      - name: Decode keystore and create key.properties
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/dpr-release.jks
+          cat > android/key.properties << EOF
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          keyAlias=dpr-release
+          storeFile=dpr-release.jks
+          EOF
+
       - name: Build release APK
         run: |
           flutter build apk --release --target-platform android-arm64 \

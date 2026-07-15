@@ -5,43 +5,48 @@ import 'package:dpr_frontend/core/utils/number_format.dart';
 import 'package:dpr_frontend/features/production/utils/production_overview_grouping.dart';
 
 class ProductionOverviewTable extends StatelessWidget {
-  final List<OverviewTableRow> rows;
+  final List<OverviewPivotRow> rows;
+  final List<OverviewUnitColumn> unitColumns;
 
-  const ProductionOverviewTable({super.key, required this.rows});
+  const ProductionOverviewTable({
+    super.key,
+    required this.rows,
+    required this.unitColumns,
+  });
 
-  static const _minUnitWidth = 40.0;
-  static const _minValueWidth = 56.0;
+  static const _colClient = 72.0;
+  static const _colProcess = 72.0;
+  static const _minValueColWidth = 64.0;
   static const _rowHeight = 36.0;
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
 
-  int get _columnCount => 4;
+  int get _columnCount => 2 + unitColumns.length;
   int get _rowCount => 1 + rows.length;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final unitW = (constraints.maxWidth * 0.15).clamp(_minUnitWidth, 80.0);
-        final valueW = (constraints.maxWidth * 0.25).clamp(_minValueWidth, 100.0);
-        final remaining = constraints.maxWidth - unitW - valueW;
-        final clientW = remaining / 2;
-        final processW = remaining / 2;
+        const pinnedWidth = _colClient + _colProcess;
+        final valueColWidth = unitColumns.isEmpty
+            ? _minValueColWidth
+            : ((constraints.maxWidth - pinnedWidth) / unitColumns.length)
+                .clamp(_minValueColWidth, double.infinity);
 
         return SizedBox(
           height: _rowCount * _rowHeight,
           child: TableView.builder(
             columnCount: _columnCount,
             rowCount: _rowCount,
-            pinnedColumnCount: 0,
+            pinnedColumnCount: 2,
             verticalDetails: const ScrollableDetails.vertical(
               physics: NeverScrollableScrollPhysics(),
             ),
             horizontalDetails: const ScrollableDetails.horizontal(
               physics: ClampingScrollPhysics(),
             ),
-            columnBuilder: (column) =>
-                _buildColumnSpan(column, clientW, processW, unitW, valueW),
+            columnBuilder: (column) => _buildColumnSpan(column, valueColWidth),
             rowBuilder: _buildRowSpan,
             cellBuilder: (context, vicinity) {
               final merge = _cellMerge(vicinity);
@@ -57,18 +62,11 @@ class ProductionOverviewTable extends StatelessWidget {
     );
   }
 
-  TableSpan _buildColumnSpan(
-    int column,
-    double clientW,
-    double processW,
-    double unitW,
-    double valueW,
-  ) {
+  TableSpan _buildColumnSpan(int column, double valueColWidth) {
     final width = switch (column) {
-      0 => clientW,
-      1 => processW,
-      2 => unitW,
-      _ => valueW,
+      0 => _colClient,
+      1 => _colProcess,
+      _ => valueColWidth,
     };
     return TableSpan(
       extent: FixedTableSpanExtent(width),
@@ -103,22 +101,22 @@ class ProductionOverviewTable extends StatelessWidget {
     final column = vicinity.column;
 
     if (isHeader) {
+      final valueLabel = LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE', '실적');
       final headers = [
         LabelStore.get('PRODUCTION_TABLE_HEADER_CLIENT', '업체'),
         LabelStore.get('PRODUCTION_TABLE_HEADER_PROCESS', '공정'),
-        LabelStore.get('PRODUCTION_TABLE_HEADER_UNIT', '단위'),
-        LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE', '실적'),
+        ...unitColumns.map((u) => '$valueLabel(${u.unitName})'),
       ];
       return _cell(headers[column], isHeader: true);
     }
 
     final row = rows[vicinity.row - 1];
-    return switch (column) {
-      0 => _cell(row.clientName),
-      1 => _cell(row.processName),
-      2 => _cell(row.unitName),
-      _ => _cell(formatNumber(row.result)),
-    };
+    if (column == 0) return _cell(row.clientName);
+    if (column == 1) return _cell(row.processName);
+
+    final unit = unitColumns[column - 2];
+    final value = row.resultByUnit[unit.unitId];
+    return _cell(value == null || value == 0 ? '-' : formatNumber(value));
   }
 
   Widget _cell(String text, {bool isHeader = false}) {
