@@ -26,6 +26,7 @@ class ProductionCard extends StatelessWidget {
   final ProductionCardFooter? footer;
   final VoidCallback? onEditTap;
   final bool wrapInCard;
+  final bool sumAmounts;
 
   const ProductionCard({
     super.key,
@@ -35,6 +36,7 @@ class ProductionCard extends StatelessWidget {
     this.footer,
     this.onEditTap,
     this.wrapInCard = true,
+    this.sumAmounts = false,
   });
 
   @override
@@ -82,36 +84,47 @@ class ProductionCard extends StatelessWidget {
     );
   }
 
+  // 공정별 뷰: 단위 하나만 잡히는 게 정상이라 첫 값만 사용 (여러 개면 데이터 이상)
+  // 업체별 뷰: 공정마다 기준단위가 다를 수 있어 여러 금액이 동시에 잡히는 게 정상이라 합산
+  double? _extractAmount(Map<int, double>? amounts) {
+    if (amounts == null) return null;
+    final nonZero = amounts.values.where((v) => v != 0);
+    if (nonZero.isEmpty) return null;
+    return sumAmounts ? nonZero.reduce((a, b) => a + b) : nonZero.first;
+  }
+
   Widget _footerRow(String label, Map<int, double> values, {Map<int, double>? amounts}) {
     final entries = units.where((u) => (values[u.id] ?? 0) != 0).toList();
+    final amount = _extractAmount(amounts);
+    final showAmount = amounts != null;
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(label, style: const TextStyle(fontSize: 12)),
-        if (entries.isEmpty)
+        if (entries.isEmpty && amount == null)
           const Text('-', style: TextStyle(fontSize: 12))
         else
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: entries.map((u) => Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text.rich(TextSpan(children: [
-                    TextSpan(text: formatNumber(values[u.id]!), style: const TextStyle(fontSize: 12)),
-                    TextSpan(text: ' ${u.name}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              ...entries.map((u) => Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Text.rich(TextSpan(children: [
+                  TextSpan(text: formatNumber(values[u.id]!), style: const TextStyle(fontSize: 12)),
+                  TextSpan(text: ' ${u.name}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                ])),
+              )),
+              if (showAmount)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8),
+                  child: Text.rich(TextSpan(children: [
+                    TextSpan(text: formatManwon(amount), style: const TextStyle(fontSize: 12)),
+                    const TextSpan(text: ' 만원', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   ])),
-                  if (amounts != null)
-                    Text.rich(TextSpan(children: [
-                      TextSpan(text: formatManwon(amounts[u.id]), style: const TextStyle(fontSize: 12)),
-                      const TextSpan(text: ' 원', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    ])),
-                ],
-              ),
-            )).toList(),
+                ),
+            ],
           ),
       ],
     );
