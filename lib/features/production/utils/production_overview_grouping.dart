@@ -36,12 +36,14 @@ class ProcessSummaryDisplayEntry {
   final String processName; // 같은 공정이 연속되면 빈 문자열
   final String unitName;
   final double result;
+  final double? amount;
   final bool isNewProcessGroup;
 
   ProcessSummaryDisplayEntry({
     required this.processName,
     required this.unitName,
     required this.result,
+    this.amount,
     required this.isNewProcessGroup,
   });
 }
@@ -134,6 +136,7 @@ List<ProcessSummaryDisplayEntry> buildProcessSummaryDisplay(
       processName: merged[i] ? '' : (processNames[e.processId] ?? e.processName),
       unitName: unitNames[e.unitId] ?? e.unitName,
       result: e.result,
+      amount: e.amount,
       isNewProcessGroup: !merged[i],
     );
   });

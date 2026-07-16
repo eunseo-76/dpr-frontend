@@ -36,6 +36,7 @@ class ProcessSummaryEntry {
   final int unitId;
   final String unitName;
   final double result;
+  final double? amount;
 
   ProcessSummaryEntry({
     required this.processId,
@@ -43,6 +44,7 @@ class ProcessSummaryEntry {
     required this.unitId,
     required this.unitName,
     required this.result,
+    this.amount,
   });
 
   factory ProcessSummaryEntry.fromJson(Map<String, dynamic> json) {
@@ -52,6 +54,7 @@ class ProcessSummaryEntry {
       unitId: json['unitId'] as int,
       unitName: json['unitName'] as String,
       result: (json['result'] as num).toDouble(),
+      amount: (json['amount'] as num?)?.toDouble(),
     );
   }
 }

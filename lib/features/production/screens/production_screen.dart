@@ -899,7 +899,10 @@ class _ProductionScreenState extends State<ProductionScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ProductionOverviewSummary(entries: summaryEntries),
+            ProductionOverviewSummary(
+              entries: summaryEntries,
+              showAmount: _showAmount,
+            ),
             const SizedBox(height: 12),
             ProductionOverviewTable(
               rows: pivotData.rows,

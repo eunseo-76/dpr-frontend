@@ -6,8 +6,13 @@ import 'package:dpr_frontend/features/production/utils/production_overview_group
 
 class ProductionOverviewSummary extends StatelessWidget {
   final List<ProcessSummaryDisplayEntry> entries;
+  final bool showAmount;
 
-  const ProductionOverviewSummary({super.key, required this.entries});
+  const ProductionOverviewSummary({
+    super.key,
+    required this.entries,
+    required this.showAmount,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +59,29 @@ class ProductionOverviewSummary extends StatelessWidget {
               textAlign: TextAlign.right,
             ),
           ),
+          if (showAmount)
+            SizedBox(
+              width: 80,
+              child: entry.amount == null
+                  ? Text(
+                      '-',
+                      textAlign: TextAlign.right,
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                    )
+                  : Text.rich(
+                      TextSpan(children: [
+                        TextSpan(
+                          text: formatManwon(entry.amount),
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        const TextSpan(
+                          text: ' 만원',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      ]),
+                      textAlign: TextAlign.right,
+                    ),
+            ),
         ],
       ),
     );
