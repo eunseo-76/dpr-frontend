@@ -57,6 +57,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
   List<FactoryClient> _allFactoryClients = [];
   List<FactoryProcess> _allFactoryProcesses = [];
   List<Production> _allProductions = [];
+  List<ProductionMonthlyCumulative> _allMonthlyCumulative = [];
 
   bool _isLoading = true;
   String? _error;
@@ -102,6 +103,10 @@ class _ProductionScreenState extends State<ProductionScreen> {
 
   List<Production> get _productions =>
       _allProductions.where((p) => p.factoryId == _selectedFactoryId).toList();
+
+  List<ProductionMonthlyCumulative> get _monthlyCumulative => _allMonthlyCumulative
+      .where((m) => m.factoryId == _selectedFactoryId)
+      .toList();
 
   bool get _canEdit => isEditAllowed(_factoryShift, _selectedDate);
   bool get _showAmount => _role != 'STAFF';
@@ -266,11 +271,17 @@ class _ProductionScreenState extends State<ProductionScreen> {
       ]);
       final factoryShift = await _factoryService.getFactoryShift(factories.first.factoryId);
       await labelsFuture;
+      final productionResult = results[3]
+          as ({
+            List<Production> productions,
+            List<ProductionMonthlyCumulative> monthlyCumulative,
+          });
       setState(() {
         _allFactoryUnits = results[0] as List<FactoryUnit>;
         _allFactoryClients = results[1] as List<FactoryClient>;
         _allFactoryProcesses = results[2] as List<FactoryProcess>;
-        _allProductions = results[3] as List<Production>;
+        _allProductions = productionResult.productions;
+        _allMonthlyCumulative = productionResult.monthlyCumulative;
         _factoryShift = factoryShift;
       });
     } catch (e) {
@@ -283,11 +294,14 @@ class _ProductionScreenState extends State<ProductionScreen> {
   Future<void> _loadProductions() async {
     setState(() { _isLoading = true; _error = null; });
     try {
-      final productions = await _productionService.getProductionList(
+      final result = await _productionService.getProductionList(
         date: _selectedDate,
         periodType: _periodTypeMap[_selectedPeriod]!,
       );
-      setState(() => _allProductions = productions);
+      setState(() {
+        _allProductions = result.productions;
+        _allMonthlyCumulative = result.monthlyCumulative;
+      });
     } catch (e) {
       setState(() => _error = e.toString());
     } finally {
@@ -781,6 +795,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
       scaffold,
       _groupBy,
       showAmount: _showAmount,
+      monthlyCumulative: _monthlyCumulative,
     );
     final rowLabelHeader = _groupBy == '공정별'
         ? LabelStore.get('PRODUCTION_TABLE_HEADER_CLIENT', '업체')

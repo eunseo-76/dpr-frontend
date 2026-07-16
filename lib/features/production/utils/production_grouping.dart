@@ -57,6 +57,7 @@ List<ProductionDayGroup> groupProductionsForDay(
   List<ProductionGroupScaffold> scaffold,
   String groupBy, {
   required bool showAmount,
+  required List<ProductionMonthlyCumulative> monthlyCumulative,
 }) {
   final processNicknames = <int, String>{};
   final clientNicknames = <int, String>{};
@@ -94,12 +95,20 @@ List<ProductionDayGroup> groupProductionsForDay(
           ? production?.wipDayShift
           : production?.wipNightShift;
 
+      final processId = groupBy == '공정별' ? group.groupId : rowScaffold.rowGroupId;
+      final clientId = groupBy == '공정별' ? rowScaffold.rowGroupId : group.groupId;
+      final cumulativeMatches = monthlyCumulative.where((m) =>
+          m.processId == processId &&
+          m.clientId == clientId &&
+          m.unitId == rowScaffold.unitId);
+      final cumulative = cumulativeMatches.isEmpty ? null : cumulativeMatches.first;
+
       final monthlyCumulativeResult = rowScaffold.shift == '주'
-          ? production?.dayMonthlyCumulativeResult
-          : production?.nightMonthlyCumulativeResult;
+          ? cumulative?.totalDayResult
+          : cumulative?.totalNightResult;
       final monthlyCumulativeAmount = rowScaffold.shift == '주'
-          ? production?.dayMonthlyCumulativeAmount
-          : production?.nightMonthlyCumulativeAmount;
+          ? cumulative?.totalDayAmount
+          : cumulative?.totalNightAmount;
 
       return ProductionDayRow(
         rowGroupId: rowScaffold.rowGroupId,
@@ -122,21 +131,26 @@ List<ProductionDayGroup> groupProductionsForDay(
     final rows = _injectAmountRows(unitRows, showAmount: showAmount);
 
     final dailySums = <int, double>{};
-    final cumulativeSums = <int, double>{};
     final amountSums = <int, double>{};
-    final cumulativeAmountSums = <int, double>{};
     for (final p in cardProductions) {
       dailySums[p.unitId] = (dailySums[p.unitId] ?? 0) + (p.result ?? 0);
-      cumulativeSums[p.unitId] = (cumulativeSums[p.unitId] ?? 0) +
-          (p.dayMonthlyCumulativeResult ?? 0) +
-          (p.nightMonthlyCumulativeResult ?? 0);
       if (p.amount != null) {
         amountSums[p.unitId] = (amountSums[p.unitId] ?? 0) + p.amount!;
       }
-      if (p.dayMonthlyCumulativeAmount != null || p.nightMonthlyCumulativeAmount != null) {
-        cumulativeAmountSums[p.unitId] = (cumulativeAmountSums[p.unitId] ?? 0) +
-            (p.dayMonthlyCumulativeAmount ?? 0) +
-            (p.nightMonthlyCumulativeAmount ?? 0);
+    }
+
+    // 카드 하단 누적합계는 오늘 production 유무와 무관하게, 위에서 매칭된
+    // 행별 monthlyCumulativeResult/Amount(주+야)를 그대로 합산한 값이다.
+    final cumulativeSums = <int, double>{};
+    final cumulativeAmountSums = <int, double>{};
+    for (final row in unitRows) {
+      if (row.monthlyCumulativeResult != null) {
+        cumulativeSums[row.unitId] =
+            (cumulativeSums[row.unitId] ?? 0) + row.monthlyCumulativeResult!;
+      }
+      if (row.monthlyCumulativeAmount != null) {
+        cumulativeAmountSums[row.unitId] =
+            (cumulativeAmountSums[row.unitId] ?? 0) + row.monthlyCumulativeAmount!;
       }
     }
 

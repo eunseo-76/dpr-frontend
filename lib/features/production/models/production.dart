@@ -19,10 +19,6 @@ class Production {
   final double? wipResult;
   final double? dayCumulativeResult;
   final double? nightCumulativeResult;
-  final double? dayMonthlyCumulativeResult;
-  final double? nightMonthlyCumulativeResult;
-  final double? dayMonthlyCumulativeAmount;
-  final double? nightMonthlyCumulativeAmount;
   final double? unitPrice;
   final double? amount;
   final double? wipAmount;
@@ -51,10 +47,6 @@ class Production {
     this.wipResult,
     this.dayCumulativeResult,
     this.nightCumulativeResult,
-    this.dayMonthlyCumulativeResult,
-    this.nightMonthlyCumulativeResult,
-    this.dayMonthlyCumulativeAmount,
-    this.nightMonthlyCumulativeAmount,
     this.unitPrice,
     this.amount,
     this.wipAmount,
@@ -85,16 +77,47 @@ class Production {
       wipResult: (json['wipResult'] as num?)?.toDouble(),
       dayCumulativeResult: (json['dayCumulativeResult'] as num?)?.toDouble(),
       nightCumulativeResult: (json['nightCumulativeResult'] as num?)?.toDouble(),
-      dayMonthlyCumulativeResult: (json['dayMonthlyCumulativeResult'] as num?)?.toDouble(),
-      nightMonthlyCumulativeResult: (json['nightMonthlyCumulativeResult'] as num?)?.toDouble(),
-      dayMonthlyCumulativeAmount: (json['dayMonthlyCumulativeAmount'] as num?)?.toDouble(),
-      nightMonthlyCumulativeAmount: (json['nightMonthlyCumulativeAmount'] as num?)?.toDouble(),
       unitPrice: (json['unitPrice'] as num?)?.toDouble(),
       amount: (json['amount'] as num?)?.toDouble(),
       wipAmount: (json['wipAmount'] as num?)?.toDouble(),
       createdName: json['createdName'] as String,
       updatedAt: json['updatedAt'] as String?,
       status: json['status'] as String,
+    );
+  }
+}
+
+class ProductionMonthlyCumulative {
+  final int factoryId;
+  final int processId;
+  final int clientId;
+  final int unitId;
+  final double totalDayResult;
+  final double totalNightResult;
+  final double? totalDayAmount;
+  final double? totalNightAmount;
+
+  ProductionMonthlyCumulative({
+    required this.factoryId,
+    required this.processId,
+    required this.clientId,
+    required this.unitId,
+    required this.totalDayResult,
+    required this.totalNightResult,
+    this.totalDayAmount,
+    this.totalNightAmount,
+  });
+
+  factory ProductionMonthlyCumulative.fromJson(Map<String, dynamic> json) {
+    return ProductionMonthlyCumulative(
+      factoryId: json['factoryId'] as int,
+      processId: json['processId'] as int,
+      clientId: json['clientId'] as int,
+      unitId: json['unitId'] as int,
+      totalDayResult: (json['totalDayResult'] as num).toDouble(),
+      totalNightResult: (json['totalNightResult'] as num).toDouble(),
+      totalDayAmount: (json['totalDayAmount'] as num?)?.toDouble(),
+      totalNightAmount: (json['totalNightAmount'] as num?)?.toDouble(),
     );
   }
 }
