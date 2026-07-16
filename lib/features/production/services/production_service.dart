@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
-
 import 'package:dpr_frontend/core/constants/api_constants.dart';
 import 'package:dpr_frontend/core/network/api_client.dart';
 import 'package:dpr_frontend/features/production/models/production.dart';
@@ -34,13 +32,10 @@ class ProductionService {
     required String date,
     required List<ProductionUpsertEntry> entries,
   }) async {
-    final requestBody = {
+    final response = await _client.post(ApiConstants.production, {
       'date': date,
       'entries': entries.map((e) => e.toJson()).toList(),
-    };
-    debugPrint('[upsertProductions] request: ${jsonEncode(requestBody)}');
-    final response = await _client.post(ApiConstants.production, requestBody);
-    debugPrint('[upsertProductions] response ${response.statusCode}: ${response.body}');
+    });
 
     if (response.statusCode == 200) {
       final body = jsonDecode(response.body) as Map<String, dynamic>;

@@ -114,7 +114,7 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
 
     for (var i = 0; i < widget.rows.length; i++) {
       final row = widget.rows[i];
-      final key = '${row.clientId}_${row.unitId}';
+      final key = '${row.processId}_${row.clientId}_${row.unitId}';
       final text = _controllers[i].text;
       final value = text.isEmpty && _initialTexts[i].isNotEmpty
           ? 0.0
