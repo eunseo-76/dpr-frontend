@@ -17,7 +17,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  String _name = '';
   String _position = '';
   String _role = '';
   List<FactorySummary> _factories = [];
@@ -34,8 +33,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final role = await UserStorage.getRole();
     final factories = await UserStorage.getFactories();
     if (mounted) {
+      UserStorage.nameNotifier.value = name ?? '';
       setState(() {
-        _name = name ?? '';
         _position = position ?? '';
         _role = role ?? '';
         _factories = factories;
@@ -71,7 +70,11 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Row(
         children: [
-          NameAvatar(name: _name, size: 48, fontSize: 20),
+          ValueListenableBuilder<String>(
+            valueListenable: UserStorage.nameNotifier,
+            builder: (context, name, _) =>
+                NameAvatar(name: name, size: 48, fontSize: 20),
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -82,11 +85,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   spacing: 6,
                   runSpacing: 4,
                   children: [
-                    Text(
-                      _name,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                    ValueListenableBuilder<String>(
+                      valueListenable: UserStorage.nameNotifier,
+                      builder: (context, name, _) => Text(
+                        name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                     if (_role != 'OWNER')
