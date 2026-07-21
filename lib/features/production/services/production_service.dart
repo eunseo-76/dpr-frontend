@@ -9,7 +9,11 @@ import 'package:dpr_frontend/features/production/models/production_upsert_entry.
 class ProductionService {
   final _client = ApiClient();
 
-  Future<List<Production>> getProductionList({
+  Future<
+      ({
+        List<Production> productions,
+        List<ProductionMonthlyCumulative> monthlyCumulative,
+      })> getProductionList({
     required String date,
     required String periodType,
   }) async {
@@ -20,10 +24,14 @@ class ProductionService {
 
     if (response.statusCode == 200) {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
-      final dataList = body['data'] as List;
-      return dataList
+      final data = body['data'] as Map<String, dynamic>;
+      final productions = (data['productions'] as List)
           .map((e) => Production.fromJson(e as Map<String, dynamic>))
           .toList();
+      final monthlyCumulative = (data['monthlyCumulative'] as List)
+          .map((e) => ProductionMonthlyCumulative.fromJson(e as Map<String, dynamic>))
+          .toList();
+      return (productions: productions, monthlyCumulative: monthlyCumulative);
     }
     throw Exception('생산실적 조회 실패: ${response.statusCode}');
   }

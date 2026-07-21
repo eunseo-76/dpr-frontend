@@ -1,15 +1,20 @@
 {
   "permissions": {
-    "deny": [
-      "Read(android/key.properties)"
-    ],
     "allow": [
       "Bash(dart format *)",
       "Bash(flutter analyze *)",
       "PowerShell(flutter analyze *)",
       "Bash(gh run *)",
       "PowerShell(gh run *)",
-      "Bash(git ls-remote *)"
+      "Bash(git ls-remote *)",
+      "Bash(adb devices *)",
+      "PowerShell(Get-PnpDevice *)",
+      "Bash(flutter devices *)",
+      "Bash(adb shell *)",
+      "Bash(flutter --version)"
+    ],
+    "deny": [
+      "Read(android/key.properties)"
     ]
   },
   "outputStyle": "Learning"

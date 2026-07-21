@@ -23,7 +23,6 @@ class MyPageScreen extends StatefulWidget {
 
 class _MyPageScreenState extends State<MyPageScreen> {
   bool _isLoading = true;
-  String _name = '';
   String _position = '';
   String _role = '';
   String _companyName = '';
@@ -38,7 +37,6 @@ class _MyPageScreenState extends State<MyPageScreen> {
   Future<void> _loadUserInfo() async {
     await UserService().refreshUserInfo();
     final results = await Future.wait([
-      UserStorage.getName(),
       UserStorage.getPosition(),
       UserStorage.getRole(),
       UserStorage.getCompanyName(),
@@ -46,10 +44,9 @@ class _MyPageScreenState extends State<MyPageScreen> {
     final factories = await UserStorage.getFactories();
     if (mounted) {
       setState(() {
-        _name = results[0] ?? '';
-        _position = results[1] ?? '';
-        _role = results[2] ?? '';
-        _companyName = results[3] ?? '';
+        _position = results[0] ?? '';
+        _role = results[1] ?? '';
+        _companyName = results[2] ?? '';
         _factories = factories;
         _isLoading = false;
       });
@@ -127,12 +124,19 @@ class _MyPageScreenState extends State<MyPageScreen> {
         children: [
           const SizedBox(height: 16),
           // 프로필
-          Center(child: NameAvatar(name: _name, size: 72, fontSize: 28)),
-          const SizedBox(height: 12),
-          Center(
-            child: Text(
-              _name,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ValueListenableBuilder<String>(
+            valueListenable: UserStorage.nameNotifier,
+            builder: (context, name, _) => Column(
+              children: [
+                Center(child: NameAvatar(name: name, size: 72, fontSize: 28)),
+                const SizedBox(height: 12),
+                Center(
+                  child: Text(
+                    name,
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
             ),
           ),
           Center(

@@ -99,33 +99,33 @@ class ProductionCard extends StatelessWidget {
     final showAmount = amounts != null;
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(fontSize: 12)),
-        if (entries.isEmpty && amount == null)
-          const Text('-', style: TextStyle(fontSize: 12))
-        else
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              ...entries.map((u) => Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: Text.rich(TextSpan(children: [
-                  TextSpan(text: formatNumber(values[u.id]!), style: const TextStyle(fontSize: 12)),
-                  TextSpan(text: ' ${u.name}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                ])),
-              )),
-              if (showAmount)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8),
-                  child: Text.rich(TextSpan(children: [
-                    TextSpan(text: formatManwon(amount), style: const TextStyle(fontSize: 12)),
-                    const TextSpan(text: ' 만원', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                  ])),
+        Expanded(
+          child: (entries.isEmpty && amount == null)
+              ? const Align(
+                  alignment: Alignment.centerRight,
+                  child: Text('-', style: TextStyle(fontSize: 12)),
+                )
+              : Wrap(
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  runSpacing: 4,
+                  children: [
+                    ...entries.map((u) => Text.rich(TextSpan(children: [
+                      TextSpan(text: formatNumber(values[u.id]!), style: const TextStyle(fontSize: 12)),
+                      TextSpan(text: ' ${u.name}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ]))),
+                    if (showAmount)
+                      Text.rich(TextSpan(children: [
+                        TextSpan(text: formatManwon(amount), style: const TextStyle(fontSize: 12)),
+                        const TextSpan(text: ' 만원', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ])),
+                  ],
                 ),
-            ],
-          ),
+        ),
       ],
     );
   }
