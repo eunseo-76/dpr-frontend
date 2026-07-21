@@ -256,10 +256,11 @@ class _ProductionUpsertDialogState extends State<ProductionUpsertDialog> {
         LabelStore.get('PRODUCTION_TABLE_HEADER_WIP', '재공'),
       ];
       child = Container(
-        alignment: Alignment.centerLeft,
+        alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(horizontal: 8),
         child: Text(
           headers[vicinity.column],
+          textAlign: TextAlign.center,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
         ),
       );

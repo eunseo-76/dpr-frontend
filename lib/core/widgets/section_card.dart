@@ -6,6 +6,7 @@ class SectionCard extends StatelessWidget {
   final String title;
   final Widget child;
   final Widget? footer;
+  final Widget? titleTrailing;
   final VoidCallback? onEditTap;
   final bool wrapInCard;
 
@@ -14,6 +15,7 @@ class SectionCard extends StatelessWidget {
     required this.title,
     required this.child,
     this.footer,
+    this.titleTrailing,
     this.onEditTap,
     this.wrapInCard = true,
   });
@@ -26,9 +28,19 @@ class SectionCard extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Text(
-                title,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      title,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  if (titleTrailing != null) ...[
+                    const SizedBox(width: 20),
+                    titleTrailing!,
+                  ],
+                ],
               ),
             ),
             if (onEditTap != null)

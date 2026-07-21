@@ -9,7 +9,9 @@
       "Bash(git ls-remote *)",
       "Bash(adb devices *)",
       "PowerShell(Get-PnpDevice *)",
-      "Bash(flutter devices *)"
+      "Bash(flutter devices *)",
+      "Bash(adb shell *)",
+      "Bash(flutter --version)"
     ],
     "deny": [
       "Read(android/key.properties)"

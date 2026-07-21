@@ -29,6 +29,7 @@ import 'package:dpr_frontend/features/production/widgets/production_overview_sum
 import 'package:dpr_frontend/features/production/widgets/production_overview_table.dart';
 import 'package:dpr_frontend/features/production/widgets/production_period_table.dart';
 import 'package:dpr_frontend/features/unit/models/unit.dart';
+import 'package:dpr_frontend/features/unit/utils/unit_order.dart';
 import 'package:dpr_frontend/features/utility/models/factory_process.dart';
 import 'package:dpr_frontend/features/utility/services/utility_service.dart';
 import 'package:dpr_frontend/features/production/widgets/production_upsert_dialog.dart';
@@ -91,7 +92,8 @@ class _ProductionScreenState extends State<ProductionScreen> {
   List<Unit> get _units => _allFactoryUnits
       .where((u) => u.factoryId == _selectedFactoryId)
       .map((u) => Unit(id: u.unitId, name: u.unitNickname ?? u.unitName))
-      .toList();
+      .toList()
+    ..sort((a, b) => fixedUnitRank(a.name).compareTo(fixedUnitRank(b.name)));
 
   List<FactoryClient> get _factoryClients => _allFactoryClients
       .where((c) => c.factoryId == _selectedFactoryId)
@@ -911,6 +913,10 @@ class _ProductionScreenState extends State<ProductionScreen> {
       padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
       child: SectionCard(
         title: _availableFactories[_selectedFactoryIndex].factoryName,
+        titleTrailing: Text(
+          LabelStore.get('PRODUCTION_OVERVIEW_SUMMARY_TITLE', '[공정별 실적 합계]'),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
