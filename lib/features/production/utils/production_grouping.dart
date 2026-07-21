@@ -68,23 +68,23 @@ List<ProductionDayGroup> groupProductionsForDay(
 
   return scaffold.map((group) {
     final cardProductions = productions.where((p) =>
-      groupBy == '공정별'
+      groupBy == 'process'
           ? p.processId == group.groupId
           : p.clientId == group.groupId
     ).toList();
 
-    final groupNickname = groupBy == '공정별'
+    final groupNickname = groupBy == 'process'
         ? processNicknames[group.groupId]
         : clientNicknames[group.groupId];
 
     final unitRows = group.rows.map((rowScaffold) {
       final matches = cardProductions.where((p) =>
-        (groupBy == '공정별' ? p.clientId : p.processId) == rowScaffold.rowGroupId &&
+        (groupBy == 'process' ? p.clientId : p.processId) == rowScaffold.rowGroupId &&
         p.unitId == rowScaffold.unitId
       );
       final production = matches.isEmpty ? null : matches.first;
 
-      final rowNickname = groupBy == '공정별'
+      final rowNickname = groupBy == 'process'
           ? clientNicknames[rowScaffold.rowGroupId]
           : processNicknames[rowScaffold.rowGroupId];
 
@@ -95,8 +95,8 @@ List<ProductionDayGroup> groupProductionsForDay(
           ? production?.wipDayShift
           : production?.wipNightShift;
 
-      final processId = groupBy == '공정별' ? group.groupId : rowScaffold.rowGroupId;
-      final clientId = groupBy == '공정별' ? rowScaffold.rowGroupId : group.groupId;
+      final processId = groupBy == 'process' ? group.groupId : rowScaffold.rowGroupId;
+      final clientId = groupBy == 'process' ? rowScaffold.rowGroupId : group.groupId;
       final cumulativeMatches = monthlyCumulative.where((m) =>
           m.processId == processId &&
           m.clientId == clientId &&

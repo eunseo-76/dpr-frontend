@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:dpr_frontend/core/widgets/pop_effect.dart';
 
 class SegmentedToggle extends StatelessWidget {
-  final List<String> options;
-  final String selected;
+  final List<String> options; // 화면에 그릴 글자 (DB 라벨이 바뀔 수 있음)
+  final List<String>?
+      values; // 탭했을 때 실제로 돌려줄 값. null이면 options를 그대로 값으로 씀(기존 동작 그대로 유지)
+  final String selected; // values[i] (values가 없으면 options[i])와 비교됨
   final ValueChanged<String> onChanged;
   final Color activeColor;
 
   const SegmentedToggle({
     super.key,
     required this.options,
+    this.values,
     required this.selected,
     required this.onChanged,
     this.activeColor = Colors.blue,
@@ -17,16 +20,19 @@ class SegmentedToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final effectiveValues = values ?? options;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: options.asMap().entries.map((entry) {
-        final option = entry.value;
-        final isLast = entry.key == options.length - 1;
-        final isSelected = option == selected;
+        final index = entry.key;
+        final label = entry.value;
+        final value = effectiveValues[index];
+        final isLast = index == options.length - 1;
+        final isSelected = value == selected;
         return Padding(
           padding: EdgeInsets.only(right: isLast ? 0 : 7),
           child: GestureDetector(
-            onTap: () => onChanged(option),
+            onTap: () => onChanged(value),
             child: PopEffect(
               trigger: isSelected,
               peakScale: 1.15,
@@ -55,7 +61,7 @@ class SegmentedToggle extends StatelessWidget {
                   ],
                 ),
                 child: Text(
-                  option,
+                  label,
                   style: TextStyle(
                     color: isSelected ? activeColor : Colors.black87,
                     fontWeight: FontWeight.w600,

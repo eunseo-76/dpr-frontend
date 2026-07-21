@@ -62,7 +62,15 @@ class _ProductionScreenState extends State<ProductionScreen> {
 
   bool _isLoading = true;
   String? _error;
-  String _groupBy = '공정별';
+  // '실적등록'(공정별/업체별로 실적 입력) vs '보기'(전체보기 형식으로 조회) — 메뉴 최상단 토글
+  String _category = 'write'; // 'write' | 'read'
+  // _category == 'read'일 때만 의미 있음. '일별보기'(단일 날짜) vs '기간별보기'(날짜 범위, 기존 전체보기)
+  String _viewMode = 'day'; // 'day' | 'period'
+  // '실적등록' 화면(_buildDayView) 안에서 공정별/업체별 중 뭘로 묶어서 보여줄지.
+  // 화면에 그려지는 글자(공정별/업체별)는 LabelStore에서 오지만, 이 값 자체는 DB 텍스트가 바뀌어도 절대 안 바뀌는 고정 내부값이다.
+  String _groupBy = 'process'; // 'process' | 'client'
+  // _category == 'write'일 때만 의미 있음. 지금은 '일'만 실제로 쓰이고 '주'/'월'/'년'은
+  // _buildPeriodView와 함께 죽은 코드로 남아있다 (전체보기로 대체되어 미사용, project memory 참고).
   String _selectedPeriod = '일';
   String _selectedDate = DateTime.now().toIso8601String().substring(0, 10);
   bool _isSelectionMode = false;
@@ -321,7 +329,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
     _factoryService.getFactoryShift(_availableFactories[index].factoryId).then((shift) {
       if (mounted) setState(() => _factoryShift = shift);
     });
-    if (_selectedPeriod == '전체보기') _loadOverview();
+    if (_category == 'read') _loadOverview();
   }
 
 
@@ -354,7 +362,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
     final idsToDelete = _productions
         .where((p) {
           final rowGroupId =
-              _groupBy == '공정별' ? p.clientId : p.processId;
+              _groupBy == 'process' ? p.clientId : p.processId;
           return _selectedRowGroupIds.contains(rowGroupId);
         })
         .map((p) => p.productionId)
@@ -403,19 +411,19 @@ class _ProductionScreenState extends State<ProductionScreen> {
 
     final rows = groupScaffold.rows.map((rowScaffold) {
       final match = _productions.where((p) =>
-          (_groupBy == '공정별' ? p.clientId : p.processId) ==
+          (_groupBy == 'process' ? p.clientId : p.processId) ==
               rowScaffold.rowGroupId &&
           p.unitId == rowScaffold.unitId &&
-          (_groupBy == '공정별' ? p.processId : p.clientId) ==
+          (_groupBy == 'process' ? p.processId : p.clientId) ==
               groupScaffold.groupId);
       final production = match.isEmpty ? null : match.first;
 
       return ProductionUpsertRow(
         factoryId: factoryId,
-        processId: _groupBy == '공정별'
+        processId: _groupBy == 'process'
             ? groupScaffold.groupId
             : rowScaffold.rowGroupId,
-        clientId: _groupBy == '공정별'
+        clientId: _groupBy == 'process'
             ? rowScaffold.rowGroupId
             : groupScaffold.groupId,
         unitId: rowScaffold.unitId,
@@ -520,47 +528,79 @@ class _ProductionScreenState extends State<ProductionScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (_selectedPeriod != '전체보기') ...[
-                            SegmentedToggle(
-                              options: const ['공정별', '업체별'],
-                              selected: _groupBy,
-                              onChanged: (value) {
-                                _exitSelectionMode();
-                                setState(() {
-                                  _groupBy = value;
-                                  _selectedCardIndex = 0;
-                                });
-                              },
+                          // 실적등록: 공정별/업체별 — 이 둘은 눌렀을 때 항상 실적등록(입력) 화면으로 전환됨.
+                          // "실적등록:"은 버튼이 아니라 그룹 이름표(텍스트)일 뿐이다.
+                          Text(
+                            '${LabelStore.get('PRODUCTION_MENU_TITLE_CATEGORY_WRITE', '실적등록')}:',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[600],
                             ),
-                            const SizedBox(width: 12),
-                            Container(
-                              width: 1.5,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[300],
-                                borderRadius: BorderRadius.circular(1),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                          ],
+                          ),
+                          const SizedBox(width: 6),
                           SegmentedToggle(
-                            options: const ['일', '전체보기'],
-                            selected: _selectedPeriod,
-                            activeColor: Colors.green,
-                            onChanged: (period) {
+                            options: [
+                              LabelStore.get('PRODUCTION_MENU_TITLE_PROCESS', '공정별'),
+                              LabelStore.get('PRODUCTION_MENU_TITLE_CLIENT', '업체별'),
+                            ],
+                            values: const ['process', 'client'],
+                            // 보기 모드일 땐 'process'/'client' 어느 쪽과도 안 맞는 빈 문자열을 줘서
+                            // 두 버튼 다 무색(미선택 상태)으로 보이게 한다. _groupBy 값 자체는 그대로 기억됨.
+                            selected: _category == 'write' ? _groupBy : '',
+                            onChanged: (value) {
                               _exitSelectionMode();
                               setState(() {
-                                _selectedPeriod = period;
-                                if (period == '전체보기' &&
-                                    (_overviewRangeStart == null ||
-                                        _overviewRangeEnd == null)) {
+                                _groupBy = value;
+                                _category = 'write';
+                                _selectedCardIndex = 0;
+                              });
+                              _loadProductions();
+                            },
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            width: 1.5,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(1),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 1),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          // 보기: 일별보기/기간별보기 — 이 둘은 눌렀을 때 항상 보기(조회) 화면으로 전환됨
+                          Text(
+                            '${LabelStore.get('PRODUCTION_MENU_TITLE_CATEGORY_READ', '보기')}:',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          SegmentedToggle(
+                            options: [
+                              LabelStore.get('PRODUCTION_MENU_TITLE_DAY', '일별보기'),
+                              LabelStore.get('PRODUCTION_MENU_TITLE_PERIOD', '기간별보기'),
+                            ],
+                            values: const ['day', 'period'],
+                            // 실적등록 모드일 땐 마찬가지로 빈 문자열을 줘서 무색으로 만듦
+                            selected: _category == 'read' ? _viewMode : '',
+                            activeColor: Colors.green, // 기존 일/전체보기 토글에 쓰던 색 그대로
+                            onChanged: (value) {
+                              _exitSelectionMode();
+                              setState(() {
+                                _viewMode = value;
+                                _category = 'read';
+                                if (_overviewRangeStart == null ||
+                                    _overviewRangeEnd == null) {
                                   final d = DateTime.parse(_selectedDate);
                                   final monday =
                                       d.subtract(Duration(days: d.weekday - 1));
@@ -569,11 +609,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
                                       monday.add(const Duration(days: 6));
                                 }
                               });
-                              if (period == '전체보기') {
-                                _loadOverview();
-                              } else {
-                                _loadProductions();
-                              }
+                              _loadOverview();
                             },
                           ),
                         ],
@@ -582,16 +618,16 @@ class _ProductionScreenState extends State<ProductionScreen> {
                   ),
                 ),
                 DateNavigator(
-                  label: _selectedPeriod == '전체보기'
+                  label: _category == 'read'
                       ? _overviewDisplayLabel()
                       : _displayLabel(),
-                  onPrevious: _selectedPeriod == '전체보기'
+                  onPrevious: _category == 'read'
                       ? () => _navigateOverviewRange(-1)
                       : () => _navigateDate(-1),
-                  onNext: _selectedPeriod == '전체보기'
+                  onNext: _category == 'read'
                       ? () => _navigateOverviewRange(1)
                       : () => _navigateDate(1),
-                  onCalendarTap: _selectedPeriod == '전체보기'
+                  onCalendarTap: _category == 'read'
                       ? _onOverviewCalendarTap
                       : _onCalendarTap,
                 ),
@@ -614,7 +650,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
                   ],
                 ),
               ),
-              child: _selectedPeriod == '전체보기'
+              child: _category == 'read'
                   ? _buildOverviewSection()
                   : _isLoading
                       ? const LoadingIndicator()
@@ -799,7 +835,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
       showAmount: _showAmount,
       monthlyCumulative: _monthlyCumulative,
     );
-    final rowLabelHeader = _groupBy == '공정별'
+    final rowLabelHeader = _groupBy == 'process'
         ? LabelStore.get('PRODUCTION_TABLE_HEADER_CLIENT', '업체')
         : LabelStore.get('PRODUCTION_TABLE_HEADER_PROCESS', '공정');
 
@@ -807,7 +843,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
     final selectedIndex =
         _selectedCardIndex < dayGroups.length ? _selectedCardIndex : 0;
     final group = dayGroups[selectedIndex];
-    final cardTitle = _groupBy == '공정별'
+    final cardTitle = _groupBy == 'process'
         ? '${group.groupName} 공정'
         : group.groupName;
 
@@ -836,7 +872,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
                     rowLabelHeader: rowLabelHeader,
                   );
                 },
-          sumAmounts: _groupBy == '업체별',
+          sumAmounts: _groupBy == 'client',
           footer: ProductionCardFooter(
             dailyByUnit: group.dailySumByUnit,
             cumulativeByUnit: group.cumulativeSumByUnit,

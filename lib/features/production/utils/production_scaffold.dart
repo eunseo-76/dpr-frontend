@@ -64,7 +64,7 @@ List<ProductionGroupScaffold> buildProductionScaffold({
     return rows;
   }
 
-  if (groupBy == '공정별') {
+  if (groupBy == 'process') {
     return processes.entries
         .map((e) => ProductionGroupScaffold(
               groupId: e.key,
