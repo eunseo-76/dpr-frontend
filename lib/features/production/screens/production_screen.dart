@@ -20,11 +20,13 @@ import 'package:dpr_frontend/features/production/models/production_overview.dart
 import 'package:dpr_frontend/features/production/services/production_service.dart';
 import 'package:dpr_frontend/features/production/utils/production_grouping.dart';
 import 'package:dpr_frontend/features/production/utils/production_overview_grouping.dart';
+import 'package:dpr_frontend/features/production/utils/production_day_m2_grouping.dart';
 import 'package:dpr_frontend/features/production/utils/production_period_grouping.dart';
 import 'package:dpr_frontend/features/production/utils/production_scaffold.dart';
 import 'package:dpr_frontend/core/widgets/section_card.dart';
 import 'package:dpr_frontend/features/production/widgets/production_card.dart';
 import 'package:dpr_frontend/features/production/widgets/production_day_table.dart';
+import 'package:dpr_frontend/features/production/widgets/production_m2_day_table.dart';
 import 'package:dpr_frontend/features/production/widgets/production_overview_summary.dart';
 import 'package:dpr_frontend/features/production/widgets/production_overview_table.dart';
 import 'package:dpr_frontend/features/production/widgets/production_period_table.dart';
@@ -64,13 +66,12 @@ class _ProductionScreenState extends State<ProductionScreen> {
   String? _error;
   // '실적등록'(공정별/업체별로 실적 입력) vs '보기'(전체보기 형식으로 조회) — 메뉴 최상단 토글
   String _category = 'write'; // 'write' | 'read'
-  // _category == 'read'일 때만 의미 있음. '일별보기'(단일 날짜) vs '기간별보기'(날짜 범위, 기존 전체보기)
+  // _category == 'read'일 때만 의미 o '일별보기'(단일 날짜) vs '기간별보기'(날짜 범위, 기존 전체보기)
   String _viewMode = 'day'; // 'day' | 'period'
-  // '실적등록' 화면(_buildDayView) 안에서 공정별/업체별 중 뭘로 묶어서 보여줄지.
-  // 화면에 그려지는 글자(공정별/업체별)는 LabelStore에서 오지만, 이 값 자체는 DB 텍스트가 바뀌어도 절대 안 바뀌는 고정 내부값이다.
+  // '실적등록' 화면(_buildDayView) 안에서 공정별/업체별 중 뭘로 묶어서 보여줄지
+  // 화면에 그려지는 글자(공정별/업체별)는 LabelStore에서 오지만, 이 값 자체는 DB 텍스트가 바뀌어도 절대 안 바뀌는 고정 내부값
   String _groupBy = 'process'; // 'process' | 'client'
-  // _category == 'write'일 때만 의미 있음. 지금은 '일'만 실제로 쓰이고 '주'/'월'/'년'은
-  // _buildPeriodView와 함께 죽은 코드로 남아있다 (전체보기로 대체되어 미사용, project memory 참고).
+  // _category == 'write'일 때만 의미 있음. 지금은 '일'만 실제로 쓰이고 '주'/'월'/'년'은 안 쓰는 중
   String _selectedPeriod = '일';
   String _selectedDate = DateTime.now().toIso8601String().substring(0, 10);
   bool _isSelectionMode = false;
@@ -125,6 +126,12 @@ class _ProductionScreenState extends State<ProductionScreen> {
       _factoryClients.isNotEmpty &&
       _units.isNotEmpty;
 
+  // 일별보기(테스트 기간)에서 M2 단위만 보여주기 위한 unitId 탐색
+  int? get _m2UnitId {
+    final matches = _units.where((u) => u.name.toUpperCase() == 'M2');
+    return matches.isEmpty ? null : matches.first.id;
+  }
+
   static const _periodTypeMap = {
     '일': 'DAY',
     '주': 'WEEK',
@@ -141,12 +148,28 @@ class _ProductionScreenState extends State<ProductionScreen> {
   String _dateStr(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
+  // write/read 공통: 하루 단위 날짜 조작용 헬퍼
+  String _stepDateStr(String dateStr, int direction) =>
+      _dateStr(DateTime.parse(dateStr).add(Duration(days: direction)));
+
+  String _singleDateLabel(String dateStr) {
+    final d = DateTime.parse(dateStr);
+    const weekdayNames = ['월', '화', '수', '목', '금', '토', '일'];
+    return '${d.year}년 ${d.month}월 ${d.day}일 (${weekdayNames[d.weekday - 1]})';
+  }
+
+  Future<String?> _pickSingleDate(String currentDate) async {
+    final picked =
+        await showCalendarPicker(context, DateTime.parse(currentDate));
+    return picked == null ? null : _dateStr(picked);
+  }
+
   void _navigateDate(int direction) {
     final d = DateTime.parse(_selectedDate);
     final DateTime next;
     switch (_selectedPeriod) {
       case '일':
-        next = d.add(Duration(days: direction));
+        next = DateTime.parse(_stepDateStr(_selectedDate, direction));
       case '주':
         next = d.add(Duration(days: direction * 7));
       case '월':
@@ -161,20 +184,18 @@ class _ProductionScreenState extends State<ProductionScreen> {
   }
 
   Future<void> _onCalendarTap() async {
-    final d = DateTime.parse(_selectedDate);
-    final picked = await showCalendarPicker(context, d);
+    final picked = await _pickSingleDate(_selectedDate);
     if (picked != null) {
-      setState(() => _selectedDate = _dateStr(picked));
+      setState(() => _selectedDate = picked);
       _loadProductions();
     }
   }
 
   String _displayLabel() {
     final d = DateTime.parse(_selectedDate);
-    const weekdayNames = ['월', '화', '수', '목', '금', '토', '일'];
     switch (_selectedPeriod) {
       case '일':
-        return '${d.year}년 ${d.month}월 ${d.day}일 (${weekdayNames[d.weekday - 1]})';
+        return _singleDateLabel(_selectedDate);
       case '주':
         final monday = d.subtract(Duration(days: d.weekday - 1));
         final sunday = monday.add(const Duration(days: 6));
@@ -224,13 +245,36 @@ class _ProductionScreenState extends State<ProductionScreen> {
     _loadOverview();
   }
 
+  void _navigateOverviewDay(int direction) {
+    setState(() => _selectedDate = _stepDateStr(_selectedDate, direction));
+    _loadProductions();
+    _loadOverview();
+  }
+
+  Future<void> _onOverviewDayCalendarTap() async {
+    final picked = await _pickSingleDate(_selectedDate);
+    if (picked != null) {
+      setState(() => _selectedDate = picked);
+      _loadProductions();
+      _loadOverview();
+    }
+  }
+
   Future<void> _loadOverview() async {
     final factoryId = _selectedFactoryId;
-    if (factoryId == null ||
-        _overviewRangeStart == null ||
-        _overviewRangeEnd == null) {
-      return;
+    if (factoryId == null) return;
+
+    final String dateFrom;
+    final String dateTo;
+    if (_viewMode == 'day') {
+      dateFrom = _selectedDate;
+      dateTo = _selectedDate;
+    } else {
+      if (_overviewRangeStart == null || _overviewRangeEnd == null) return;
+      dateFrom = _dateStr(_overviewRangeStart!);
+      dateTo = _dateStr(_overviewRangeEnd!);
     }
+
     setState(() {
       _overviewLoading = true;
       _overviewError = null;
@@ -238,8 +282,8 @@ class _ProductionScreenState extends State<ProductionScreen> {
     try {
       final data = await _productionService.getProductionOverview(
         factoryId: factoryId,
-        dateFrom: _dateStr(_overviewRangeStart!),
-        dateTo: _dateStr(_overviewRangeEnd!),
+        dateFrom: dateFrom,
+        dateTo: dateTo,
       );
       setState(() => _overviewData = data);
     } catch (e) {
@@ -528,10 +572,8 @@ class _ProductionScreenState extends State<ProductionScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // 실적등록: 공정별/업체별 — 이 둘은 눌렀을 때 항상 실적등록(입력) 화면으로 전환됨.
-                          // "실적등록:"은 버튼이 아니라 그룹 이름표(텍스트)일 뿐이다.
                           Text(
-                            '${LabelStore.get('PRODUCTION_MENU_TITLE_CATEGORY_WRITE', '실적등록')}:',
+                            LabelStore.get('PRODUCTION_MENU_TITLE_CATEGORY_WRITE', '등록'),
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -551,6 +593,12 @@ class _ProductionScreenState extends State<ProductionScreen> {
                             onChanged: (value) {
                               _exitSelectionMode();
                               setState(() {
+                                // 기간별보기에서 넘어오는 거면 방금 보던 범위의 종료일로 이어줌
+                                if (_category == 'read' &&
+                                    _viewMode == 'period' &&
+                                    _overviewRangeEnd != null) {
+                                  _selectedDate = _dateStr(_overviewRangeEnd!);
+                                }
                                 _groupBy = value;
                                 _category = 'write';
                                 _selectedCardIndex = 0;
@@ -577,7 +625,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
                           const SizedBox(width: 12),
                           // 보기: 일별보기/기간별보기 — 이 둘은 눌렀을 때 항상 보기(조회) 화면으로 전환됨
                           Text(
-                            '${LabelStore.get('PRODUCTION_MENU_TITLE_CATEGORY_READ', '보기')}:',
+                            LabelStore.get('PRODUCTION_MENU_TITLE_CATEGORY_READ', '보기'),
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
@@ -597,18 +645,25 @@ class _ProductionScreenState extends State<ProductionScreen> {
                             onChanged: (value) {
                               _exitSelectionMode();
                               setState(() {
+                                // 기간별보기에서 일별보기로 넘어오는 거면 방금 보던 범위의 종료일로 이어줌
+                                if (_category == 'read' &&
+                                    _viewMode == 'period' &&
+                                    value == 'day' &&
+                                    _overviewRangeEnd != null) {
+                                  _selectedDate = _dateStr(_overviewRangeEnd!);
+                                }
+                                // 기간별보기로 갈 때마다, 방금 보던 날짜를 마지막 날로 하는
+                                // 최근 7일 범위로 다시 계산 (미래 날짜로 안 넘어가게)
+                                if (value == 'period') {
+                                  final end = DateTime.parse(_selectedDate);
+                                  _overviewRangeEnd = end;
+                                  _overviewRangeStart =
+                                      end.subtract(const Duration(days: 6));
+                                }
                                 _viewMode = value;
                                 _category = 'read';
-                                if (_overviewRangeStart == null ||
-                                    _overviewRangeEnd == null) {
-                                  final d = DateTime.parse(_selectedDate);
-                                  final monday =
-                                      d.subtract(Duration(days: d.weekday - 1));
-                                  _overviewRangeStart = monday;
-                                  _overviewRangeEnd =
-                                      monday.add(const Duration(days: 6));
-                                }
                               });
+                              if (value == 'day') _loadProductions();
                               _loadOverview();
                             },
                           ),
@@ -619,16 +674,24 @@ class _ProductionScreenState extends State<ProductionScreen> {
                 ),
                 DateNavigator(
                   label: _category == 'read'
-                      ? _overviewDisplayLabel()
+                      ? (_viewMode == 'day'
+                          ? _singleDateLabel(_selectedDate)
+                          : _overviewDisplayLabel())
                       : _displayLabel(),
                   onPrevious: _category == 'read'
-                      ? () => _navigateOverviewRange(-1)
+                      ? (_viewMode == 'day'
+                          ? () => _navigateOverviewDay(-1)
+                          : () => _navigateOverviewRange(-1))
                       : () => _navigateDate(-1),
                   onNext: _category == 'read'
-                      ? () => _navigateOverviewRange(1)
+                      ? (_viewMode == 'day'
+                          ? () => _navigateOverviewDay(1)
+                          : () => _navigateOverviewRange(1))
                       : () => _navigateDate(1),
                   onCalendarTap: _category == 'read'
-                      ? _onOverviewCalendarTap
+                      ? (_viewMode == 'day'
+                          ? _onOverviewDayCalendarTap
+                          : _onOverviewCalendarTap)
                       : _onCalendarTap,
                 ),
               ],
@@ -651,7 +714,9 @@ class _ProductionScreenState extends State<ProductionScreen> {
                 ),
               ),
               child: _category == 'read'
-                  ? _buildOverviewSection()
+                  ? (_viewMode == 'day'
+                      ? _buildDayOverviewSection()
+                      : _buildOverviewSection())
                   : _isLoading
                       ? const LoadingIndicator()
                       : _error != null
@@ -892,6 +957,43 @@ class _ProductionScreenState extends State<ProductionScreen> {
     );
   }
 
+  Widget _buildDayOverviewSection() {
+    if (_availableFactories.isEmpty) return _buildNoFactoryState();
+    if (_overviewLoading) return const LoadingIndicator();
+    if (_overviewError != null) {
+      return Center(child: Text('오류: $_overviewError'));
+    }
+
+    final data = _overviewData;
+    if (data == null || data.rows.isEmpty) {
+      return Center(
+        child: Text(
+          '선택한 날짜에 데이터가 없습니다',
+          style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+        ),
+      );
+    }
+
+    final m2UnitId = _m2UnitId;
+    final Widget table;
+    if (m2UnitId == null) {
+      table = Text(
+        'M2 단위가 설정되어 있지 않습니다',
+        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+      );
+    } else {
+      final m2Rows = buildM2DayRows(_productions, m2UnitId: m2UnitId);
+      table = m2Rows.isEmpty
+          ? Text(
+              'M2 실적/재공 데이터가 없습니다',
+              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+            )
+          : ProductionM2DayTable(rows: m2Rows);
+    }
+
+    return _buildOverviewView(data, table: table);
+  }
+
   Widget _buildOverviewSection() {
     if (_availableFactories.isEmpty) return _buildNoFactoryState();
 
@@ -918,10 +1020,6 @@ class _ProductionScreenState extends State<ProductionScreen> {
       );
     }
 
-    return _buildOverviewView(data);
-  }
-
-  Widget _buildOverviewView(ProductionOverview data) {
     final clientNames = {
       for (final c in _factoryClients) c.clientId: c.clientNickname ?? c.clientName,
     };
@@ -929,7 +1027,6 @@ class _ProductionScreenState extends State<ProductionScreen> {
       for (final p in _factoryProcesses) p.processId: p.processNickname ?? p.processName,
     };
     final unitNames = {for (final u in _units) u.id: u.name};
-
     final unitOrder = _units.map((u) => u.id).toList();
     final pivotData = buildOverviewPivotRows(
       data.rows,
@@ -938,6 +1035,22 @@ class _ProductionScreenState extends State<ProductionScreen> {
       unitNames: unitNames,
       unitOrder: unitOrder,
     );
+
+    return _buildOverviewView(
+      data,
+      table: ProductionOverviewTable(
+        rows: pivotData.rows,
+        unitColumns: pivotData.unitColumns,
+      ),
+    );
+  }
+
+  Widget _buildOverviewView(ProductionOverview data, {required Widget table}) {
+    final processNames = {
+      for (final p in _factoryProcesses) p.processId: p.processNickname ?? p.processName,
+    };
+    final unitNames = {for (final u in _units) u.id: u.name};
+    final unitOrder = _units.map((u) => u.id).toList();
     final summaryEntries = buildProcessSummaryDisplay(
       data.processSummary,
       processNames: processNames,
@@ -961,10 +1074,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
               showAmount: _showAmount,
             ),
             const SizedBox(height: 12),
-            ProductionOverviewTable(
-              rows: pivotData.rows,
-              unitColumns: pivotData.unitColumns,
-            ),
+            table,
           ],
         ),
       ),

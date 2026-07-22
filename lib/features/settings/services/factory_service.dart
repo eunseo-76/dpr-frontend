@@ -8,10 +8,14 @@ class FactoryService {
   final _client = ApiClient();
 
   Future<FactoryShift?> getFactoryShift(int factoryId) async {
-    final response = await _client.get('${ApiConstants.factory_}/$factoryId');
+    // 목록(/api/factories)에서 factoryId로 찾기
+    final response = await _client.get(ApiConstants.factory_);
     if (response.statusCode == 200) {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
-      return FactoryShift.fromJson(body['data'] as Map<String, dynamic>);
+      final dataList = (body['data'] as List).cast<Map<String, dynamic>>();
+      final match = dataList.where((e) => e['factoryId'] == factoryId);
+      if (match.isEmpty) return null;
+      return FactoryShift.fromJson(match.first);
     }
     return null;
   }
