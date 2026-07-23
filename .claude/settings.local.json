@@ -11,7 +11,8 @@
       "PowerShell(Get-PnpDevice *)",
       "Bash(flutter devices *)",
       "Bash(adb shell *)",
-      "Bash(flutter --version)"
+      "Bash(flutter --version)",
+      "Artifact"
     ],
     "deny": [
       "Read(android/key.properties)"
