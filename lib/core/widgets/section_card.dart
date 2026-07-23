@@ -28,20 +28,24 @@ class SectionCard extends StatelessWidget {
         Row(
           children: [
             Expanded(
-              child: Row(
-                children: [
-                  Flexible(
-                    child: Text(
+              child: titleTrailing == null
+                  ? Text(
                       title,
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    )
+                  : Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            title,
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        titleTrailing!,
+                      ],
                     ),
-                  ),
-                  if (titleTrailing != null) ...[
-                    const SizedBox(width: 20),
-                    titleTrailing!,
-                  ],
-                ],
-              ),
             ),
             if (onEditTap != null)
               _FloatingEditButton(onTap: onEditTap!),

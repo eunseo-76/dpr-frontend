@@ -1,81 +1,140 @@
 import 'package:flutter/material.dart';
+import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
+import 'package:dpr_frontend/core/utils/label_store.dart';
 import 'package:dpr_frontend/core/utils/number_format.dart';
 import 'package:dpr_frontend/features/production/utils/production_day_m2_grouping.dart';
 
 class ProductionM2DayTable extends StatelessWidget {
   final List<ProductionM2DayRow> rows;
+  final String unitName;
 
-  const ProductionM2DayTable({super.key, required this.rows});
+  const ProductionM2DayTable({
+    super.key,
+    required this.rows,
+    required this.unitName,
+  });
 
+  static const _colClient = 72.0;
+  static const _colProcess = 72.0;
+  static const _minValueColWidth = 64.0;
+  static const _rowHeight = 36.0;
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
+
+  static const _columnCount = 4;
+  int get _rowCount => 1 + rows.length;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const pinnedWidth = _colClient + _colProcess;
+        final valueColWidth =
+            ((constraints.maxWidth - pinnedWidth) / 2)
+                .clamp(_minValueColWidth, double.infinity);
+
+        return SizedBox(
+          height: _rowCount * _rowHeight,
+          child: TableView.builder(
+            columnCount: _columnCount,
+            rowCount: _rowCount,
+            pinnedColumnCount: 2,
+            verticalDetails: const ScrollableDetails.vertical(
+              physics: NeverScrollableScrollPhysics(),
+            ),
+            horizontalDetails: const ScrollableDetails.horizontal(
+              physics: ClampingScrollPhysics(),
+            ),
+            columnBuilder: (column) => _buildColumnSpan(column, valueColWidth),
+            rowBuilder: _buildRowSpan,
+            cellBuilder: (context, vicinity) {
+              final merge = _cellMerge(vicinity);
+              return TableViewCell(
+                rowMergeStart: merge?.$1,
+                rowMergeSpan: merge?.$2,
+                child: _buildCell(vicinity),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  TableSpan _buildColumnSpan(int column, double valueColWidth) {
+    final width = switch (column) {
+      0 => _colClient,
+      1 => _colProcess,
+      _ => valueColWidth,
+    };
+    return TableSpan(
+      extent: FixedTableSpanExtent(width),
+      foregroundDecoration: const TableSpanDecoration(
+        border: TableSpanBorder(trailing: BorderSide(color: _borderColor)),
+      ),
+    );
+  }
+
+  TableSpan _buildRowSpan(int row) {
+    return TableSpan(
+      extent: const FixedTableSpanExtent(_rowHeight),
+      backgroundDecoration:
+          row == 0 ? const TableSpanDecoration(color: _headerColor) : null,
+      foregroundDecoration: const TableSpanDecoration(
+        border: TableSpanBorder(trailing: BorderSide(color: _borderColor)),
+      ),
+    );
+  }
+
+  // 업체(0번 열)만 연속된 같은 그룹끼리 병합 (ProductionOverviewTable과 동일)
+  (int, int)? _cellMerge(TableVicinity vicinity) {
+    if (vicinity.row == 0 || vicinity.column != 0) return null;
+    final groupIndex = rows[vicinity.row - 1].clientGroupIndex;
+    final start = rows.indexWhere((r) => r.clientGroupIndex == groupIndex);
+    final span = rows.where((r) => r.clientGroupIndex == groupIndex).length;
+    return (start + 1, span);
+  }
+
+  Widget _buildCell(TableVicinity vicinity) {
+    final isHeader = vicinity.row == 0;
+    final column = vicinity.column;
+
+    if (isHeader) {
+      final valueLabel = LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE', '실적');
+      final wipLabel = LabelStore.get('PRODUCTION_TABLE_HEADER_WIP', '재공');
+      final headers = [
+        LabelStore.get('PRODUCTION_TABLE_HEADER_CLIENT', '업체'),
+        LabelStore.get('PRODUCTION_TABLE_HEADER_PROCESS', '공정'),
+        '$valueLabel($unitName)',
+        '$wipLabel($unitName)',
+      ];
+      return _cell(headers[column], isHeader: true);
+    }
+
+    final row = rows[vicinity.row - 1];
+    return switch (column) {
+      0 => _cell(row.clientName),
+      1 => _cell(row.processName),
+      2 => _cell(_fmt(row.result)),
+      _ => _cell(_fmt(row.wip)),
+    };
+  }
 
   static String _fmt(double? value) =>
       value == null || value == 0 ? '-' : formatNumber(value);
 
-  @override
-  Widget build(BuildContext context) {
-    return Table(
-      border: TableBorder.all(color: _borderColor),
-      columnWidths: const {
-        0: FlexColumnWidth(2),
-        1: FlexColumnWidth(2),
-        2: FlexColumnWidth(2),
-        3: FlexColumnWidth(2),
-      },
-      children: [
-        TableRow(
-          decoration: const BoxDecoration(color: _headerColor),
-          children: const [
-            _HeaderCell('업체'),
-            _HeaderCell('공정'),
-            _HeaderCell('실적(m2)'),
-            _HeaderCell('재공(m2)'),
-          ],
+  Widget _cell(String text, {bool isHeader = false}) {
+    return Container(
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
         ),
-        for (final row in rows)
-          TableRow(
-            children: [
-              _BodyCell(row.clientName),
-              _BodyCell(row.processName),
-              _BodyCell(_fmt(row.result)),
-              _BodyCell(_fmt(row.wip)),
-            ],
-          ),
-      ],
-    );
-  }
-}
-
-class _HeaderCell extends StatelessWidget {
-  final String text;
-  const _HeaderCell(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-      ),
-    );
-  }
-}
-
-class _BodyCell extends StatelessWidget {
-  final String text;
-  const _BodyCell(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: const TextStyle(fontSize: 13),
       ),
     );
   }

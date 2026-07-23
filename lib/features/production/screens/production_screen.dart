@@ -28,6 +28,7 @@ import 'package:dpr_frontend/features/production/widgets/production_card.dart';
 import 'package:dpr_frontend/features/production/widgets/production_day_table.dart';
 import 'package:dpr_frontend/features/production/widgets/production_m2_day_table.dart';
 import 'package:dpr_frontend/features/production/widgets/production_overview_summary.dart';
+import 'package:dpr_frontend/features/production/widgets/production_process_detail_sheet.dart';
 import 'package:dpr_frontend/features/production/widgets/production_overview_table.dart';
 import 'package:dpr_frontend/features/production/widgets/production_period_table.dart';
 import 'package:dpr_frontend/features/unit/models/unit.dart';
@@ -126,10 +127,10 @@ class _ProductionScreenState extends State<ProductionScreen> {
       _factoryClients.isNotEmpty &&
       _units.isNotEmpty;
 
-  // 일별보기(테스트 기간)에서 M2 단위만 보여주기 위한 unitId 탐색
-  int? get _m2UnitId {
+  // 일별보기(테스트 기간)에서 M2 단위만 보여주기 위한 unit 탐색
+  Unit? get _m2Unit {
     final matches = _units.where((u) => u.name.toUpperCase() == 'M2');
-    return matches.isEmpty ? null : matches.first.id;
+    return matches.isEmpty ? null : matches.first;
   }
 
   static const _periodTypeMap = {
@@ -974,21 +975,21 @@ class _ProductionScreenState extends State<ProductionScreen> {
       );
     }
 
-    final m2UnitId = _m2UnitId;
+    final m2Unit = _m2Unit;
     final Widget table;
-    if (m2UnitId == null) {
+    if (m2Unit == null) {
       table = Text(
         'M2 단위가 설정되어 있지 않습니다',
         style: TextStyle(fontSize: 14, color: Colors.grey[600]),
       );
     } else {
-      final m2Rows = buildM2DayRows(_productions, m2UnitId: m2UnitId);
+      final m2Rows = buildM2DayRows(_productions, m2UnitId: m2Unit.id);
       table = m2Rows.isEmpty
           ? Text(
               'M2 실적/재공 데이터가 없습니다',
               style: TextStyle(fontSize: 14, color: Colors.grey[600]),
             )
-          : ProductionM2DayTable(rows: m2Rows);
+          : ProductionM2DayTable(rows: m2Rows, unitName: m2Unit.name);
     }
 
     return _buildOverviewView(data, table: table);
@@ -1063,7 +1064,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
       child: SectionCard(
         title: _availableFactories[_selectedFactoryIndex].factoryName,
         titleTrailing: Text(
-          LabelStore.get('PRODUCTION_OVERVIEW_SUMMARY_TITLE', '[공정별 실적 합계]'),
+          LabelStore.get('PRODUCTION_OVERVIEW_SUMMARY_TITLE_PROCESS', '[공정별 실적 합계]'),
           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
         ),
         child: Column(
@@ -1072,8 +1073,24 @@ class _ProductionScreenState extends State<ProductionScreen> {
             ProductionOverviewSummary(
               entries: summaryEntries,
               showAmount: _showAmount,
+              onRowTap: (entry) => showProductionProcessDetailSheet(
+                context,
+                factoryName: _availableFactories[_selectedFactoryIndex].factoryName,
+                entry: entry,
+                showAmount: _showAmount,
+                unitNames: _units.map((u) => u.name).toList(),
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: Text(
+                LabelStore.get('PRODUCTION_OVERVIEW_SUMMARY_TITLE_CLIENT', '[업체별 실적 합계]'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 8),
             table,
           ],
         ),
