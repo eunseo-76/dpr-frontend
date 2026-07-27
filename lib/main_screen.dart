@@ -18,7 +18,7 @@ class _MainScreenState extends State<MainScreen> {
   String? _role;
   bool _navBarVisible = true;
 
-  bool get _canManageSettings => _role == 'OWNER' || _role == 'MANAGER';
+  bool get _canManageSettings => UserStorage.isAdmin(_role);
 
   List<Widget> get _screens => [
     ProductionScreen(

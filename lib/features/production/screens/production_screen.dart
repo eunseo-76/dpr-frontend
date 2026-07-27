@@ -2,6 +2,7 @@ import 'package:dpr_frontend/core/constants/api_constants.dart';
 import 'package:dpr_frontend/core/models/factory_summary.dart';
 import 'package:dpr_frontend/core/services/master_data_service.dart';
 import 'package:dpr_frontend/core/utils/shift_checker.dart';
+import 'package:dpr_frontend/core/utils/number_format.dart';
 import 'package:dpr_frontend/core/utils/toast.dart';
 import 'package:dpr_frontend/core/utils/user_storage.dart';
 import 'package:dpr_frontend/features/auth/services/user_service.dart';
@@ -28,7 +29,8 @@ import 'package:dpr_frontend/features/production/widgets/production_card.dart';
 import 'package:dpr_frontend/features/production/widgets/production_day_table.dart';
 import 'package:dpr_frontend/features/production/widgets/production_m2_day_table.dart';
 import 'package:dpr_frontend/features/production/widgets/production_overview_summary.dart';
-import 'package:dpr_frontend/features/production/widgets/production_process_detail_sheet.dart';
+import 'package:dpr_frontend/features/production/widgets/production_process_summary_sheet.dart';
+import 'package:dpr_frontend/features/production/widgets/production_client_summary_sheet.dart';
 import 'package:dpr_frontend/features/production/widgets/production_overview_table.dart';
 import 'package:dpr_frontend/features/production/widgets/production_period_table.dart';
 import 'package:dpr_frontend/features/unit/models/unit.dart';
@@ -976,23 +978,28 @@ class _ProductionScreenState extends State<ProductionScreen> {
     }
 
     final m2Unit = _m2Unit;
-    final Widget table;
+    final Widget Function(VoidCallback? onClientHeaderTap) tableBuilder;
     if (m2Unit == null) {
-      table = Text(
-        'M2 단위가 설정되어 있지 않습니다',
-        style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-      );
+      tableBuilder = (_) => Text(
+            'M2 단위가 설정되어 있지 않습니다',
+            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+          );
     } else {
       final m2Rows = buildM2DayRows(_productions, m2UnitId: m2Unit.id);
-      table = m2Rows.isEmpty
-          ? Text(
-              'M2 실적/재공 데이터가 없습니다',
-              style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-            )
-          : ProductionM2DayTable(rows: m2Rows, unitName: m2Unit.name);
+      tableBuilder = m2Rows.isEmpty
+          ? (_) => Text(
+                'M2 실적/재공 데이터가 없습니다',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+              )
+          : (onClientHeaderTap) => ProductionM2DayTable(
+                rows: m2Rows,
+                unitName: m2Unit.name,
+                showAmount: _showAmount,
+                onClientHeaderTap: onClientHeaderTap,
+              );
     }
 
-    return _buildOverviewView(data, table: table);
+    return _buildOverviewView(data, tableBuilder: tableBuilder);
   }
 
   Widget _buildOverviewSection() {
@@ -1039,16 +1046,24 @@ class _ProductionScreenState extends State<ProductionScreen> {
 
     return _buildOverviewView(
       data,
-      table: ProductionOverviewTable(
+      tableBuilder: (onClientHeaderTap) => ProductionOverviewTable(
         rows: pivotData.rows,
         unitColumns: pivotData.unitColumns,
+        showAmount: _showAmount,
+        onClientHeaderTap: onClientHeaderTap,
       ),
     );
   }
 
-  Widget _buildOverviewView(ProductionOverview data, {required Widget table}) {
+  Widget _buildOverviewView(
+    ProductionOverview data, {
+    required Widget Function(VoidCallback? onClientHeaderTap) tableBuilder,
+  }) {
     final processNames = {
       for (final p in _factoryProcesses) p.processId: p.processNickname ?? p.processName,
+    };
+    final clientNames = {
+      for (final c in _factoryClients) c.clientId: c.clientNickname ?? c.clientName,
     };
     final unitNames = {for (final u in _units) u.id: u.name};
     final unitOrder = _units.map((u) => u.id).toList();
@@ -1058,28 +1073,83 @@ class _ProductionScreenState extends State<ProductionScreen> {
       unitNames: unitNames,
       unitOrder: unitOrder,
     );
+    // 일별보기는 원본 리스트(_productions)에서 재공까지 함께 그룹핑하고,
+    // 기간별보기는 서버 집계(data.rows)를 쓴다 — 기간에 걸친 재공 합산은
+    // 아직 의미가 정리되지 않아 기간별보기에는 노출하지 않는다.
+    final clientSummaryEntries = _viewMode == 'day'
+        ? buildClientSummaryDisplayFromProductions(
+            _productions,
+            clientNames: clientNames,
+            processNames: processNames,
+            unitNames: unitNames,
+            unitOrder: unitOrder,
+          )
+        : buildClientSummaryDisplay(
+            data.rows,
+            clientNames: clientNames,
+            processNames: processNames,
+            unitNames: unitNames,
+            unitOrder: unitOrder,
+          );
+    final onProcessHeaderTap = summaryEntries.isEmpty
+        ? null
+        : () => showProductionProcessSummarySheet(
+              context,
+              factoryName: _availableFactories[_selectedFactoryIndex].factoryName,
+              entries: summaryEntries,
+              showAmount: _showAmount,
+              unitNames: _units.map((u) => u.name).toList(),
+            );
+    final onClientHeaderTap = clientSummaryEntries.isEmpty
+        ? null
+        : () => showProductionClientSummarySheet(
+              context,
+              factoryName: _availableFactories[_selectedFactoryIndex].factoryName,
+              entries: clientSummaryEntries,
+              showAmount: _showAmount,
+              showWip: _viewMode == 'day',
+              unitNames: _units.map((u) => u.name).toList(),
+            );
+
+    final revenueAmounts =
+        summaryEntries.map((e) => e.totalAmount).whereType<double>();
+    final totalRevenue =
+        revenueAmounts.isEmpty ? null : revenueAmounts.reduce((a, b) => a + b);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
       child: SectionCard(
         title: _availableFactories[_selectedFactoryIndex].factoryName,
-        titleTrailing: Text(
-          LabelStore.get('PRODUCTION_OVERVIEW_SUMMARY_TITLE_PROCESS', '[공정별 실적 합계]'),
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (_showAmount) ...[
+              Container(
+                padding: const EdgeInsets.only(bottom: 3, left: 6, right: 6),
+                decoration: const BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Colors.blue, width: 3)),
+                ),
+                child: Text(
+                  '${LabelStore.get('PRODUCTION_OVERVIEW_SUMMARY_TITLE_TOTAL_REVENUE', '총 매출')} '
+                  '${totalRevenue == null ? '-' : '${formatManwon(totalRevenue)} 만원'}',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            SizedBox(
+              width: double.infinity,
+              child: Text(
+                LabelStore.get('PRODUCTION_OVERVIEW_SUMMARY_TITLE_PROCESS', '[공정별 실적 합계]'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 8),
             ProductionOverviewSummary(
               entries: summaryEntries,
               showAmount: _showAmount,
-              onRowTap: (entry) => showProductionProcessDetailSheet(
-                context,
-                factoryName: _availableFactories[_selectedFactoryIndex].factoryName,
-                entry: entry,
-                showAmount: _showAmount,
-                unitNames: _units.map((u) => u.name).toList(),
-              ),
+              onProcessHeaderTap: onProcessHeaderTap,
             ),
             const SizedBox(height: 24),
             SizedBox(
@@ -1091,7 +1161,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            table,
+            tableBuilder(onClientHeaderTap),
           ],
         ),
       ),

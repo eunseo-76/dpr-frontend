@@ -3,15 +3,21 @@ import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
 import 'package:dpr_frontend/core/utils/label_store.dart';
 import 'package:dpr_frontend/core/utils/number_format.dart';
 import 'package:dpr_frontend/features/production/utils/production_overview_grouping.dart';
+import 'package:dpr_frontend/features/production/widgets/table_header_button.dart';
 
 class ProductionOverviewTable extends StatelessWidget {
   final List<OverviewPivotRow> rows;
   final List<OverviewUnitColumn> unitColumns;
+  final bool showAmount;
+  // '업체' 헤더 셀의 버튼을 탭했을 때 호출된다.
+  final VoidCallback? onClientHeaderTap;
 
   const ProductionOverviewTable({
     super.key,
     required this.rows,
     required this.unitColumns,
+    required this.showAmount,
+    this.onClientHeaderTap,
   });
 
   static const _colClient = 72.0;
@@ -21,7 +27,8 @@ class ProductionOverviewTable extends StatelessWidget {
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
 
-  int get _columnCount => 2 + unitColumns.length;
+  int get _valueColCount => unitColumns.length + (showAmount ? 1 : 0);
+  int get _columnCount => 2 + _valueColCount;
   int get _rowCount => 1 + rows.length;
 
   @override
@@ -29,9 +36,9 @@ class ProductionOverviewTable extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         const pinnedWidth = _colClient + _colProcess;
-        final valueColWidth = unitColumns.isEmpty
+        final valueColWidth = _valueColCount == 0
             ? _minValueColWidth
-            : ((constraints.maxWidth - pinnedWidth) / unitColumns.length)
+            : ((constraints.maxWidth - pinnedWidth) / _valueColCount)
                 .clamp(_minValueColWidth, double.infinity);
 
         return SizedBox(
@@ -101,22 +108,34 @@ class ProductionOverviewTable extends StatelessWidget {
     final column = vicinity.column;
 
     if (isHeader) {
+      if (column == 0) return _clientHeaderCell();
       final valueLabel = LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE', '실적');
       final headers = [
-        LabelStore.get('PRODUCTION_TABLE_HEADER_CLIENT', '업체'),
         LabelStore.get('PRODUCTION_TABLE_HEADER_PROCESS', '공정'),
         ...unitColumns.map((u) => '$valueLabel(${u.unitName})'),
+        if (showAmount) LabelStore.get('PRODUCTION_TABLE_HEADER_AMOUNT', '금액'),
       ];
-      return _cell(headers[column], isHeader: true);
+      return _cell(headers[column - 1], isHeader: true);
     }
 
     final row = rows[vicinity.row - 1];
     if (column == 0) return _cell(row.clientName);
     if (column == 1) return _cell(row.processName);
 
+    final amountColumn = 2 + unitColumns.length;
+    if (showAmount && column == amountColumn) {
+      return _cell(row.totalAmount == null ? '-' : formatManwon(row.totalAmount));
+    }
+
     final unit = unitColumns[column - 2];
     final value = row.resultByUnit[unit.unitId];
     return _cell(value == null || value == 0 ? '-' : formatNumber(value));
+  }
+
+  Widget _clientHeaderCell() {
+    final label = LabelStore.get('PRODUCTION_TABLE_HEADER_CLIENT', '업체');
+    if (onClientHeaderTap == null) return _cell(label, isHeader: true);
+    return TableHeaderButton(label: label, onTap: onClientHeaderTap!);
   }
 
   Widget _cell(String text, {bool isHeader = false}) {
