@@ -3,15 +3,21 @@ import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
 import 'package:dpr_frontend/core/utils/label_store.dart';
 import 'package:dpr_frontend/core/utils/number_format.dart';
 import 'package:dpr_frontend/features/production/utils/production_day_m2_grouping.dart';
+import 'package:dpr_frontend/features/production/widgets/table_header_button.dart';
 
 class ProductionM2DayTable extends StatelessWidget {
   final List<ProductionM2DayRow> rows;
   final String unitName;
+  final bool showAmount;
+  // '업체' 헤더 셀의 버튼을 탭했을 때 호출된다.
+  final VoidCallback? onClientHeaderTap;
 
   const ProductionM2DayTable({
     super.key,
     required this.rows,
     required this.unitName,
+    required this.showAmount,
+    this.onClientHeaderTap,
   });
 
   static const _colClient = 72.0;
@@ -21,7 +27,8 @@ class ProductionM2DayTable extends StatelessWidget {
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
 
-  static const _columnCount = 4;
+  int get _valueColCount => showAmount ? 3 : 2;
+  int get _columnCount => 2 + _valueColCount;
   int get _rowCount => 1 + rows.length;
 
   @override
@@ -30,7 +37,7 @@ class ProductionM2DayTable extends StatelessWidget {
       builder: (context, constraints) {
         const pinnedWidth = _colClient + _colProcess;
         final valueColWidth =
-            ((constraints.maxWidth - pinnedWidth) / 2)
+            ((constraints.maxWidth - pinnedWidth) / _valueColCount)
                 .clamp(_minValueColWidth, double.infinity);
 
         return SizedBox(
@@ -100,15 +107,16 @@ class ProductionM2DayTable extends StatelessWidget {
     final column = vicinity.column;
 
     if (isHeader) {
+      if (column == 0) return _clientHeaderCell();
       final valueLabel = LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE', '실적');
       final wipLabel = LabelStore.get('PRODUCTION_TABLE_HEADER_WIP', '재공');
       final headers = [
-        LabelStore.get('PRODUCTION_TABLE_HEADER_CLIENT', '업체'),
         LabelStore.get('PRODUCTION_TABLE_HEADER_PROCESS', '공정'),
         '$valueLabel($unitName)',
         '$wipLabel($unitName)',
+        if (showAmount) LabelStore.get('PRODUCTION_TABLE_HEADER_AMOUNT', '금액'),
       ];
-      return _cell(headers[column], isHeader: true);
+      return _cell(headers[column - 1], isHeader: true);
     }
 
     final row = rows[vicinity.row - 1];
@@ -116,12 +124,19 @@ class ProductionM2DayTable extends StatelessWidget {
       0 => _cell(row.clientName),
       1 => _cell(row.processName),
       2 => _cell(_fmt(row.result)),
-      _ => _cell(_fmt(row.wip)),
+      3 => _cell(_fmt(row.wip)),
+      _ => _cell(row.amount == null ? '-' : formatManwon(row.amount)),
     };
   }
 
   static String _fmt(double? value) =>
       value == null || value == 0 ? '-' : formatNumber(value);
+
+  Widget _clientHeaderCell() {
+    final label = LabelStore.get('PRODUCTION_TABLE_HEADER_CLIENT', '업체');
+    if (onClientHeaderTap == null) return _cell(label, isHeader: true);
+    return TableHeaderButton(label: label, onTap: onClientHeaderTap!);
+  }
 
   Widget _cell(String text, {bool isHeader = false}) {
     return Container(

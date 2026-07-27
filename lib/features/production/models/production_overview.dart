@@ -6,6 +6,7 @@ class ProductionOverviewRow {
   final int unitId;
   final String unitName;
   final double result;
+  final double? amount; // STAFF는 hideAmount 정책으로 null
 
   ProductionOverviewRow({
     required this.clientId,
@@ -15,6 +16,7 @@ class ProductionOverviewRow {
     required this.unitId,
     required this.unitName,
     required this.result,
+    this.amount,
   });
 
   factory ProductionOverviewRow.fromJson(Map<String, dynamic> json) {
@@ -26,6 +28,7 @@ class ProductionOverviewRow {
       unitId: json['unitId'] as int,
       unitName: json['unitName'] as String,
       result: (json['result'] as num).toDouble(),
+      amount: (json['amount'] as num?)?.toDouble(),
     );
   }
 }

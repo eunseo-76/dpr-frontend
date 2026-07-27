@@ -42,7 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  bool get _isAdmin => _role == 'OWNER' || _role == 'MANAGER';
+  bool get _isAdmin => UserStorage.isAdmin(_role);
 
   @override
   Widget build(BuildContext context) {

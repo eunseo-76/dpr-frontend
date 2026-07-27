@@ -8,6 +8,7 @@ class ProductionM2DayRow {
   final String processName;
   final double? result;
   final double? wip;
+  final double? amount;
   final int clientGroupIndex; // ProductionOverviewTable과 동일하게, 업체 셀 병합에 사용
 
   ProductionM2DayRow({
@@ -17,6 +18,7 @@ class ProductionM2DayRow {
     required this.processName,
     this.result,
     this.wip,
+    this.amount,
     required this.clientGroupIndex,
   });
 }
@@ -48,6 +50,7 @@ List<ProductionM2DayRow> buildM2DayRows(
       processName: p.processNickname ?? p.processName,
       result: p.result,
       wip: p.wipResult,
+      amount: p.amount,
       clientGroupIndex: clientGroupIdx,
     );
   });

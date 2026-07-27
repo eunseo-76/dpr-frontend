@@ -58,6 +58,8 @@ class UserStorage {
     return prefs.getString(_role);
   }
 
+  static bool isAdmin(String? role) => role == 'OWNER' || role == 'MANAGER';
+
   static Future<String?> getName() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_name);
