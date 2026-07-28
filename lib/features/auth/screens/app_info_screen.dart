@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppInfoScreen extends StatelessWidget {
   // TODO: 릴리스 태그 붙일 때마다 여기 버전 문자열 직접 갱신
-  static const _version = 'v0.1.8';
+  static const _version = 'v0.1.9';
 
   const AppInfoScreen({super.key});
 

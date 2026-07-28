@@ -187,6 +187,68 @@ List<ProcessSummaryDisplayEntry> buildProcessSummaryDisplay(
   }).toList();
 }
 
+// buildProcessSummaryDisplay와 같은 공정 단위 그루핑이지만, 일별보기 전용이다.
+// 서버 집계(ProcessSummaryEntry)엔 재공 필드가 없어서, 하루치 원본 리스트
+// (_productions, Production 모델)를 직접 그룹핑해 재공까지 함께 보여준다.
+// 기간별보기는 이 함수를 쓰지 않는다 — buildClientSummaryDisplayFromProductions와 동일한 이유
+// (여러 날짜에 걸친 재공 합산은 재고 관점에서 아직 의미가 정리되지 않음).
+List<ProcessSummaryDisplayEntry> buildProcessSummaryDisplayFromProductions(
+  List<Production> productions, {
+  required Map<int, String> processNames,
+  required Map<int, String> unitNames,
+  required List<int> unitOrder,
+}) {
+  int unitRank(int unitId) {
+    final index = unitOrder.indexOf(unitId);
+    return index == -1 ? unitOrder.length : index;
+  }
+
+  bool hasValue(Production p) => (p.result ?? 0) != 0 || (p.wipResult ?? 0) != 0;
+
+  final matches = productions.where(hasValue).toList();
+
+  final grouped = <int, List<Production>>{};
+  for (final p in matches) {
+    grouped.putIfAbsent(p.processId, () => []).add(p);
+  }
+
+  final processIds = grouped.keys.toList()..sort();
+
+  return processIds.map((processId) {
+    final group = grouped[processId]!;
+
+    // 업체별 표와 달리 공정 단위로 묶으므로, 같은 단위가 여러 업체에
+    // 걸쳐 나올 수 있어 단위별로 합산해야 한다.
+    final resultByUnit = <int, double>{};
+    final wipByUnit = <int, double>{};
+    final unitNameById = <int, String>{};
+    for (final p in group) {
+      resultByUnit[p.unitId] = (resultByUnit[p.unitId] ?? 0) + (p.result ?? 0);
+      wipByUnit[p.unitId] = (wipByUnit[p.unitId] ?? 0) + (p.wipResult ?? 0);
+      unitNameById[p.unitId] = p.unitName;
+    }
+    final unitIds = resultByUnit.keys
+        .where((id) => resultByUnit[id] != 0 || wipByUnit[id] != 0)
+        .toList()
+      ..sort((a, b) => unitRank(a).compareTo(unitRank(b)));
+    final unitResults = unitIds
+        .map((id) => UnitResultDisplay(
+              result: resultByUnit[id]!,
+              unitName: unitNames[id] ?? unitNameById[id]!,
+              wip: wipByUnit[id],
+            ))
+        .toList();
+
+    final amounts = group.map((p) => p.amount).whereType<double>().toList();
+
+    return ProcessSummaryDisplayEntry(
+      processName: processNames[processId] ?? group.first.processName,
+      unitResults: unitResults,
+      totalAmount: amounts.isEmpty ? null : amounts.reduce((a, b) => a + b),
+    );
+  }).toList();
+}
+
 // buildOverviewPivotRows와 같은 (업체, 공정) 단위 그루핑을 그대로 따른다 —
 // [업체별 실적 합계] 표가 업체 안에서도 공정별로 행을 나눠 보여주고 있으므로,
 // 상세 바텀시트에서 공정을 합쳐버리면 원본 표와 어긋난다.

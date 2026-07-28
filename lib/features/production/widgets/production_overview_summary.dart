@@ -11,6 +11,8 @@ import 'package:dpr_frontend/features/production/widgets/table_header_button.dar
 class ProductionOverviewSummary extends StatelessWidget {
   final List<ProcessSummaryDisplayEntry> entries;
   final bool showAmount;
+  // 일별보기에서만 true. 기간별보기는 재공 원본 데이터가 없어 항상 false.
+  final bool showWip;
   // '공정' 헤더 셀의 버튼을 탭했을 때 호출된다. row 자체는 더 이상 탭 불가.
   final VoidCallback? onProcessHeaderTap;
 
@@ -18,6 +20,7 @@ class ProductionOverviewSummary extends StatelessWidget {
     super.key,
     required this.entries,
     required this.showAmount,
+    required this.showWip,
     this.onProcessHeaderTap,
   });
 
@@ -27,7 +30,7 @@ class ProductionOverviewSummary extends StatelessWidget {
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
 
-  int get _columnCount => showAmount ? 3 : 2;
+  int get _columnCount => 2 + (showWip ? 1 : 0) + (showAmount ? 1 : 0);
   int get _rowCount => 1 + entries.length;
 
   double? _m2Result(ProcessSummaryDisplayEntry entry) {
@@ -36,11 +39,26 @@ class ProductionOverviewSummary extends StatelessWidget {
     return match.isEmpty ? null : match.first.result;
   }
 
+  double? _m2Wip(ProcessSummaryDisplayEntry entry) {
+    final match =
+        entry.unitResults.where((u) => u.unitName.toUpperCase() == 'M2');
+    return match.isEmpty ? null : match.first.wip;
+  }
+
+  // 헤더에 붙일 단위 표기. DB에 저장된 실제 대소문자(예: 'm2')를 그대로 따르고,
+  // 데이터가 하나도 없을 때만 'm2'로 표시한다 — 'M2' 하드코딩을 피하기 위함.
+  String get _m2Label {
+    final match = entries
+        .expand((e) => e.unitResults)
+        .where((u) => u.unitName.toUpperCase() == 'M2');
+    return match.isEmpty ? 'm2' : match.first.unitName;
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final valueColCount = showAmount ? 2 : 1;
+        final valueColCount = 1 + (showWip ? 1 : 0) + (showAmount ? 1 : 0);
         final valueColWidth = ((constraints.maxWidth - _colProcess) /
                 valueColCount)
             .clamp(_minValueColWidth, double.infinity);
@@ -97,9 +115,11 @@ class ProductionOverviewSummary extends StatelessWidget {
     if (vicinity.row == 0) {
       if (column == 0) return _processHeaderCell();
       final valueLabel = LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE', '실적');
+      final wipLabel = LabelStore.get('PRODUCTION_TABLE_HEADER_WIP', '재공');
       final headers = [
-        '$valueLabel(m2)',
-        if (showAmount) LabelStore.get('PRODUCTION_TABLE_HEADER_AMOUNT', '금액'),
+        '$valueLabel($_m2Label)',
+        if (showWip) '$wipLabel($_m2Label)',
+        if (showAmount) LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE_AMOUNT', '실적금액'),
       ];
       return _cell(headers[column - 1], isHeader: true);
     }
@@ -109,6 +129,11 @@ class ProductionOverviewSummary extends StatelessWidget {
 
     if (column == 1) {
       final value = _m2Result(entry);
+      return _cell(value == null || value == 0 ? '-' : formatNumber(value));
+    }
+
+    if (showWip && column == 2) {
+      final value = _m2Wip(entry);
       return _cell(value == null || value == 0 ? '-' : formatNumber(value));
     }
 

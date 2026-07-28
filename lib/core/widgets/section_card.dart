@@ -7,6 +7,9 @@ class SectionCard extends StatelessWidget {
   final Widget child;
   final Widget? footer;
   final Widget? titleTrailing;
+  // 타이틀 텍스트 바로 옆(같은 줄)에 붙는 보조 위젯. titleTrailing과 달리
+  // Stack으로 겹쳐 그리지 않고 Row 안에서 title 뒤에 순서대로 이어 붙는다.
+  final Widget? titleSuffix;
   final VoidCallback? onEditTap;
   final bool wrapInCard;
 
@@ -16,12 +19,24 @@ class SectionCard extends StatelessWidget {
     required this.child,
     this.footer,
     this.titleTrailing,
+    this.titleSuffix,
     this.onEditTap,
     this.wrapInCard = true,
   });
 
   @override
   Widget build(BuildContext context) {
+    final titleText = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        ?titleSuffix,
+      ],
+    );
+
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -29,19 +44,13 @@ class SectionCard extends StatelessWidget {
           children: [
             Expanded(
               child: titleTrailing == null
-                  ? Text(
-                      title,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    )
+                  ? titleText
                   : Stack(
                       alignment: Alignment.center,
                       children: [
                         Align(
                           alignment: Alignment.centerLeft,
-                          child: Text(
-                            title,
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
+                          child: titleText,
                         ),
                         titleTrailing!,
                       ],

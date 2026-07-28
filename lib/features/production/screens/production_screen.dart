@@ -21,7 +21,6 @@ import 'package:dpr_frontend/features/production/models/production_overview.dart
 import 'package:dpr_frontend/features/production/services/production_service.dart';
 import 'package:dpr_frontend/features/production/utils/production_grouping.dart';
 import 'package:dpr_frontend/features/production/utils/production_overview_grouping.dart';
-import 'package:dpr_frontend/features/production/utils/production_day_m2_grouping.dart';
 import 'package:dpr_frontend/features/production/utils/production_period_grouping.dart';
 import 'package:dpr_frontend/features/production/utils/production_scaffold.dart';
 import 'package:dpr_frontend/core/widgets/section_card.dart';
@@ -977,29 +976,42 @@ class _ProductionScreenState extends State<ProductionScreen> {
       );
     }
 
-    final m2Unit = _m2Unit;
-    final Widget Function(VoidCallback? onClientHeaderTap) tableBuilder;
-    if (m2Unit == null) {
-      tableBuilder = (_) => Text(
-            'M2 단위가 설정되어 있지 않습니다',
-            style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-          );
-    } else {
-      final m2Rows = buildM2DayRows(_productions, m2UnitId: m2Unit.id);
-      tableBuilder = m2Rows.isEmpty
-          ? (_) => Text(
-                'M2 실적/재공 데이터가 없습니다',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-              )
-          : (onClientHeaderTap) => ProductionM2DayTable(
-                rows: m2Rows,
-                unitName: m2Unit.name,
-                showAmount: _showAmount,
-                onClientHeaderTap: onClientHeaderTap,
-              );
-    }
+    final clientNames = {
+      for (final c in _factoryClients) c.clientId: c.clientNickname ?? c.clientName,
+    };
+    final processNames = {
+      for (final p in _factoryProcesses) p.processId: p.processNickname ?? p.processName,
+    };
+    final unitNames = {for (final u in _units) u.id: u.name};
+    final unitOrder = _units.map((u) => u.id).toList();
+    // (업체, 공정) 조합 전체를 대상으로 하고, M2 데이터가 없는 조합은 표 안에서
+    // 값 칸만 '-'로 표시한다 ([공정별 실적 합계]와 동일한 원칙 — 공장 설정(_units에
+    // M2 매핑 여부)이 아니라 실제 데이터 존재 여부로 표시 여부를 정한다).
+    final dayEntries = buildClientSummaryDisplayFromProductions(
+      _productions,
+      clientNames: clientNames,
+      processNames: processNames,
+      unitNames: unitNames,
+      unitOrder: unitOrder,
+    );
+    // _units(공장 설정)에 M2가 없어도, 실제 데이터에 M2 행이 있으면 그 표기(대소문자
+    // 포함)를 그대로 따른다. 둘 다 없을 때만 'm2'로 표시 — DB에 저장된 단위명은
+    // 소문자 'm2'이므로 대문자 하드코딩을 피한다.
+    final m2Matches = dayEntries
+        .expand((e) => e.unitResults)
+        .where((u) => u.unitName.toUpperCase() == 'M2');
+    final m2Label =
+        _m2Unit?.name ?? (m2Matches.isEmpty ? 'm2' : m2Matches.first.unitName);
 
-    return _buildOverviewView(data, tableBuilder: tableBuilder);
+    return _buildOverviewView(
+      data,
+      tableBuilder: (onClientHeaderTap) => ProductionM2DayTable(
+        entries: dayEntries,
+        unitName: m2Label,
+        showAmount: _showAmount,
+        onClientHeaderTap: onClientHeaderTap,
+      ),
+    );
   }
 
   Widget _buildOverviewSection() {
@@ -1067,15 +1079,22 @@ class _ProductionScreenState extends State<ProductionScreen> {
     };
     final unitNames = {for (final u in _units) u.id: u.name};
     final unitOrder = _units.map((u) => u.id).toList();
-    final summaryEntries = buildProcessSummaryDisplay(
-      data.processSummary,
-      processNames: processNames,
-      unitNames: unitNames,
-      unitOrder: unitOrder,
-    );
     // 일별보기는 원본 리스트(_productions)에서 재공까지 함께 그룹핑하고,
-    // 기간별보기는 서버 집계(data.rows)를 쓴다 — 기간에 걸친 재공 합산은
+    // 기간별보기는 서버 집계(data.processSummary)를 쓴다 — 기간에 걸친 재공 합산은
     // 아직 의미가 정리되지 않아 기간별보기에는 노출하지 않는다.
+    final summaryEntries = _viewMode == 'day'
+        ? buildProcessSummaryDisplayFromProductions(
+            _productions,
+            processNames: processNames,
+            unitNames: unitNames,
+            unitOrder: unitOrder,
+          )
+        : buildProcessSummaryDisplay(
+            data.processSummary,
+            processNames: processNames,
+            unitNames: unitNames,
+            unitOrder: unitOrder,
+          );
     final clientSummaryEntries = _viewMode == 'day'
         ? buildClientSummaryDisplayFromProductions(
             _productions,
@@ -1098,6 +1117,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
               factoryName: _availableFactories[_selectedFactoryIndex].factoryName,
               entries: summaryEntries,
               showAmount: _showAmount,
+              showWip: _viewMode == 'day',
               unitNames: _units.map((u) => u.name).toList(),
             );
     final onClientHeaderTap = clientSummaryEntries.isEmpty
@@ -1120,23 +1140,19 @@ class _ProductionScreenState extends State<ProductionScreen> {
       padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
       child: SectionCard(
         title: _availableFactories[_selectedFactoryIndex].factoryName,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (_showAmount) ...[
-              Container(
-                padding: const EdgeInsets.only(bottom: 3, left: 6, right: 6),
-                decoration: const BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Colors.blue, width: 3)),
-                ),
+        titleSuffix: _showAmount
+            ? Padding(
+                padding: const EdgeInsets.only(left: 8),
                 child: Text(
                   '${LabelStore.get('PRODUCTION_OVERVIEW_SUMMARY_TITLE_TOTAL_REVENUE', '총 매출')} '
                   '${totalRevenue == null ? '-' : '${formatManwon(totalRevenue)} 만원'}',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.normal),
                 ),
-              ),
-              const SizedBox(height: 16),
-            ],
+              )
+            : null,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
             SizedBox(
               width: double.infinity,
               child: Text(
@@ -1149,6 +1165,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
             ProductionOverviewSummary(
               entries: summaryEntries,
               showAmount: _showAmount,
+              showWip: _viewMode == 'day',
               onProcessHeaderTap: onProcessHeaderTap,
             ),
             const SizedBox(height: 24),
