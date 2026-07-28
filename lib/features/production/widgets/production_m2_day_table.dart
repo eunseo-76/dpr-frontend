@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
 import 'package:dpr_frontend/core/utils/label_store.dart';
 import 'package:dpr_frontend/core/utils/number_format.dart';
-import 'package:dpr_frontend/features/production/utils/production_day_m2_grouping.dart';
+import 'package:dpr_frontend/features/production/utils/production_overview_grouping.dart';
 import 'package:dpr_frontend/features/production/widgets/table_header_button.dart';
 
+// [업체별 실적 합계] 일별보기 표. M2 컬럼만 기본으로 보여주고, PNL/LOT 등 나머지
+// 단위는 '업체' 헤더 버튼 → 상세 바텀시트에서 보여준다 ([공정별 실적 합계]와 동일한 원칙).
+// entries는 (업체, 공정) 조합 전체를 담고 있고, M2 데이터가 없는 조합은 값 칸만 '-'로
+// 표시한다 — M2 데이터가 있는 행만 추려서 보여주면 다른 단위로만 입력된 실적이 표에서
+// 통째로 빠지는 문제가 있었음.
 class ProductionM2DayTable extends StatelessWidget {
-  final List<ProductionM2DayRow> rows;
+  final List<ClientSummaryDisplayEntry> entries;
   final String unitName;
   final bool showAmount;
   // '업체' 헤더 셀의 버튼을 탭했을 때 호출된다.
@@ -14,7 +19,7 @@ class ProductionM2DayTable extends StatelessWidget {
 
   const ProductionM2DayTable({
     super.key,
-    required this.rows,
+    required this.entries,
     required this.unitName,
     required this.showAmount,
     this.onClientHeaderTap,
@@ -29,7 +34,19 @@ class ProductionM2DayTable extends StatelessWidget {
 
   int get _valueColCount => showAmount ? 3 : 2;
   int get _columnCount => 2 + _valueColCount;
-  int get _rowCount => 1 + rows.length;
+  int get _rowCount => 1 + entries.length;
+
+  double? _m2Result(ClientSummaryDisplayEntry entry) {
+    final match =
+        entry.unitResults.where((u) => u.unitName.toUpperCase() == 'M2');
+    return match.isEmpty ? null : match.first.result;
+  }
+
+  double? _m2Wip(ClientSummaryDisplayEntry entry) {
+    final match =
+        entry.unitResults.where((u) => u.unitName.toUpperCase() == 'M2');
+    return match.isEmpty ? null : match.first.wip;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,9 +113,9 @@ class ProductionM2DayTable extends StatelessWidget {
   // 업체(0번 열)만 연속된 같은 그룹끼리 병합 (ProductionOverviewTable과 동일)
   (int, int)? _cellMerge(TableVicinity vicinity) {
     if (vicinity.row == 0 || vicinity.column != 0) return null;
-    final groupIndex = rows[vicinity.row - 1].clientGroupIndex;
-    final start = rows.indexWhere((r) => r.clientGroupIndex == groupIndex);
-    final span = rows.where((r) => r.clientGroupIndex == groupIndex).length;
+    final groupIndex = entries[vicinity.row - 1].clientGroupIndex;
+    final start = entries.indexWhere((e) => e.clientGroupIndex == groupIndex);
+    final span = entries.where((e) => e.clientGroupIndex == groupIndex).length;
     return (start + 1, span);
   }
 
@@ -114,18 +131,18 @@ class ProductionM2DayTable extends StatelessWidget {
         LabelStore.get('PRODUCTION_TABLE_HEADER_PROCESS', '공정'),
         '$valueLabel($unitName)',
         '$wipLabel($unitName)',
-        if (showAmount) LabelStore.get('PRODUCTION_TABLE_HEADER_AMOUNT', '금액'),
+        if (showAmount) LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE_AMOUNT', '실적금액'),
       ];
       return _cell(headers[column - 1], isHeader: true);
     }
 
-    final row = rows[vicinity.row - 1];
+    final entry = entries[vicinity.row - 1];
     return switch (column) {
-      0 => _cell(row.clientName),
-      1 => _cell(row.processName),
-      2 => _cell(_fmt(row.result)),
-      3 => _cell(_fmt(row.wip)),
-      _ => _cell(row.amount == null ? '-' : formatManwon(row.amount)),
+      0 => _cell(entry.clientName),
+      1 => _cell(entry.processName),
+      2 => _cell(_fmt(_m2Result(entry))),
+      3 => _cell(_fmt(_m2Wip(entry))),
+      _ => _cell(entry.totalAmount == null ? '-' : formatManwon(entry.totalAmount)),
     };
   }
 

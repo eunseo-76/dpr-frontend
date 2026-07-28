@@ -113,7 +113,7 @@ class ProductionOverviewTable extends StatelessWidget {
       final headers = [
         LabelStore.get('PRODUCTION_TABLE_HEADER_PROCESS', '공정'),
         ...unitColumns.map((u) => '$valueLabel(${u.unitName})'),
-        if (showAmount) LabelStore.get('PRODUCTION_TABLE_HEADER_AMOUNT', '금액'),
+        if (showAmount) LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE_AMOUNT', '실적금액'),
       ];
       return _cell(headers[column - 1], isHeader: true);
     }

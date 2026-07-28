@@ -227,7 +227,7 @@ class _SummaryTable extends StatelessWidget {
           '$valueLabel($u)',
           if (showWip) '$wipLabel($u)',
         ],
-        if (showAmount) LabelStore.get('PRODUCTION_TABLE_HEADER_AMOUNT', '금액'),
+        if (showAmount) LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE_AMOUNT', '실적금액'),
       ];
       return _cell(headers[column], isHeader: true);
     }

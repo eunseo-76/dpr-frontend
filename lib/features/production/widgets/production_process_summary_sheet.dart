@@ -12,6 +12,8 @@ Future<void> showProductionProcessSummarySheet(
   required String factoryName,
   required List<ProcessSummaryDisplayEntry> entries,
   required bool showAmount,
+  // 일별보기에서만 true. 기간별보기는 재공 원본 데이터가 없어 항상 false.
+  required bool showWip,
   required List<String> unitNames,
 }) {
   return showModalBottomSheet<void>(
@@ -29,6 +31,7 @@ Future<void> showProductionProcessSummarySheet(
         factoryName: factoryName,
         entries: entries,
         showAmount: showAmount,
+        showWip: showWip,
         unitNames: unitNames,
       ),
     ),
@@ -39,12 +42,14 @@ class _ProductionProcessSummarySheet extends StatelessWidget {
   final String factoryName;
   final List<ProcessSummaryDisplayEntry> entries;
   final bool showAmount;
+  final bool showWip;
   final List<String> unitNames;
 
   const _ProductionProcessSummarySheet({
     required this.factoryName,
     required this.entries,
     required this.showAmount,
+    required this.showWip,
     required this.unitNames,
   });
 
@@ -94,6 +99,7 @@ class _ProductionProcessSummarySheet extends StatelessWidget {
             child: _SummaryTable(
               entries: entries,
               showAmount: showAmount,
+              showWip: showWip,
               unitNames: unitNames,
             ),
           ),
@@ -106,6 +112,7 @@ class _ProductionProcessSummarySheet extends StatelessWidget {
 class _SummaryTable extends StatelessWidget {
   final List<ProcessSummaryDisplayEntry> entries;
   final bool showAmount;
+  final bool showWip;
   // 실적이 있는 단위가 아니라, 공장이 실제로 쓰는 단위 전체 목록.
   // entry.unitResults만 보면 값이 0인 단위는 통째로 빠져서 행마다 컬럼이
   // 들쭉날쭉해지는 문제가 있음 — 단위는 항상 고정된 컬럼으로 두고, 값 없는
@@ -115,6 +122,7 @@ class _SummaryTable extends StatelessWidget {
   const _SummaryTable({
     required this.entries,
     required this.showAmount,
+    required this.showWip,
     required this.unitNames,
   });
 
@@ -124,7 +132,11 @@ class _SummaryTable extends StatelessWidget {
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
 
-  int get _columnCount => 1 + unitNames.length + (showAmount ? 1 : 0);
+  // 단위 하나당 실적 열 1개, 재공을 보여줄 땐 그 옆에 재공 열이 하나 더 붙는다
+  // (production_client_summary_sheet.dart와 동일한 실적/재공 나란히 배치).
+  int get _metricsPerUnit => showWip ? 2 : 1;
+  int get _columnCount =>
+      1 + unitNames.length * _metricsPerUnit + (showAmount ? 1 : 0);
   int get _rowCount => 1 + entries.length;
 
   double? _resultFor(ProcessSummaryDisplayEntry entry, String unitName) {
@@ -133,11 +145,18 @@ class _SummaryTable extends StatelessWidget {
     return match.isEmpty ? null : match.first.result;
   }
 
+  double? _wipFor(ProcessSummaryDisplayEntry entry, String unitName) {
+    final match = entry.unitResults
+        .where((u) => u.unitName.toUpperCase() == unitName.toUpperCase());
+    return match.isEmpty ? null : match.first.wip;
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final valueColCount = unitNames.length + (showAmount ? 1 : 0);
+        final valueColCount =
+            unitNames.length * _metricsPerUnit + (showAmount ? 1 : 0);
         final valueColWidth = valueColCount == 0
             ? _minValueColWidth
             : ((constraints.maxWidth - _colProcess) / valueColCount)
@@ -177,12 +196,16 @@ class _SummaryTable extends StatelessWidget {
   Widget _buildCell(TableVicinity vicinity) {
     final column = vicinity.column;
     final valueLabel = LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE', '실적');
+    final wipLabel = LabelStore.get('PRODUCTION_TABLE_HEADER_WIP', '재공');
 
     if (vicinity.row == 0) {
       final headers = [
         LabelStore.get('PRODUCTION_TABLE_HEADER_PROCESS', '공정'),
-        ...unitNames.map((u) => '$valueLabel($u)'),
-        if (showAmount) LabelStore.get('PRODUCTION_TABLE_HEADER_AMOUNT', '금액'),
+        for (final u in unitNames) ...[
+          '$valueLabel($u)',
+          if (showWip) '$wipLabel($u)',
+        ],
+        if (showAmount) LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE_AMOUNT', '실적금액'),
       ];
       return _cell(headers[column], isHeader: true);
     }
@@ -190,14 +213,17 @@ class _SummaryTable extends StatelessWidget {
     final entry = entries[vicinity.row - 1];
     if (column == 0) return _cell(entry.processName);
 
-    final amountColumn = 1 + unitNames.length;
+    final amountColumn = 1 + unitNames.length * _metricsPerUnit;
     if (showAmount && column == amountColumn) {
       return _cell(
         entry.totalAmount == null ? '-' : formatManwon(entry.totalAmount),
       );
     }
 
-    final value = _resultFor(entry, unitNames[column - 1]);
+    final unitName = unitNames[(column - 1) ~/ _metricsPerUnit];
+    final isWipColumn = showWip && (column - 1) % _metricsPerUnit == 1;
+    final value =
+        isWipColumn ? _wipFor(entry, unitName) : _resultFor(entry, unitName);
     return _cell(value == null || value == 0 ? '-' : formatNumber(value));
   }
 
