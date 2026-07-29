@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return LiquidGlassWidgets.wrap(
       child: MaterialApp(
-        title: 'DPR',
+        title: 'FPRS',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
