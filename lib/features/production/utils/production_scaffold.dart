@@ -1,6 +1,6 @@
- import 'package:dpr_frontend/features/client/models/factory_client.dart';
-import 'package:dpr_frontend/features/unit/models/unit.dart';
-import 'package:dpr_frontend/features/utility/models/factory_process.dart';
+ import 'package:fprs_frontend/features/client/models/factory_client.dart';
+import 'package:fprs_frontend/features/unit/models/unit.dart';
+import 'package:fprs_frontend/features/utility/models/factory_process.dart';
 
 class ProductionRowScaffold {
   final int rowGroupId;

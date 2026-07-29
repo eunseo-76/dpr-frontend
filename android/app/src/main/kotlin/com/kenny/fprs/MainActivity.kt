@@ -1,4 +1,4 @@
-package com.example.dpr_frontend
+package com.kenny.fprs
 
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
@@ -6,7 +6,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    private val channel = "dpr/screen_security"
+    private val channel = "fprs/screen_security"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

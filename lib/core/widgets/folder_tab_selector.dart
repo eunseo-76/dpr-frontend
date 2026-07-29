@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dpr_frontend/core/widgets/wobble_effect.dart';
+import 'package:fprs_frontend/core/widgets/wobble_effect.dart';
 
 // 탭 = 카드 선택 인덱스. 선택된 탭이 아래 카드와 이음새 없이 붙어 보이도록
 // 탭 위치(첫 번째/마지막/중간)에 따라 카드 상단 모서리 라운딩을 지운다.

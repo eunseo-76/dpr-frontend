@@ -1,4 +1,4 @@
-import 'package:dpr_frontend/features/utility/models/factory_process.dart';
+import 'package:fprs_frontend/features/utility/models/factory_process.dart';
 
 // 카드 안의 한 행 - (factoryId, processId)가 실적 데이터를 찾는 key가 된다
 // 공장별 뷰 -> label은 공정명, 공정별 뷰 -> label은 공장명

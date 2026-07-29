@@ -1,11 +1,11 @@
 import 'dart:convert';
 
-import 'package:dpr_frontend/core/constants/api_constants.dart';
-import 'package:dpr_frontend/core/network/api_client.dart';
-import 'package:dpr_frontend/core/utils/token_storage.dart';
-import 'package:dpr_frontend/core/utils/user_storage.dart';
-import 'package:dpr_frontend/features/auth/models/login_request.dart';
-import 'package:dpr_frontend/features/auth/models/login_response.dart';
+import 'package:fprs_frontend/core/constants/api_constants.dart';
+import 'package:fprs_frontend/core/network/api_client.dart';
+import 'package:fprs_frontend/core/utils/token_storage.dart';
+import 'package:fprs_frontend/core/utils/user_storage.dart';
+import 'package:fprs_frontend/features/auth/models/login_request.dart';
+import 'package:fprs_frontend/features/auth/models/login_response.dart';
 
 class AuthService {
   final _client = ApiClient();

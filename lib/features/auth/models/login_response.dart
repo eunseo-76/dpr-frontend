@@ -1,4 +1,4 @@
-import 'package:dpr_frontend/core/models/factory_summary.dart';
+import 'package:fprs_frontend/core/models/factory_summary.dart';
 
 // 역직렬화
 class LoginResponse {

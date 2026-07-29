@@ -1,5 +1,5 @@
-import 'package:dpr_frontend/core/services/screen_security_service.dart';
-import 'package:dpr_frontend/features/auth/screens/splash_screen.dart';
+import 'package:fprs_frontend/core/services/screen_security_service.dart';
+import 'package:fprs_frontend/features/auth/screens/splash_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';

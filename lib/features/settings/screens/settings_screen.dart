@@ -1,13 +1,13 @@
-import 'package:dpr_frontend/core/constants/api_constants.dart';
-import 'package:dpr_frontend/core/models/field_config.dart';
-import 'package:dpr_frontend/core/services/master_data_service.dart';
-import 'package:dpr_frontend/core/utils/user_storage.dart';
-import 'package:dpr_frontend/core/widgets/menu_card.dart';
-import 'package:dpr_frontend/features/settings/screens/factory_mapping_screen.dart';
-import 'package:dpr_frontend/features/settings/screens/master_data_manage_screen.dart';
-import 'package:dpr_frontend/features/settings/screens/invitation_manage_screen.dart';
-import 'package:dpr_frontend/features/settings/screens/unit_price_screen.dart';
-import 'package:dpr_frontend/features/settings/widgets/factory_form_dialog.dart';
+import 'package:fprs_frontend/core/constants/api_constants.dart';
+import 'package:fprs_frontend/core/models/field_config.dart';
+import 'package:fprs_frontend/core/services/master_data_service.dart';
+import 'package:fprs_frontend/core/utils/user_storage.dart';
+import 'package:fprs_frontend/core/widgets/menu_card.dart';
+import 'package:fprs_frontend/features/settings/screens/factory_mapping_screen.dart';
+import 'package:fprs_frontend/features/settings/screens/master_data_manage_screen.dart';
+import 'package:fprs_frontend/features/settings/screens/invitation_manage_screen.dart';
+import 'package:fprs_frontend/features/settings/screens/unit_price_screen.dart';
+import 'package:fprs_frontend/features/settings/widgets/factory_form_dialog.dart';
 import 'package:flutter/material.dart';
 
 class SettingsScreen extends StatefulWidget {

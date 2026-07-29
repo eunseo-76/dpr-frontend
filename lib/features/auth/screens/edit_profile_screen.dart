@@ -1,10 +1,10 @@
-import 'package:dpr_frontend/core/utils/toast.dart';
-import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
-import 'package:dpr_frontend/core/utils/user_storage.dart';
-import 'package:dpr_frontend/core/widgets/form_action_bar.dart';
-import 'package:dpr_frontend/core/widgets/shake_field.dart';
-import 'package:dpr_frontend/features/auth/models/update_user_request.dart';
-import 'package:dpr_frontend/features/auth/services/user_service.dart';
+import 'package:fprs_frontend/core/utils/toast.dart';
+import 'package:fprs_frontend/core/widgets/confirm_dialog.dart';
+import 'package:fprs_frontend/core/utils/user_storage.dart';
+import 'package:fprs_frontend/core/widgets/form_action_bar.dart';
+import 'package:fprs_frontend/core/widgets/shake_field.dart';
+import 'package:fprs_frontend/features/auth/models/update_user_request.dart';
+import 'package:fprs_frontend/features/auth/services/user_service.dart';
 import 'package:flutter/material.dart';
 
 class EditProfileScreen extends StatefulWidget {

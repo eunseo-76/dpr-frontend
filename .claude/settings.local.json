@@ -13,7 +13,10 @@
       "Bash(adb shell *)",
       "Bash(flutter --version)",
       "Artifact",
-      "Bash(git status *)"
+      "Bash(git status *)",
+      "Bash(xargs sed -i 's/dpr_frontend/fprs_frontend/g')",
+      "Bash(git mv *)",
+      "Bash(flutter pub *)"
     ],
     "deny": [
       "Read(android/key.properties)"

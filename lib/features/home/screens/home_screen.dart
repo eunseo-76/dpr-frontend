@@ -1,10 +1,10 @@
-import 'package:dpr_frontend/core/models/factory_summary.dart';
-import 'package:dpr_frontend/core/utils/user_storage.dart';
-import 'package:dpr_frontend/core/widgets/factory_tag.dart';
-import 'package:dpr_frontend/core/widgets/menu_card.dart';
-import 'package:dpr_frontend/core/widgets/name_avatar.dart';
-import 'package:dpr_frontend/features/auth/screens/my_page_screen.dart';
-import 'package:dpr_frontend/features/settings/screens/settings_screen.dart';
+import 'package:fprs_frontend/core/models/factory_summary.dart';
+import 'package:fprs_frontend/core/utils/user_storage.dart';
+import 'package:fprs_frontend/core/widgets/factory_tag.dart';
+import 'package:fprs_frontend/core/widgets/menu_card.dart';
+import 'package:fprs_frontend/core/widgets/name_avatar.dart';
+import 'package:fprs_frontend/features/auth/screens/my_page_screen.dart';
+import 'package:fprs_frontend/features/settings/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {

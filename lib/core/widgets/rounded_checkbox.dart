@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dpr_frontend/core/widgets/pop_effect.dart';
+import 'package:fprs_frontend/core/widgets/pop_effect.dart';
 
 // 체크박스 커스텀
 class RoundedCheckbox extends StatelessWidget {

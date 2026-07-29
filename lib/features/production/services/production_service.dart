@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import 'package:dpr_frontend/core/constants/api_constants.dart';
-import 'package:dpr_frontend/core/network/api_client.dart';
-import 'package:dpr_frontend/features/production/models/production.dart';
-import 'package:dpr_frontend/features/production/models/production_overview.dart';
-import 'package:dpr_frontend/features/production/models/production_upsert_entry.dart';
+import 'package:fprs_frontend/core/constants/api_constants.dart';
+import 'package:fprs_frontend/core/network/api_client.dart';
+import 'package:fprs_frontend/features/production/models/production.dart';
+import 'package:fprs_frontend/features/production/models/production_overview.dart';
+import 'package:fprs_frontend/features/production/models/production_upsert_entry.dart';
 
 class ProductionService {
   final _client = ApiClient();

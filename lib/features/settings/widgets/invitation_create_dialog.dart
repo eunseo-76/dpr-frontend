@@ -1,13 +1,13 @@
-import 'package:dpr_frontend/core/constants/api_constants.dart';
-import 'package:dpr_frontend/core/models/master_data_entity.dart';
-import 'package:dpr_frontend/core/services/master_data_service.dart';
-import 'package:dpr_frontend/core/utils/toast.dart';
-import 'package:dpr_frontend/core/utils/validators.dart';
-import 'package:dpr_frontend/core/utils/user_storage.dart';
-import 'package:dpr_frontend/core/widgets/pin_code_field.dart';
-import 'package:dpr_frontend/core/widgets/pop_effect.dart';
-import 'package:dpr_frontend/core/widgets/shake_field.dart';
-import 'package:dpr_frontend/features/settings/services/invitation_service.dart';
+import 'package:fprs_frontend/core/constants/api_constants.dart';
+import 'package:fprs_frontend/core/models/master_data_entity.dart';
+import 'package:fprs_frontend/core/services/master_data_service.dart';
+import 'package:fprs_frontend/core/utils/toast.dart';
+import 'package:fprs_frontend/core/utils/validators.dart';
+import 'package:fprs_frontend/core/utils/user_storage.dart';
+import 'package:fprs_frontend/core/widgets/pin_code_field.dart';
+import 'package:fprs_frontend/core/widgets/pop_effect.dart';
+import 'package:fprs_frontend/core/widgets/shake_field.dart';
+import 'package:fprs_frontend/features/settings/services/invitation_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 

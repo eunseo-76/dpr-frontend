@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:dpr_frontend/core/utils/number_format.dart';
-import 'package:dpr_frontend/core/widgets/section_card.dart';
+import 'package:fprs_frontend/core/utils/number_format.dart';
+import 'package:fprs_frontend/core/widgets/section_card.dart';
 
 // 전기&용수의 공장별/공정별 카드 - 제목 + 표(일/주/월/년에 따라 다름) + 누적합계 footer
 class UtilityCard extends StatelessWidget {

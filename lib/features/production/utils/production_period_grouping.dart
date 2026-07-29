@@ -1,6 +1,6 @@
-import 'package:dpr_frontend/features/production/models/production.dart';
-import 'package:dpr_frontend/features/production/utils/production_scaffold.dart';
-import 'package:dpr_frontend/features/utility/utils/utility_period_columns.dart';
+import 'package:fprs_frontend/features/production/models/production.dart';
+import 'package:fprs_frontend/features/production/utils/production_scaffold.dart';
+import 'package:fprs_frontend/features/utility/utils/utility_period_columns.dart';
 
 class ProductionPeriodRow {
   final int rowGroupId;

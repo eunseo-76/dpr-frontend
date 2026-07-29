@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:dpr_frontend/core/models/master_data_entity.dart';
-import 'package:dpr_frontend/core/network/api_client.dart';
+import 'package:fprs_frontend/core/models/master_data_entity.dart';
+import 'package:fprs_frontend/core/network/api_client.dart';
 
 class MasterDataService {
   final String endpoint;

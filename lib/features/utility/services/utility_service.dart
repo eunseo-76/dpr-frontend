@@ -1,11 +1,11 @@
 import 'dart:convert';
 
-import 'package:dpr_frontend/core/constants/api_constants.dart';
-import 'package:dpr_frontend/core/network/api_client.dart';
-import 'package:dpr_frontend/features/utility/models/factory_process.dart';
-import 'package:dpr_frontend/features/utility/models/utility.dart';
-import 'package:dpr_frontend/features/utility/models/utility_summary.dart';
-import 'package:dpr_frontend/features/utility/models/utility_upsert_entry.dart';
+import 'package:fprs_frontend/core/constants/api_constants.dart';
+import 'package:fprs_frontend/core/network/api_client.dart';
+import 'package:fprs_frontend/features/utility/models/factory_process.dart';
+import 'package:fprs_frontend/features/utility/models/utility.dart';
+import 'package:fprs_frontend/features/utility/models/utility_summary.dart';
+import 'package:fprs_frontend/features/utility/models/utility_upsert_entry.dart';
 
 class UtilityService {
   final _client = ApiClient();

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
-import 'package:dpr_frontend/core/utils/label_store.dart';
-import 'package:dpr_frontend/core/utils/number_format.dart';
-import 'package:dpr_frontend/features/production/utils/production_overview_grouping.dart';
+import 'package:fprs_frontend/core/utils/label_store.dart';
+import 'package:fprs_frontend/core/utils/number_format.dart';
+import 'package:fprs_frontend/features/production/utils/production_overview_grouping.dart';
 
 // [공정별 실적 합계] '공정' 헤더 버튼을 탭하면 뜨는 상세 — 조회 중인 기간(일/기간)의
 // 전체 공정을 단위별 실적 + 금액으로 한 번에 보여준다. 캘린더 피커와 같은 바텀시트

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dpr_frontend/core/widgets/pop_effect.dart';
+import 'package:fprs_frontend/core/widgets/pop_effect.dart';
 
 // 카드 = 제목(+편집 아이콘) + 본문 + (선택)하단
 class SectionCard extends StatelessWidget {

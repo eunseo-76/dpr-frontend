@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:dpr_frontend/core/models/factory_summary.dart';
+import 'package:fprs_frontend/core/models/factory_summary.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 

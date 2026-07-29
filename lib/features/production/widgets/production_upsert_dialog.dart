@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:dpr_frontend/core/utils/label_store.dart';
-import 'package:dpr_frontend/core/utils/validators.dart';
+import 'package:fprs_frontend/core/utils/label_store.dart';
+import 'package:fprs_frontend/core/utils/validators.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
-import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
-import 'package:dpr_frontend/features/production/models/production_upsert_entry.dart';
+import 'package:fprs_frontend/core/widgets/confirm_dialog.dart';
+import 'package:fprs_frontend/features/production/models/production_upsert_entry.dart';
 
 class ProductionUpsertRow {
   final int factoryId;

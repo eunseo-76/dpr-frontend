@@ -1,15 +1,15 @@
-import 'package:dpr_frontend/core/constants/api_constants.dart';
-import 'package:dpr_frontend/core/utils/toast.dart';
-import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
-import 'package:dpr_frontend/core/models/master_data_entity.dart';
-import 'package:dpr_frontend/core/services/master_data_service.dart';
-import 'package:dpr_frontend/features/client/models/factory_client.dart';
-import 'package:dpr_frontend/features/settings/models/factory_unit.dart';
-import 'package:dpr_frontend/features/settings/services/factory_mapping_service.dart';
-import 'package:dpr_frontend/features/utility/models/factory_process.dart';
-import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
-import 'package:dpr_frontend/core/widgets/pill_selector.dart';
-import 'package:dpr_frontend/core/widgets/rounded_checkbox.dart';
+import 'package:fprs_frontend/core/constants/api_constants.dart';
+import 'package:fprs_frontend/core/utils/toast.dart';
+import 'package:fprs_frontend/core/widgets/confirm_dialog.dart';
+import 'package:fprs_frontend/core/models/master_data_entity.dart';
+import 'package:fprs_frontend/core/services/master_data_service.dart';
+import 'package:fprs_frontend/features/client/models/factory_client.dart';
+import 'package:fprs_frontend/features/settings/models/factory_unit.dart';
+import 'package:fprs_frontend/features/settings/services/factory_mapping_service.dart';
+import 'package:fprs_frontend/features/utility/models/factory_process.dart';
+import 'package:fprs_frontend/core/widgets/loading_indicator.dart';
+import 'package:fprs_frontend/core/widgets/pill_selector.dart';
+import 'package:fprs_frontend/core/widgets/rounded_checkbox.dart';
 import 'package:flutter/material.dart';
 
 class FactoryMappingScreen extends StatefulWidget {

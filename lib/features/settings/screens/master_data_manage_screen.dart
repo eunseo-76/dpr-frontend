@@ -1,12 +1,12 @@
-import 'package:dpr_frontend/core/models/field_config.dart';
-import 'package:dpr_frontend/core/utils/toast.dart';
-import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
-import 'package:dpr_frontend/core/widgets/name_avatar.dart';
-import 'package:dpr_frontend/core/models/master_data_entity.dart';
-import 'package:dpr_frontend/core/services/master_data_service.dart';
-import 'package:dpr_frontend/core/widgets/form_dialog.dart';
-import 'package:dpr_frontend/core/widgets/shake_field.dart';
-import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
+import 'package:fprs_frontend/core/models/field_config.dart';
+import 'package:fprs_frontend/core/utils/toast.dart';
+import 'package:fprs_frontend/core/widgets/confirm_dialog.dart';
+import 'package:fprs_frontend/core/widgets/name_avatar.dart';
+import 'package:fprs_frontend/core/models/master_data_entity.dart';
+import 'package:fprs_frontend/core/services/master_data_service.dart';
+import 'package:fprs_frontend/core/widgets/form_dialog.dart';
+import 'package:fprs_frontend/core/widgets/shake_field.dart';
+import 'package:fprs_frontend/core/widgets/loading_indicator.dart';
 import 'package:flutter/material.dart';
 
 class MasterDataManageScreen extends StatefulWidget {
