@@ -10,8 +10,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('ko_KR');
   await LiquidGlassWidgets.initialize();
-  // TODO: 테스트 기간 종료 후 캡처 방지 풀기
-  // await ScreenSecurityService.enable();
+  await ScreenSecurityService.enable();
   // 상태표시줄이 화면 전환/다이얼로그 시 검정으로 되돌아가는 것 방지
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
