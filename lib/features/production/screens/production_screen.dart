@@ -810,6 +810,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
       factoryClients: _factoryClients,
       units: _units,
       groupBy: _groupBy,
+      hasNightShift: _factoryShift?.hasNightShift ?? true,
     );
 
     final date = DateTime.parse(_selectedDate);
@@ -894,6 +895,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
       factoryClients: _factoryClients,
       units: _units,
       groupBy: _groupBy,
+      hasNightShift: _factoryShift?.hasNightShift ?? true,
     );
     final dayGroups = groupProductionsForDay(
       _productions,
