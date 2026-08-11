@@ -1,5 +1,5 @@
-import 'package:dpr_frontend/features/utility/models/utility.dart';
-import 'package:dpr_frontend/features/utility/utils/factory_process_scaffold.dart';
+import 'package:fprs_frontend/features/utility/models/utility.dart';
+import 'package:fprs_frontend/features/utility/utils/factory_process_scaffold.dart';
 
 // 주/월/년 보기
 

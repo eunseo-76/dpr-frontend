@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
-import 'package:dpr_frontend/core/utils/label_store.dart';
-import 'package:dpr_frontend/core/utils/number_format.dart';
-import 'package:dpr_frontend/features/production/utils/production_overview_grouping.dart';
-import 'package:dpr_frontend/features/production/widgets/table_header_button.dart';
+import 'package:fprs_frontend/core/utils/label_store.dart';
+import 'package:fprs_frontend/core/utils/number_format.dart';
+import 'package:fprs_frontend/features/production/utils/production_overview_grouping.dart';
+import 'package:fprs_frontend/features/production/widgets/table_header_button.dart';
 
 // [업체별 실적 합계] 일별보기 표. M2 컬럼만 기본으로 보여주고, PNL/LOT 등 나머지
 // 단위는 '업체' 헤더 버튼 → 상세 바텀시트에서 보여준다 ([공정별 실적 합계]와 동일한 원칙).

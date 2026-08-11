@@ -1,17 +1,17 @@
-import 'package:dpr_frontend/core/models/factory_summary.dart';
-import 'package:dpr_frontend/core/utils/toast.dart';
-import 'package:dpr_frontend/core/utils/token_storage.dart';
-import 'package:dpr_frontend/core/utils/user_storage.dart';
-import 'package:dpr_frontend/features/auth/screens/app_info_screen.dart';
-import 'package:dpr_frontend/features/auth/screens/edit_profile_screen.dart';
-import 'package:dpr_frontend/features/auth/screens/landing_screen.dart';
-import 'package:dpr_frontend/features/auth/screens/forgot_password_screen.dart';
-import 'package:dpr_frontend/features/auth/screens/reset_password_screen.dart';
-import 'package:dpr_frontend/features/auth/screens/withdraw_screen.dart';
-import 'package:dpr_frontend/features/auth/services/auth_service.dart';
-import 'package:dpr_frontend/features/auth/services/user_service.dart';
-import 'package:dpr_frontend/core/widgets/name_avatar.dart';
-import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
+import 'package:fprs_frontend/core/models/factory_summary.dart';
+import 'package:fprs_frontend/core/utils/toast.dart';
+import 'package:fprs_frontend/core/utils/token_storage.dart';
+import 'package:fprs_frontend/core/utils/user_storage.dart';
+import 'package:fprs_frontend/features/auth/screens/app_info_screen.dart';
+import 'package:fprs_frontend/features/auth/screens/edit_profile_screen.dart';
+import 'package:fprs_frontend/features/auth/screens/landing_screen.dart';
+import 'package:fprs_frontend/features/auth/screens/forgot_password_screen.dart';
+import 'package:fprs_frontend/features/auth/screens/reset_password_screen.dart';
+import 'package:fprs_frontend/features/auth/screens/withdraw_screen.dart';
+import 'package:fprs_frontend/features/auth/services/auth_service.dart';
+import 'package:fprs_frontend/features/auth/services/user_service.dart';
+import 'package:fprs_frontend/core/widgets/name_avatar.dart';
+import 'package:fprs_frontend/core/widgets/loading_indicator.dart';
 import 'package:flutter/material.dart';
 
 class MyPageScreen extends StatefulWidget {

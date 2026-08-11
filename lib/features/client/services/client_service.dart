@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:dpr_frontend/core/constants/api_constants.dart';
-import 'package:dpr_frontend/core/network/api_client.dart';
-import 'package:dpr_frontend/features/client/models/factory_client.dart';
+import 'package:fprs_frontend/core/constants/api_constants.dart';
+import 'package:fprs_frontend/core/network/api_client.dart';
+import 'package:fprs_frontend/features/client/models/factory_client.dart';
 
 class ClientService {
   final _client = ApiClient();

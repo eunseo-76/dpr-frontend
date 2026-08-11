@@ -1,6 +1,6 @@
-import 'package:dpr_frontend/core/utils/fade_route.dart';
-import 'package:dpr_frontend/features/auth/screens/invite_code_screen.dart';
-import 'package:dpr_frontend/features/auth/screens/login_screen.dart';
+import 'package:fprs_frontend/core/utils/fade_route.dart';
+import 'package:fprs_frontend/features/auth/screens/invite_code_screen.dart';
+import 'package:fprs_frontend/features/auth/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 
 class LandingScreen extends StatelessWidget {
@@ -42,7 +42,7 @@ class LandingScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  '생산일보',
+                  'FPRS',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 28,

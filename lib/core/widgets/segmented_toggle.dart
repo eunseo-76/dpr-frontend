@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dpr_frontend/core/widgets/pop_effect.dart';
+import 'package:fprs_frontend/core/widgets/pop_effect.dart';
 
 class SegmentedToggle extends StatelessWidget {
   final List<String> options; // 화면에 그릴 글자 (DB 라벨이 바뀔 수 있음)

@@ -1,6 +1,6 @@
- import 'package:dpr_frontend/features/client/models/factory_client.dart';
-import 'package:dpr_frontend/features/unit/models/unit.dart';
-import 'package:dpr_frontend/features/utility/models/factory_process.dart';
+ import 'package:fprs_frontend/features/client/models/factory_client.dart';
+import 'package:fprs_frontend/features/unit/models/unit.dart';
+import 'package:fprs_frontend/features/utility/models/factory_process.dart';
 
 class ProductionRowScaffold {
   final int rowGroupId;
@@ -35,6 +35,7 @@ List<ProductionGroupScaffold> buildProductionScaffold({
   required List<FactoryClient> factoryClients,
   required List<Unit> units,
   required String groupBy,
+  required bool hasNightShift,
 }) {
   final processes = <int, String>{};
   for (final fp in factoryProcesses) {
@@ -49,7 +50,7 @@ List<ProductionGroupScaffold> buildProductionScaffold({
   List<ProductionRowScaffold> buildRows(Map<int, String> rowGroups) {
     final rows = <ProductionRowScaffold>[];
     for (final entry in rowGroups.entries) {
-      for (final shift in ['주', '야']) {
+      for (final shift in hasNightShift ? ['주', '야'] : ['주']) {
         for (final unit in units) {
           rows.add(ProductionRowScaffold(
             rowGroupId: entry.key,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
-import 'package:dpr_frontend/core/utils/number_format.dart';
-import 'package:dpr_frontend/features/utility/utils/utility_period_grouping.dart';
+import 'package:fprs_frontend/core/utils/number_format.dart';
+import 'package:fprs_frontend/features/utility/utils/utility_period_grouping.dart';
 
 // 주/월/년 보기 표
 // 컬럼: 구분 | 공정(또는 공장) | 기간열1...N | 합계

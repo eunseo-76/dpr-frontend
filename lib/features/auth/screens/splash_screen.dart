@@ -1,7 +1,7 @@
-import 'package:dpr_frontend/core/utils/token_storage.dart';
-import 'package:dpr_frontend/features/auth/screens/landing_screen.dart';
-import 'package:dpr_frontend/main_screen.dart';
-import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
+import 'package:fprs_frontend/core/utils/token_storage.dart';
+import 'package:fprs_frontend/features/auth/screens/landing_screen.dart';
+import 'package:fprs_frontend/main_screen.dart';
+import 'package:fprs_frontend/core/widgets/loading_indicator.dart';
 import 'package:flutter/material.dart';
 
 // 앱 시작 시 토큰 유무를 확인해 초기 화면을 결정한다.

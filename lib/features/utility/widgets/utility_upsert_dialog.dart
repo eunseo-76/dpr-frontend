@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:dpr_frontend/core/utils/validators.dart';
-import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
-import 'package:dpr_frontend/features/utility/models/utility_upsert_entry.dart';
+import 'package:fprs_frontend/core/utils/validators.dart';
+import 'package:fprs_frontend/core/widgets/confirm_dialog.dart';
+import 'package:fprs_frontend/features/utility/models/utility_upsert_entry.dart';
 
 class UtilityUpsertRow {
   final int factoryId;

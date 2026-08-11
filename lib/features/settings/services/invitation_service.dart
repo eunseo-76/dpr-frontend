@@ -1,8 +1,8 @@
 import 'dart:convert';
-import 'package:dpr_frontend/core/constants/api_constants.dart';
-import 'package:dpr_frontend/core/network/api_client.dart';
-import 'package:dpr_frontend/features/settings/models/user_member.dart';
-import 'package:dpr_frontend/features/settings/models/invitation.dart';
+import 'package:fprs_frontend/core/constants/api_constants.dart';
+import 'package:fprs_frontend/core/network/api_client.dart';
+import 'package:fprs_frontend/features/settings/models/user_member.dart';
+import 'package:fprs_frontend/features/settings/models/invitation.dart';
 
 class InvitationService {
   final ApiClient _client = ApiClient();

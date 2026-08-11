@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AppInfoScreen extends StatelessWidget {
   // TODO: 릴리스 태그 붙일 때마다 여기 버전 문자열 직접 갱신
-  static const _version = 'v0.1.9';
+  static const _version = 'v0.2.3';
 
   const AppInfoScreen({super.key});
 
@@ -28,7 +28,7 @@ class AppInfoScreen extends StatelessWidget {
           const SizedBox(height: 16),
           const Center(
             child: Text(
-              '생산일보 (DPR)',
+              'FPRS',
               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
           ),
@@ -42,7 +42,7 @@ class AppInfoScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Center(
             child: Text(
-              'Daily Production Report',
+              'Factory Production Report System',
               style: TextStyle(fontSize: 14, color: Colors.grey[500]),
             ),
           ),
@@ -60,7 +60,7 @@ class AppInfoScreen extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right),
               onTap: () => showLicensePage(
                 context: context,
-                applicationName: '생산일보 (DPR)',
+                applicationName: 'FPRS',
                 applicationVersion: _version,
               ),
             ),

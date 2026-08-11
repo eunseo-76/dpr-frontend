@@ -1,5 +1,5 @@
-import 'package:dpr_frontend/features/production/models/production.dart';
-import 'package:dpr_frontend/features/production/models/production_overview.dart';
+import 'package:fprs_frontend/features/production/models/production.dart';
+import 'package:fprs_frontend/features/production/models/production_overview.dart';
 
 class OverviewPivotRow {
   final int clientId;

@@ -1,5 +1,5 @@
-import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
-import 'package:dpr_frontend/core/widgets/form_action_bar.dart';
+import 'package:fprs_frontend/core/widgets/confirm_dialog.dart';
+import 'package:fprs_frontend/core/widgets/form_action_bar.dart';
 import 'package:flutter/material.dart';
 
 class FormDialog extends StatelessWidget {

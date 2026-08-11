@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:dpr_frontend/core/constants/api_constants.dart';
-import 'package:dpr_frontend/core/network/api_client.dart';
-import 'package:dpr_frontend/features/settings/models/factory_shift.dart';
+import 'package:fprs_frontend/core/constants/api_constants.dart';
+import 'package:fprs_frontend/core/network/api_client.dart';
+import 'package:fprs_frontend/features/settings/models/factory_shift.dart';
 
 class FactoryService {
   final _client = ApiClient();

@@ -1,7 +1,7 @@
 import 'package:flutter/services.dart';
 
 class ScreenSecurityService {
-  static const _channel = MethodChannel('dpr/screen_security');
+  static const _channel = MethodChannel('fprs/screen_security');
 
   static Future<void> enable() async {
     await _channel.invokeMethod('enableScreenSecurity');

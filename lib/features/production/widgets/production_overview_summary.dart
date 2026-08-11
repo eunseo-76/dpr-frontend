@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
-import 'package:dpr_frontend/core/utils/label_store.dart';
-import 'package:dpr_frontend/core/utils/number_format.dart';
-import 'package:dpr_frontend/features/production/utils/production_overview_grouping.dart';
-import 'package:dpr_frontend/features/production/widgets/table_header_button.dart';
+import 'package:fprs_frontend/core/utils/label_store.dart';
+import 'package:fprs_frontend/core/utils/number_format.dart';
+import 'package:fprs_frontend/features/production/utils/production_overview_grouping.dart';
+import 'package:fprs_frontend/features/production/widgets/table_header_button.dart';
 
 // [공정별 실적 합계] — ProductionM2DayTable(production_m2_day_table.dart)과 동일한
 // TableView 그리드로 그린다. 테두리색/헤더색/행높이/폰트 상수도 그쪽과 맞춰서 고정한다.

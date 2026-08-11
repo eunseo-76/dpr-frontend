@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import 'package:dpr_frontend/core/constants/api_constants.dart';
-import 'package:dpr_frontend/core/network/api_client.dart';
-import 'package:dpr_frontend/features/client/models/factory_client.dart';
-import 'package:dpr_frontend/features/settings/models/factory_unit.dart';
-import 'package:dpr_frontend/features/utility/models/factory_process.dart';
+import 'package:fprs_frontend/core/constants/api_constants.dart';
+import 'package:fprs_frontend/core/network/api_client.dart';
+import 'package:fprs_frontend/features/client/models/factory_client.dart';
+import 'package:fprs_frontend/features/settings/models/factory_unit.dart';
+import 'package:fprs_frontend/features/utility/models/factory_process.dart';
 
 class FactoryMappingService {
   final _client = ApiClient();

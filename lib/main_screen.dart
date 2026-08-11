@@ -1,8 +1,8 @@
-import 'package:dpr_frontend/core/utils/user_storage.dart';
-import 'package:dpr_frontend/core/widgets/floating_nav_bar.dart';
-import 'package:dpr_frontend/features/home/screens/home_screen.dart';
-import 'package:dpr_frontend/features/production/screens/production_screen.dart';
-import 'package:dpr_frontend/features/settings/screens/settings_screen.dart';
+import 'package:fprs_frontend/core/utils/user_storage.dart';
+import 'package:fprs_frontend/core/widgets/floating_nav_bar.dart';
+import 'package:fprs_frontend/features/home/screens/home_screen.dart';
+import 'package:fprs_frontend/features/production/screens/production_screen.dart';
+import 'package:fprs_frontend/features/settings/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 

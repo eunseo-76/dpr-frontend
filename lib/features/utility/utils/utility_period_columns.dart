@@ -1,6 +1,6 @@
-import 'package:dpr_frontend/features/utility/models/utility.dart';
-import 'package:dpr_frontend/features/utility/utils/factory_process_scaffold.dart';
-import 'package:dpr_frontend/features/utility/utils/utility_period_grouping.dart';
+import 'package:fprs_frontend/features/utility/models/utility.dart';
+import 'package:fprs_frontend/features/utility/utils/factory_process_scaffold.dart';
+import 'package:fprs_frontend/features/utility/utils/utility_period_grouping.dart';
 
 // 주/월/년 보기에서 표의 한 열(컬럼)
 // label: 헤더에 표시할 기간 ('08', '5/4~5/10', '1월' 등)

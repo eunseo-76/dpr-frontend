@@ -1,10 +1,10 @@
-import 'package:dpr_frontend/core/utils/toast.dart';
-import 'package:dpr_frontend/core/widgets/confirm_dialog.dart';
-import 'package:dpr_frontend/core/widgets/shake_field.dart';
-import 'package:dpr_frontend/core/utils/token_storage.dart';
-import 'package:dpr_frontend/core/utils/user_storage.dart';
-import 'package:dpr_frontend/features/auth/screens/landing_screen.dart';
-import 'package:dpr_frontend/features/auth/services/auth_service.dart';
+import 'package:fprs_frontend/core/utils/toast.dart';
+import 'package:fprs_frontend/core/widgets/confirm_dialog.dart';
+import 'package:fprs_frontend/core/widgets/shake_field.dart';
+import 'package:fprs_frontend/core/utils/token_storage.dart';
+import 'package:fprs_frontend/core/utils/user_storage.dart';
+import 'package:fprs_frontend/features/auth/screens/landing_screen.dart';
+import 'package:fprs_frontend/features/auth/services/auth_service.dart';
 import 'package:flutter/material.dart';
 
 class WithdrawScreen extends StatefulWidget {

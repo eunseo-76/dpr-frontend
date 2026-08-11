@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:dpr_frontend/features/settings/models/factory_shift.dart';
+import 'package:fprs_frontend/features/settings/models/factory_shift.dart';
 
 int _toMinutes(String time) {
   final parts = time.split(':');

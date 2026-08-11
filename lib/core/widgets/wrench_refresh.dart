@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dpr_frontend/core/widgets/loading_indicator.dart';
+import 'package:fprs_frontend/core/widgets/loading_indicator.dart';
 
 // 아래로 당기면 wrench가 위에서 내려오고, 놓으면 새로고침
 // TODO: 새로고침 할 때 어색한 거 나중에 수정... 일단 굴러는 간다

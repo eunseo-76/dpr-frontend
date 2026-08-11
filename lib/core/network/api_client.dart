@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:dpr_frontend/core/constants/api_constants.dart';
-import 'package:dpr_frontend/core/utils/token_storage.dart';
+import 'package:fprs_frontend/core/constants/api_constants.dart';
+import 'package:fprs_frontend/core/utils/token_storage.dart';
 import 'package:http/http.dart' as http;
 
 const _timeout = Duration(seconds: 15);

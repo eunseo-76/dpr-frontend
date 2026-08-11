@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
-import 'package:dpr_frontend/core/utils/label_store.dart';
-import 'package:dpr_frontend/core/utils/number_format.dart';
-import 'package:dpr_frontend/features/production/utils/production_period_grouping.dart';
+import 'package:fprs_frontend/core/utils/label_store.dart';
+import 'package:fprs_frontend/core/utils/number_format.dart';
+import 'package:fprs_frontend/features/production/utils/production_period_grouping.dart';
 
 class ProductionPeriodTable extends StatelessWidget {
   final String rowLabelHeader;

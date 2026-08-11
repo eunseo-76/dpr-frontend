@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:dpr_frontend/core/widgets/pop_effect.dart';
+import 'package:fprs_frontend/core/widgets/pop_effect.dart';
 
 class PillSelector extends StatelessWidget {
   final List<String> labels;

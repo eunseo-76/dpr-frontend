@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
-import 'package:dpr_frontend/core/utils/label_store.dart';
-import 'package:dpr_frontend/core/utils/number_format.dart';
-import 'package:dpr_frontend/features/production/utils/production_overview_grouping.dart';
-import 'package:dpr_frontend/features/production/widgets/table_header_button.dart';
+import 'package:fprs_frontend/core/utils/label_store.dart';
+import 'package:fprs_frontend/core/utils/number_format.dart';
+import 'package:fprs_frontend/features/production/utils/production_overview_grouping.dart';
+import 'package:fprs_frontend/features/production/widgets/table_header_button.dart';
 
 class ProductionOverviewTable extends StatelessWidget {
   final List<OverviewPivotRow> rows;

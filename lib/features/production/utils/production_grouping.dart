@@ -1,5 +1,5 @@
-import 'package:dpr_frontend/features/production/models/production.dart';
-import 'package:dpr_frontend/features/production/utils/production_scaffold.dart';
+import 'package:fprs_frontend/features/production/models/production.dart';
+import 'package:fprs_frontend/features/production/utils/production_scaffold.dart';
 
 class ProductionDayRow {
   final int rowGroupId;

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:dpr_frontend/core/utils/label_store.dart';
-import 'package:dpr_frontend/core/utils/number_format.dart';
-import 'package:dpr_frontend/core/widgets/dashed_divider.dart';
-import 'package:dpr_frontend/core/widgets/section_card.dart';
-import 'package:dpr_frontend/features/unit/models/unit.dart';
+import 'package:fprs_frontend/core/utils/label_store.dart';
+import 'package:fprs_frontend/core/utils/number_format.dart';
+import 'package:fprs_frontend/core/widgets/dashed_divider.dart';
+import 'package:fprs_frontend/core/widgets/section_card.dart';
+import 'package:fprs_frontend/features/unit/models/unit.dart';
 
 class ProductionCardFooter {
   final Map<int, double> dailyByUnit;

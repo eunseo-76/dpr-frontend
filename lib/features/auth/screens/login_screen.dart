@@ -1,12 +1,12 @@
-import 'package:dpr_frontend/core/utils/fade_route.dart';
-import 'package:dpr_frontend/core/utils/toast.dart';
-import 'package:dpr_frontend/core/utils/user_storage.dart';
-import 'package:dpr_frontend/core/utils/validators.dart';
-import 'package:dpr_frontend/core/widgets/shake_field.dart';
-import 'package:dpr_frontend/features/auth/models/login_request.dart';
-import 'package:dpr_frontend/features/auth/screens/forgot_password_screen.dart';
-import 'package:dpr_frontend/features/auth/services/auth_service.dart';
-import 'package:dpr_frontend/main_screen.dart';
+import 'package:fprs_frontend/core/utils/fade_route.dart';
+import 'package:fprs_frontend/core/utils/toast.dart';
+import 'package:fprs_frontend/core/utils/user_storage.dart';
+import 'package:fprs_frontend/core/utils/validators.dart';
+import 'package:fprs_frontend/core/widgets/shake_field.dart';
+import 'package:fprs_frontend/features/auth/models/login_request.dart';
+import 'package:fprs_frontend/features/auth/screens/forgot_password_screen.dart';
+import 'package:fprs_frontend/features/auth/services/auth_service.dart';
+import 'package:fprs_frontend/main_screen.dart';
 import 'package:flutter/material.dart';
 
 class LoginScreen extends StatefulWidget {

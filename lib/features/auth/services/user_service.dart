@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import 'package:dpr_frontend/core/constants/api_constants.dart';
-import 'package:dpr_frontend/core/models/factory_summary.dart';
-import 'package:dpr_frontend/core/network/api_client.dart';
-import 'package:dpr_frontend/core/utils/user_storage.dart';
-import 'package:dpr_frontend/features/auth/models/update_user_request.dart';
+import 'package:fprs_frontend/core/constants/api_constants.dart';
+import 'package:fprs_frontend/core/models/factory_summary.dart';
+import 'package:fprs_frontend/core/network/api_client.dart';
+import 'package:fprs_frontend/core/utils/user_storage.dart';
+import 'package:fprs_frontend/features/auth/models/update_user_request.dart';
 
 class UserService {
   final _client = ApiClient();
