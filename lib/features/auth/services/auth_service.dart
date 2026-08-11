@@ -13,8 +13,8 @@ class AuthService {
   Future<LoginResponse> login(LoginRequest request) async {
     final response = await _client.post(ApiConstants.login, request.toJson());
 
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode == 200) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
       final loginResponse = LoginResponse.fromJson(
         body['data'] as Map<String, dynamic>,
       );
@@ -30,7 +30,7 @@ class AuthService {
       );
       return loginResponse;
     }
-    throw Exception(body['message'] as String? ?? '로그인에 실패했습니다');
+    throw Exception(extractErrorMessage(response, '로그인에 실패했습니다'));
   }
 
   Future<Map<String, dynamic>> verifyInviteCode(String code) async {
@@ -39,11 +39,11 @@ class AuthService {
       queryParams: {'code': code},
     );
 
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode == 200) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
       return body['data'] as Map<String, dynamic>;
     }
-    throw Exception(body['message'] as String? ?? '초대코드 확인에 실패했습니다');
+    throw Exception(extractErrorMessage(response, '초대코드 확인에 실패했습니다'));
   }
 
   Future<LoginResponse> register({
@@ -59,8 +59,8 @@ class AuthService {
       'password': password,
     });
 
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode == 200) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
       final loginResponse = LoginResponse.fromJson(
         body['data'] as Map<String, dynamic>,
       );
@@ -76,7 +76,7 @@ class AuthService {
       );
       return loginResponse;
     }
-    throw Exception(body['message'] as String? ?? '회원가입에 실패했습니다');
+    throw Exception(extractErrorMessage(response, '회원가입에 실패했습니다'));
   }
 
   Future<void> withdraw(String password) async {
@@ -86,8 +86,7 @@ class AuthService {
     );
 
     if (response.statusCode == 200) return;
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    throw Exception(body['message'] as String? ?? '탈퇴에 실패했습니다');
+    throw Exception(extractErrorMessage(response, '탈퇴에 실패했습니다'));
   }
 
   Future<void> forgotPassword(String email) async {
@@ -96,8 +95,7 @@ class AuthService {
       {'email': email},
     );
     if (response.statusCode != 200) {
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(body['message'] as String? ?? '요청에 실패했습니다');
+      throw Exception(extractErrorMessage(response, '요청에 실패했습니다'));
     }
   }
 
@@ -111,8 +109,7 @@ class AuthService {
     );
 
     if (response.statusCode == 200) return;
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    throw Exception(body['message'] as String? ?? '코드 확인에 실패했습니다');
+    throw Exception(extractErrorMessage(response, '코드 확인에 실패했습니다'));
   }
 
   Future<void> resetPassword({
@@ -127,7 +124,6 @@ class AuthService {
     });
 
     if (response.statusCode == 200) return;
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    throw Exception(body['message'] as String? ?? '비밀번호 재설정에 실패했습니다');
+    throw Exception(extractErrorMessage(response, '비밀번호 재설정에 실패했습니다'));
   }
 }
