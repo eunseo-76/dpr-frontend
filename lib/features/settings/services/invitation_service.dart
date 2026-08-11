@@ -36,8 +36,7 @@ class InvitationService {
       'userIds': userIds,
     });
     if (response.statusCode != 200) {
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(body['message'] ?? '회원 삭제 실패');
+      throw Exception(extractErrorMessage(response, '회원 삭제 실패'));
     }
   }
 
@@ -50,8 +49,7 @@ class InvitationService {
       'factoryId': factoryId,
     });
     if (response.statusCode != 200) {
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(body['message'] ?? '공장 배치 실패');
+      throw Exception(extractErrorMessage(response, '공장 배치 실패'));
     }
   }
 
@@ -63,8 +61,7 @@ class InvitationService {
       'ids': factoryIds,
     });
     if (response.statusCode != 200) {
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      throw Exception(body['message'] ?? '담당 공장 수정 실패');
+      throw Exception(extractErrorMessage(response, '담당 공장 수정 실패'));
     }
   }
 
@@ -84,7 +81,6 @@ class InvitationService {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       return body['data'] as Map<String, dynamic>;
     }
-    final body = jsonDecode(response.body) as Map<String, dynamic>;
-    throw Exception(body['message'] ?? '초대 생성 실패');
+    throw Exception(extractErrorMessage(response, '초대 생성 실패'));
   }
 }
