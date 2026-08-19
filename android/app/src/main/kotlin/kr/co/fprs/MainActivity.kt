@@ -1,4 +1,4 @@
-package com.kenny.fprs
+package kr.co.fprs
 
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
