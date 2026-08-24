@@ -1,3 +1,5 @@
+import 'package:fprs_frontend/core/constants/app_links.dart';
+import 'package:fprs_frontend/core/utils/link_launcher.dart';
 import 'package:fprs_frontend/core/utils/toast.dart';
 import 'package:fprs_frontend/core/utils/validators.dart';
 import 'package:fprs_frontend/core/widgets/shake_field.dart';
@@ -39,6 +41,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  bool _agreedToPrivacyPolicy = false;
+
+  Future<void> _openPrivacyPolicy() async {
+    try {
+      await openExternalLink(AppLinks.privacyPolicy);
+    } catch (e) {
+      if (mounted) showToast(context, '링크를 열 수 없습니다');
+    }
+  }
 
   Future<void> _register() async {
     _nameKey.currentState?.clearError();
@@ -137,7 +148,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             _infoRow('공장', widget.factoryName!),
                           ],
                           const SizedBox(height: 8),
-                          _infoRow('직급', widget.position),
+                          _infoRow('직함', widget.position),
                         ],
                       ),
                     ),
@@ -229,12 +240,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       '영문 + 숫자 + 특수문자(@\$!%*#?&) 포함 8자 이상',
                       style: TextStyle(color: Colors.grey[400], fontSize: 12),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: Checkbox(
+                            value: _agreedToPrivacyPolicy,
+                            onChanged: (value) =>
+                                setState(() => _agreedToPrivacyPolicy = value ?? false),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            '(필수) 개인정보 처리방침에 동의합니다',
+                            style: TextStyle(fontSize: 13, color: Colors.black87),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _openPrivacyPolicy,
+                          child: const Text('보기', style: TextStyle(fontSize: 13)),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
                     SizedBox(
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _register,
+                        onPressed: (_isLoading || !_agreedToPrivacyPolicy) ? null : _register,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black87,
                           foregroundColor: Colors.white,

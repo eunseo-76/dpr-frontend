@@ -100,7 +100,7 @@ class _WithdrawScreenState extends State<WithdrawScreen> {
                   children: [
                     const SizedBox(height: 32),
                     Text(
-                      '탈퇴하면 계정이 영구 삭제되며\n같은 이메일로 재가입할 수 없습니다\n\n탈퇴 후 재가입하려면 관리자에게 문의하세요.\n (eunseolee19@gmail.com)',
+                      '탈퇴 시 이메일·비밀번호 등 개인정보는\n즉시 마스킹 처리되며, 같은 이메일로\n재가입할 수 없습니다\n\n탈퇴 후 재가입하려면 관리자에게 문의하세요.\n (eunseolee19@gmail.com)',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.5),
                     ),
