@@ -1,4 +1,6 @@
+import 'package:fprs_frontend/core/constants/app_links.dart';
 import 'package:fprs_frontend/core/models/factory_summary.dart';
+import 'package:fprs_frontend/core/utils/link_launcher.dart';
 import 'package:fprs_frontend/core/utils/toast.dart';
 import 'package:fprs_frontend/core/utils/token_storage.dart';
 import 'package:fprs_frontend/core/utils/user_storage.dart';
@@ -73,6 +75,14 @@ class _MyPageScreenState extends State<MyPageScreen> {
       );
     } catch (e) {
       if (mounted) showToast(context, e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  Future<void> _openPrivacyPolicy() async {
+    try {
+      await openExternalLink(AppLinks.privacyPolicy);
+    } catch (e) {
+      if (mounted) showToast(context, '링크를 열 수 없습니다');
     }
   }
 
@@ -198,13 +208,23 @@ class _MyPageScreenState extends State<MyPageScreen> {
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: _menuTile(
-              icon: Icons.info_outline,
-              label: '앱 정보',
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AppInfoScreen()),
-              ),
+            child: Column(
+              children: [
+                _menuTile(
+                  icon: Icons.info_outline,
+                  label: '앱 정보',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AppInfoScreen()),
+                  ),
+                ),
+                _divider(),
+                _menuTile(
+                  icon: Icons.privacy_tip_outlined,
+                  label: '개인정보 처리방침',
+                  onTap: _openPrivacyPolicy,
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),

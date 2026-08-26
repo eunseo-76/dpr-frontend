@@ -87,7 +87,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.grey[600], fontSize: 14, height: 1.5),
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 8),
+                    Text(
+                      '인증 코드는 해외(Google) 메일 서버를 통해 발송됩니다',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                    ),
+                    const SizedBox(height: 32),
                     ShakeField(
                       key: _emailKey,
                       controller: _emailController,

@@ -92,7 +92,7 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
       hasError = true;
     }
     if (_positionController.text.trim().isEmpty) {
-      _positionKey.currentState?.showError('직급을 입력해주세요');
+      _positionKey.currentState?.showError('직함을 입력해주세요');
       hasError = true;
     }
     if (_selectedFactoryId == null) {
@@ -226,7 +226,7 @@ class _InvitationCreateDialogState extends State<InvitationCreateDialog> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    '직급',
+                    '직함',
                     style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 6),
