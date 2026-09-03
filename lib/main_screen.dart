@@ -2,6 +2,7 @@ import 'package:fprs_frontend/core/utils/user_storage.dart';
 import 'package:fprs_frontend/core/widgets/floating_nav_bar.dart';
 import 'package:fprs_frontend/features/home/screens/home_screen.dart';
 import 'package:fprs_frontend/features/production/screens/production_screen.dart';
+import 'package:fprs_frontend/features/production_comparison/screens/production_comparison_screen.dart';
 import 'package:fprs_frontend/features/settings/screens/settings_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -19,20 +20,24 @@ class _MainScreenState extends State<MainScreen> {
   bool _navBarVisible = true;
 
   bool get _canManageSettings => UserStorage.isAdmin(_role);
+  bool get _canViewComparison => _role == 'OWNER';
 
   List<Widget> get _screens => [
     ProductionScreen(
       onGoToSettings: _canManageSettings
-          ? () => setState(() => _currentIndex = 2)
+          ? () => setState(() => _currentIndex = _canViewComparison ? 3 : 2)
           : null,
     ),
     HomeScreen(onTabChange: (index) => setState(() => _currentIndex = index)),
+    if (_canViewComparison) const ProductionComparisonScreen(),
     if (_canManageSettings) const SettingsScreen(),
   ];
 
   List<FloatingNavItem> get _navItems => [
     const FloatingNavItem(icon: Icons.precision_manufacturing, label: '생산실적'),
     const FloatingNavItem(icon: Icons.home, label: '홈'),
+    if (_canViewComparison)
+      const FloatingNavItem(icon: Icons.compare_arrows_rounded, label: '실적비교'),
     if (_canManageSettings) const FloatingNavItem(icon: Icons.settings, label: '설정'),
   ];
 
