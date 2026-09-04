@@ -22,7 +22,7 @@ class ProcessComparisonTable extends StatelessWidget {
   });
 
   static const _colProcess = 72.0;
-  static const _minValueColWidth = 56.0;
+  static const _valueColWidth = 56.0;
   static const _rowHeight = 36.0;
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
@@ -40,40 +40,33 @@ class ProcessComparisonTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final valueColWidth = ((constraints.maxWidth - _colProcess) / (_metricGroups.length * 3))
-            .clamp(_minValueColWidth, double.infinity);
-
-        return SizedBox(
-          height: _rowCount * _rowHeight,
-          child: TableView.builder(
-            columnCount: _columnCount,
-            rowCount: _rowCount,
-            pinnedColumnCount: 1,
-            verticalDetails: const ScrollableDetails.vertical(
-              physics: NeverScrollableScrollPhysics(),
-            ),
-            horizontalDetails: const ScrollableDetails.horizontal(
-              physics: ClampingScrollPhysics(),
-            ),
-            columnBuilder: (column) => TableSpan(
-              extent: FixedTableSpanExtent(column == 0 ? _colProcess : valueColWidth),
-              foregroundDecoration: const TableSpanDecoration(
-                border: TableSpanBorder(trailing: BorderSide(color: _borderColor)),
-              ),
-            ),
-            rowBuilder: (row) => TableSpan(
-              extent: const FixedTableSpanExtent(_rowHeight),
-              backgroundDecoration: row < 2 ? const TableSpanDecoration(color: _headerColor) : null,
-              foregroundDecoration: const TableSpanDecoration(
-                border: TableSpanBorder(trailing: BorderSide(color: _borderColor)),
-              ),
-            ),
-            cellBuilder: _buildCell,
+    return SizedBox(
+      height: _rowCount * _rowHeight,
+      child: TableView.builder(
+        columnCount: _columnCount,
+        rowCount: _rowCount,
+        pinnedColumnCount: 1,
+        verticalDetails: const ScrollableDetails.vertical(
+          physics: NeverScrollableScrollPhysics(),
+        ),
+        horizontalDetails: const ScrollableDetails.horizontal(
+          physics: ClampingScrollPhysics(),
+        ),
+        columnBuilder: (column) => TableSpan(
+          extent: FixedTableSpanExtent(column == 0 ? _colProcess : _valueColWidth),
+          foregroundDecoration: const TableSpanDecoration(
+            border: TableSpanBorder(trailing: BorderSide(color: _borderColor)),
           ),
-        );
-      },
+        ),
+        rowBuilder: (row) => TableSpan(
+          extent: const FixedTableSpanExtent(_rowHeight),
+          backgroundDecoration: row < 2 ? const TableSpanDecoration(color: _headerColor) : null,
+          foregroundDecoration: const TableSpanDecoration(
+            border: TableSpanBorder(trailing: BorderSide(color: _borderColor)),
+          ),
+        ),
+        cellBuilder: _buildCell,
+      ),
     );
   }
 

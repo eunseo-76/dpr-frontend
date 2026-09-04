@@ -11,8 +11,10 @@ import 'package:fprs_frontend/features/production/models/production_overview.dar
 import 'package:fprs_frontend/features/production/services/production_service.dart';
 import 'package:fprs_frontend/features/production_comparison/models/process_metric_row.dart';
 import 'package:fprs_frontend/features/production_comparison/utils/comparison_date_preset.dart';
+import 'package:fprs_frontend/features/production_comparison/utils/comparison_diff.dart';
 import 'package:fprs_frontend/features/production_comparison/utils/process_metric_grouping.dart';
 import 'package:fprs_frontend/features/production_comparison/widgets/comparison_date_row.dart';
+import 'package:fprs_frontend/features/production_comparison/widgets/diverging_bar_row.dart';
 import 'package:fprs_frontend/features/production_comparison/widgets/process_comparison_table.dart';
 import 'package:fprs_frontend/features/production_comparison/widgets/simple_dropdown_button.dart';
 import 'package:fprs_frontend/features/settings/models/factory_unit.dart';
@@ -45,10 +47,22 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
   Map<int, String> get _processNameLookup =>
       {for (final p in _allFactoryProcesses) p.processId: p.processNickname ?? p.processName};
 
+  List<int> get _processIdsForSelectedFactory => _allFactoryProcesses
+      .where((p) => p.factoryId == _selectedFactoryId)
+      .map((p) => p.processId)
+      .toList();
+
   String _period = 'day';
+  String _graphMetric = 'result';
 
   List<FactoryUnit> get _unitsForSelectedFactory =>
       _allFactoryUnits.where((u) => u.factoryId == _selectedFactoryId).toList();
+
+  String get _selectedUnitLabel {
+    final unit = _unitsForSelectedFactory.where((u) => u.unitName == _selectedUnit);
+    if (unit.isEmpty) return _selectedUnit ?? '';
+    return unit.first.unitNickname ?? unit.first.unitName;
+  }
 
   String? _defaultUnit(List<FactoryUnit> units) {
     if (units.isEmpty) return null;
@@ -334,6 +348,7 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
         factoryId: _selectedFactoryId!,
         unit: unit,
         processNames: _processNameLookup,
+        processIds: _processIdsForSelectedFactory,
       );
     }
     return groupCumulativeMetrics(
@@ -341,11 +356,72 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
       summaryB: _summaryB,
       unit: unit,
       processNames: _processNameLookup,
+      processIds: _processIdsForSelectedFactory,
+    );
+  }
+
+  double? _graphPercent(ProcessMetricRow row) {
+    final (a, b) = _graphMetric == 'result' ? (row.resultA, row.resultB) : (row.amountA, row.amountB);
+    return computeDiff(a, b).percent;
+  }
+
+  List<ProcessMetricRow> _sortedByGraphMetric(List<ProcessMetricRow> metrics) {
+    final sorted = [...metrics];
+    sorted.sort((x, y) {
+      final px = _graphPercent(x);
+      final py = _graphPercent(y);
+      if (px == null && py == null) return 0;
+      if (px == null) return 1;
+      if (py == null) return -1;
+      return py.compareTo(px);
+    });
+    return sorted;
+  }
+
+  Widget _buildGraphSection(List<ProcessMetricRow> metrics) {
+    final items = metrics
+        .map((row) => (name: row.processName, diff: computeDiff(
+              _graphMetric == 'result' ? row.resultA : row.amountA,
+              _graphMetric == 'result' ? row.resultB : row.amountB,
+            )))
+        .toList();
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey[300]!),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                '공정별 증감',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              SegmentedToggle(
+                options: const ['실적', '금액'],
+                values: const ['result', 'amount'],
+                selected: _graphMetric,
+                activeColor: Colors.green,
+                onChanged: (value) => setState(() => _graphMetric = value),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          for (final item in items) DivergingBarRow(processName: item.name, diff: item.diff),
+        ],
+      ),
     );
   }
 
   Widget _buildComparisonCard() {
-    final metrics = _currentMetrics;
+    final metrics = _sortedByGraphMetric(_currentMetrics);
 
     return Container(
       width: double.infinity,
@@ -363,7 +439,7 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
             children: [
               const Text(
                 '공정별 비교',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Colors.black54),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               SegmentedToggle(
                 options: const ['당일', '누적'],
@@ -374,6 +450,10 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
             ],
           ),
           const SizedBox(height: 10),
+          if (metrics.isNotEmpty) ...[
+            _buildGraphSection(metrics),
+            const SizedBox(height: 14),
+          ],
           if (metrics.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
@@ -383,7 +463,7 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
             ProcessComparisonTable(
               rows: metrics,
               showWip: _period == 'day',
-              unitLabel: _selectedUnit ?? '',
+              unitLabel: _selectedUnitLabel,
               dateALabel: _dateLabel(_dateA),
               dateBLabel: _dateLabel(_dateB),
             ),

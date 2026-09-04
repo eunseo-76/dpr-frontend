@@ -8,17 +8,18 @@ List<ProcessMetricRow> groupDayMetrics({
   required int factoryId,
   required String unit,
   required Map<int, String> processNames,
+  required List<int> processIds,
 }) {
   final byProcessA = _groupByProcess(productionsA, factoryId);
   final byProcessB = _groupByProcess(productionsB, factoryId);
 
-  return {...byProcessA.keys, ...byProcessB.keys}.map((processId) {
+  return processIds.map((processId) {
     final rowsA = byProcessA[processId] ?? const <Production>[];
     final rowsB = byProcessB[processId] ?? const <Production>[];
 
     return ProcessMetricRow(
       processId: processId,
-      processName: processNames[processId] ?? (rowsA.isNotEmpty ? rowsA : rowsB).first.processName,
+      processName: processNames[processId] ?? '',
       resultA: _sumResult(rowsA, unit),
       resultB: _sumResult(rowsB, unit),
       wipA: _sumWip(rowsA, unit),
@@ -34,18 +35,18 @@ List<ProcessMetricRow> groupCumulativeMetrics({
   required List<ProcessSummaryEntry> summaryB,
   required String unit,
   required Map<int, String> processNames,
+  required List<int> processIds,
 }) {
   final byProcessA = _groupSummaryByProcess(summaryA);
   final byProcessB = _groupSummaryByProcess(summaryB);
 
-  return {...byProcessA.keys, ...byProcessB.keys}.map((processId) {
+  return processIds.map((processId) {
     final entriesA = byProcessA[processId] ?? const <ProcessSummaryEntry>[];
     final entriesB = byProcessB[processId] ?? const <ProcessSummaryEntry>[];
 
     return ProcessMetricRow(
       processId: processId,
-      processName:
-          processNames[processId] ?? (entriesA.isNotEmpty ? entriesA : entriesB).first.processName,
+      processName: processNames[processId] ?? '',
       resultA: _sumSummaryResult(entriesA, unit),
       resultB: _sumSummaryResult(entriesB, unit),
       wipA: null,
