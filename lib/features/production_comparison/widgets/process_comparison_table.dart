@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
+import 'package:fprs_frontend/core/utils/number_format.dart';
 import 'package:fprs_frontend/features/production_comparison/models/process_metric_row.dart';
 import 'package:fprs_frontend/features/production_comparison/utils/comparison_diff.dart';
 
 typedef _MetricValues = (double? a, double? b);
+typedef _Formatter = String Function(double? value);
 
 class ProcessComparisonTable extends StatelessWidget {
   final List<ProcessMetricRow> rows;
@@ -29,10 +31,10 @@ class ProcessComparisonTable extends StatelessWidget {
   static const _upColor = Color(0xFF0CA30C);
   static const _downColor = Color(0xFFD03B3B);
 
-  List<(String label, _MetricValues Function(ProcessMetricRow))> get _metricGroups => [
-    ('실적($unitLabel)', (r) => (r.resultA, r.resultB)),
-    if (showWip) ('재공($unitLabel)', (r) => (r.wipA, r.wipB)),
-    ('금액(만원)', (r) => (r.amountA, r.amountB)),
+  List<(String label, _MetricValues Function(ProcessMetricRow), _Formatter)> get _metricGroups => [
+    ('실적($unitLabel)', (r) => (r.resultA, r.resultB), _formatResultOrWip),
+    if (showWip) ('재공($unitLabel)', (r) => (r.wipA, r.wipB), _formatResultOrWip),
+    ('금액(만원)', (r) => (r.amountA, r.amountB), formatManwon),
   ];
 
   int get _columnCount => 1 + _metricGroups.length * 3;
@@ -112,9 +114,10 @@ class ProcessComparisonTable extends StatelessWidget {
     final groupIndex = (column - 1) ~/ 3;
     final subIndex = (column - 1) % 3;
     final (a, b) = _metricGroups[groupIndex].$2(row);
+    final format = _metricGroups[groupIndex].$3;
 
-    if (subIndex == 0) return _cell(_formatValue(a));
-    if (subIndex == 1) return _cell(_formatValue(b));
+    if (subIndex == 0) return _cell(format(a));
+    if (subIndex == 1) return _cell(format(b));
 
     final diff = computeDiff(a, b);
     return _cell(
@@ -127,7 +130,8 @@ class ProcessComparisonTable extends StatelessWidget {
     );
   }
 
-  String _formatValue(double? value) => value == null ? '-' : value.toStringAsFixed(1);
+  String _formatResultOrWip(double? value) =>
+      value == null || value == 0 ? '-' : formatNumber(value);
 
   Widget _cell(String text, {bool isHeader = false, Color? color}) {
     return Container(
