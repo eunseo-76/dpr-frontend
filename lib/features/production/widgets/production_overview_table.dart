@@ -31,6 +31,27 @@ class ProductionOverviewTable extends StatelessWidget {
   int get _columnCount => 2 + _valueColCount;
   int get _rowCount => 1 + rows.length;
 
+  // m2를 항상 맨 앞으로 — [공정별 실적 합계]/[업체별 실적 합계] 일별 표와 동일한
+  // 우선순위 규칙(실적(m2) → 실적금액 → 나머지)을 기간별 표에도 맞추기 위함
+  // (2026-09-08 kenny공 결정). m2가 없는 공장/기간이면 기존 순서(pnl→lot) 그대로 유지.
+  bool get _hasPriorityUnit =>
+      unitColumns.any((u) => u.unitName.toUpperCase() == 'M2');
+
+  List<OverviewUnitColumn> get _orderedUnitColumns {
+    final priority =
+        unitColumns.where((u) => u.unitName.toUpperCase() == 'M2').toList();
+    final rest =
+        unitColumns.where((u) => u.unitName.toUpperCase() != 'M2').toList();
+    return [...priority, ...rest];
+  }
+
+  // 실적금액이 표에서 몇 번째 열에 오는지. m2가 있으면 그 바로 다음(2번째 value 열),
+  // 없으면 기존처럼 모든 단위 열 뒤(맨 끝)에 붙는다.
+  int? get _amountColumn {
+    if (!showAmount) return null;
+    return _hasPriorityUnit ? 3 : 2 + unitColumns.length;
+  }
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -110,10 +131,15 @@ class ProductionOverviewTable extends StatelessWidget {
     if (isHeader) {
       if (column == 0) return _clientHeaderCell();
       final valueLabel = LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE', '실적');
+      final amountLabel = LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE_AMOUNT', '실적금액');
+      final orderedNames =
+          _orderedUnitColumns.map((u) => '$valueLabel(${u.unitName})').toList();
       final headers = [
         LabelStore.get('PRODUCTION_TABLE_HEADER_PROCESS', '공정'),
-        ...unitColumns.map((u) => '$valueLabel(${u.unitName})'),
-        if (showAmount) LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE_AMOUNT', '실적금액'),
+        if (orderedNames.isNotEmpty) orderedNames.first,
+        if (showAmount && _hasPriorityUnit) amountLabel,
+        ...orderedNames.skip(1),
+        if (showAmount && !_hasPriorityUnit) amountLabel,
       ];
       return _cell(headers[column - 1], isHeader: true);
     }
@@ -122,12 +148,15 @@ class ProductionOverviewTable extends StatelessWidget {
     if (column == 0) return _cell(row.clientName);
     if (column == 1) return _cell(row.processName);
 
-    final amountColumn = 2 + unitColumns.length;
-    if (showAmount && column == amountColumn) {
+    if (showAmount && column == _amountColumn) {
       return _cell(row.totalAmount == null ? '-' : formatManwon(row.totalAmount));
     }
 
-    final unit = unitColumns[column - 2];
+    // 실적금액 열이 m2 실적 바로 다음에 끼어든 만큼, 그 뒤 단위 열들은 인덱스를 한 칸씩 당겨서 찾는다.
+    final unitIndex = (showAmount && _hasPriorityUnit && column > _amountColumn!)
+        ? column - 3
+        : column - 2;
+    final unit = _orderedUnitColumns[unitIndex];
     final value = row.resultByUnit[unit.unitId];
     return _cell(value == null || value == 0 ? '-' : formatNumber(value));
   }

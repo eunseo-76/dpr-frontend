@@ -22,8 +22,6 @@ List<ProcessMetricRow> groupDayMetrics({
       processName: processNames[processId] ?? '',
       resultA: _sumResult(rowsA, unit),
       resultB: _sumResult(rowsB, unit),
-      wipA: _sumWip(rowsA, unit),
-      wipB: _sumWip(rowsB, unit),
       amountA: _sumAmounts(rowsA.map((p) => p.amount)),
       amountB: _sumAmounts(rowsB.map((p) => p.amount)),
     );
@@ -49,8 +47,6 @@ List<ProcessMetricRow> groupCumulativeMetrics({
       processName: processNames[processId] ?? '',
       resultA: _sumSummaryResult(entriesA, unit),
       resultB: _sumSummaryResult(entriesB, unit),
-      wipA: null,
-      wipB: null,
       amountA: _sumAmounts(entriesA.map((e) => e.amount)),
       amountB: _sumAmounts(entriesB.map((e) => e.amount)),
     );
@@ -78,12 +74,6 @@ double? _sumResult(List<Production> rows, String unit) {
   final matches = rows.where((p) => p.unitName.toUpperCase() == unit.toUpperCase());
   if (matches.isEmpty) return null;
   return matches.fold<double>(0, (sum, p) => sum + (p.result ?? 0));
-}
-
-double? _sumWip(List<Production> rows, String unit) {
-  final matches = rows.where((p) => p.unitName.toUpperCase() == unit.toUpperCase());
-  if (matches.isEmpty) return null;
-  return matches.fold<double>(0, (sum, p) => sum + (p.wipResult ?? 0));
 }
 
 double? _sumSummaryResult(List<ProcessSummaryEntry> entries, String unit) {

@@ -66,7 +66,8 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
 
   String? _defaultUnit(List<FactoryUnit> units) {
     if (units.isEmpty) return null;
-    final m2 = units.where((u) => u.unitName.toUpperCase() == 'M2');
+    final m2 = units.where((u) =>
+        u.unitName.toUpperCase() == 'M2' || u.unitNickname?.toUpperCase() == 'M2');
     return m2.isNotEmpty ? m2.first.unitName : units.first.unitName;
   }
 
@@ -462,7 +463,6 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
           else
             ProcessComparisonTable(
               rows: metrics,
-              showWip: _period == 'day',
               unitLabel: _selectedUnitLabel,
               dateALabel: _dateLabel(_dateA),
               dateBLabel: _dateLabel(_dateB),

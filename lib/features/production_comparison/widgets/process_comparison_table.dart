@@ -9,7 +9,6 @@ typedef _Formatter = String Function(double? value);
 
 class ProcessComparisonTable extends StatelessWidget {
   final List<ProcessMetricRow> rows;
-  final bool showWip;
   final String unitLabel;
   final String dateALabel;
   final String dateBLabel;
@@ -17,7 +16,6 @@ class ProcessComparisonTable extends StatelessWidget {
   const ProcessComparisonTable({
     super.key,
     required this.rows,
-    required this.showWip,
     required this.unitLabel,
     required this.dateALabel,
     required this.dateBLabel,
@@ -32,8 +30,7 @@ class ProcessComparisonTable extends StatelessWidget {
   static const _downColor = Color(0xFFD03B3B);
 
   List<(String label, _MetricValues Function(ProcessMetricRow), _Formatter)> get _metricGroups => [
-    ('실적($unitLabel)', (r) => (r.resultA, r.resultB), _formatResultOrWip),
-    if (showWip) ('재공($unitLabel)', (r) => (r.wipA, r.wipB), _formatResultOrWip),
+    ('실적($unitLabel)', (r) => (r.resultA, r.resultB), _formatResult),
     ('금액(만원)', (r) => (r.amountA, r.amountB), formatManwon),
   ];
 
@@ -130,7 +127,7 @@ class ProcessComparisonTable extends StatelessWidget {
     );
   }
 
-  String _formatResultOrWip(double? value) =>
+  String _formatResult(double? value) =>
       value == null || value == 0 ? '-' : formatNumber(value);
 
   Widget _cell(String text, {bool isHeader = false, Color? color}) {

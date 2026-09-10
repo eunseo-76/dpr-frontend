@@ -118,8 +118,8 @@ class ProductionOverviewSummary extends StatelessWidget {
       final wipLabel = LabelStore.get('PRODUCTION_TABLE_HEADER_WIP', '재공');
       final headers = [
         '$valueLabel($_m2Label)',
-        if (showWip) '$wipLabel($_m2Label)',
         if (showAmount) LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE_AMOUNT', '실적금액'),
+        if (showWip) '$wipLabel($_m2Label)',
       ];
       return _cell(headers[column - 1], isHeader: true);
     }
@@ -132,14 +132,14 @@ class ProductionOverviewSummary extends StatelessWidget {
       return _cell(value == null || value == 0 ? '-' : formatNumber(value));
     }
 
-    if (showWip && column == 2) {
-      final value = _m2Wip(entry);
-      return _cell(value == null || value == 0 ? '-' : formatNumber(value));
+    if (showAmount && column == 2) {
+      return _cell(
+        entry.totalAmount == null ? '-' : formatManwon(entry.totalAmount),
+      );
     }
 
-    return _cell(
-      entry.totalAmount == null ? '-' : formatManwon(entry.totalAmount),
-    );
+    final value = _m2Wip(entry);
+    return _cell(value == null || value == 0 ? '-' : formatNumber(value));
   }
 
   Widget _processHeaderCell() {

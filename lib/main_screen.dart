@@ -69,7 +69,7 @@ class _MainScreenState extends State<MainScreen> {
               }
               return false;
             },
-            child: _screens[_currentIndex],
+            child: IndexedStack(index: _currentIndex, children: _screens),
           ),
           Positioned(
             left: 0,
