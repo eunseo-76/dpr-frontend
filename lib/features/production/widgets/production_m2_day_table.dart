@@ -130,20 +130,19 @@ class ProductionM2DayTable extends StatelessWidget {
       final headers = [
         LabelStore.get('PRODUCTION_TABLE_HEADER_PROCESS', '공정'),
         '$valueLabel($unitName)',
-        '$wipLabel($unitName)',
         if (showAmount) LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE_AMOUNT', '실적금액'),
+        '$wipLabel($unitName)',
       ];
       return _cell(headers[column - 1], isHeader: true);
     }
 
     final entry = entries[vicinity.row - 1];
-    return switch (column) {
-      0 => _cell(entry.clientName),
-      1 => _cell(entry.processName),
-      2 => _cell(_fmt(_m2Result(entry))),
-      3 => _cell(_fmt(_m2Wip(entry))),
-      _ => _cell(entry.totalAmount == null ? '-' : formatManwon(entry.totalAmount)),
-    };
+    final wipColumn = showAmount ? 4 : 3;
+    if (column == 0) return _cell(entry.clientName);
+    if (column == 1) return _cell(entry.processName);
+    if (column == 2) return _cell(_fmt(_m2Result(entry)));
+    if (column == wipColumn) return _cell(_fmt(_m2Wip(entry)));
+    return _cell(entry.totalAmount == null ? '-' : formatManwon(entry.totalAmount));
   }
 
   static String _fmt(double? value) =>

@@ -72,6 +72,42 @@ class ClientSummaryDisplayEntry {
   });
 }
 
+enum SummaryValueColumnKind { value, wip, amount }
+
+// 상세 바텀시트(공정별/업체별 실적 합계)의 열 구성 단일 기준. m2를 맨 앞으로 보내고
+// 그 실적 바로 뒤에 실적금액을 끼워 넣는 우선순위 규칙(2026-09-08 kenny공 결정)을
+// production_process_summary_sheet.dart / production_client_summary_sheet.dart가
+// 동일하게 따르도록 여기서 한 번만 만든다.
+class SummaryValueColumn {
+  final SummaryValueColumnKind kind;
+  final String? unitName;
+
+  const SummaryValueColumn.value(String this.unitName) : kind = SummaryValueColumnKind.value;
+  const SummaryValueColumn.wip(String this.unitName) : kind = SummaryValueColumnKind.wip;
+  const SummaryValueColumn.amount()
+      : kind = SummaryValueColumnKind.amount,
+        unitName = null;
+}
+
+List<SummaryValueColumn> buildSummaryValueColumns(
+  List<String> unitNames, {
+  required bool showAmount,
+  required bool showWip,
+}) {
+  final ordered = [
+    ...unitNames.where((u) => u.toUpperCase() == 'M2'),
+    ...unitNames.where((u) => u.toUpperCase() != 'M2'),
+  ];
+  final columns = <SummaryValueColumn>[];
+  for (var i = 0; i < ordered.length; i++) {
+    columns.add(SummaryValueColumn.value(ordered[i]));
+    if (i == 0 && showAmount) columns.add(const SummaryValueColumn.amount());
+    if (showWip) columns.add(SummaryValueColumn.wip(ordered[i]));
+  }
+  if (ordered.isEmpty && showAmount) columns.add(const SummaryValueColumn.amount());
+  return columns;
+}
+
 // items[i]가 바로 앞(items[i-1])과 key가 같으면 true를 담은 리스트를 반환
 // true = 이전 행과 같은 그룹이니 라벨을 비워도 된다는 뜻
 List<bool> sameAsPrevious<T>(List<T> items, Object Function(T item) keyOf) {
@@ -158,8 +194,12 @@ List<ProcessSummaryDisplayEntry> buildProcessSummaryDisplay(
     return index == -1 ? unitOrder.length : index;
   }
 
+  // 기간 내내 실적이 0인 공정은 행 자체를 만들지 않는다 (일별보기와 동일한 원칙,
+  // 2026-09-08 kenny공 결정) — 그루핑 전에 걸러야 processId 자체가 그룹에 안 잡힌다.
+  final resultEntries = entries.where((e) => e.result != 0).toList();
+
   final grouped = <int, List<ProcessSummaryEntry>>{};
-  for (final e in entries) {
+  for (final e in resultEntries) {
     grouped.putIfAbsent(e.processId, () => []).add(e);
   }
 
@@ -170,7 +210,6 @@ List<ProcessSummaryDisplayEntry> buildProcessSummaryDisplay(
       ..sort((a, b) => unitRank(a.unitId).compareTo(unitRank(b.unitId)));
 
     final unitResults = group
-        .where((e) => e.result != 0)
         .map((e) => UnitResultDisplay(
               result: e.result,
               unitName: unitNames[e.unitId] ?? e.unitName,
@@ -264,8 +303,13 @@ List<ClientSummaryDisplayEntry> buildClientSummaryDisplay(
     return index == -1 ? unitOrder.length : index;
   }
 
+  // 기간 내내 실적이 0인 (업체, 공정) 조합은 행 자체를 만들지 않는다 (일별보기와
+  // 동일한 원칙, 2026-09-08 kenny공 결정) — buildOverviewPivotRows와 같은 필터를
+  // 그루핑 전에 적용해야 그 조합의 키 자체가 그룹에 안 잡힌다.
+  final resultRows = rows.where((r) => r.result != 0).toList();
+
   final grouped = <String, List<ProductionOverviewRow>>{};
-  for (final r in rows) {
+  for (final r in resultRows) {
     grouped.putIfAbsent('${r.clientId}_${r.processId}', () => []).add(r);
   }
 

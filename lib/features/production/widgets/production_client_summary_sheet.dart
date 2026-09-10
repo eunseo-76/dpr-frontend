@@ -133,11 +133,10 @@ class _SummaryTable extends StatelessWidget {
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
 
-  // 단위 하나당 실적 열 1개, 재공을 보여줄 땐 그 옆에 재공 열이 하나 더 붙는다
-  // (ProductionM2DayTable과 동일한 실적/재공 나란히 배치).
-  int get _metricsPerUnit => showWip ? 2 : 1;
-  int get _columnCount =>
-      2 + unitNames.length * _metricsPerUnit + (showAmount ? 1 : 0);
+  List<SummaryValueColumn> get _valueColumns =>
+      buildSummaryValueColumns(unitNames, showAmount: showAmount, showWip: showWip);
+
+  int get _columnCount => 2 + _valueColumns.length;
   int get _rowCount => 1 + entries.length;
 
   double? _resultFor(ClientSummaryDisplayEntry entry, String unitName) {
@@ -166,8 +165,7 @@ class _SummaryTable extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         const pinnedWidth = _colClient + _colProcess;
-        final valueColCount =
-            unitNames.length * _metricsPerUnit + (showAmount ? 1 : 0);
+        final valueColCount = _valueColumns.length;
         final valueColWidth = valueColCount == 0
             ? _minValueColWidth
             : ((constraints.maxWidth - pinnedWidth) / valueColCount)
@@ -219,34 +217,37 @@ class _SummaryTable extends StatelessWidget {
     final valueLabel = LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE', '실적');
     final wipLabel = LabelStore.get('PRODUCTION_TABLE_HEADER_WIP', '재공');
 
+    if (column == 0 || column == 1) {
+      if (vicinity.row == 0) {
+        final label = column == 0
+            ? LabelStore.get('PRODUCTION_TABLE_HEADER_CLIENT', '업체')
+            : LabelStore.get('PRODUCTION_TABLE_HEADER_PROCESS', '공정');
+        return _cell(label, isHeader: true);
+      }
+      final entry = entries[vicinity.row - 1];
+      return _cell(column == 0 ? entry.clientName : entry.processName);
+    }
+
+    final spec = _valueColumns[column - 2];
     if (vicinity.row == 0) {
-      final headers = [
-        LabelStore.get('PRODUCTION_TABLE_HEADER_CLIENT', '업체'),
-        LabelStore.get('PRODUCTION_TABLE_HEADER_PROCESS', '공정'),
-        for (final u in unitNames) ...[
-          '$valueLabel($u)',
-          if (showWip) '$wipLabel($u)',
-        ],
-        if (showAmount) LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE_AMOUNT', '실적금액'),
-      ];
-      return _cell(headers[column], isHeader: true);
+      final label = switch (spec.kind) {
+        SummaryValueColumnKind.value => '$valueLabel(${spec.unitName})',
+        SummaryValueColumnKind.wip => '$wipLabel(${spec.unitName})',
+        SummaryValueColumnKind.amount => LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE_AMOUNT', '실적금액'),
+      };
+      return _cell(label, isHeader: true);
     }
 
     final entry = entries[vicinity.row - 1];
-    if (column == 0) return _cell(entry.clientName);
-    if (column == 1) return _cell(entry.processName);
-
-    final amountColumn = 2 + unitNames.length * _metricsPerUnit;
-    if (showAmount && column == amountColumn) {
+    if (spec.kind == SummaryValueColumnKind.amount) {
       return _cell(
         entry.totalAmount == null ? '-' : formatManwon(entry.totalAmount),
       );
     }
 
-    final unitName = unitNames[(column - 2) ~/ _metricsPerUnit];
-    final isWipColumn = showWip && (column - 2) % _metricsPerUnit == 1;
-    final value =
-        isWipColumn ? _wipFor(entry, unitName) : _resultFor(entry, unitName);
+    final value = spec.kind == SummaryValueColumnKind.wip
+        ? _wipFor(entry, spec.unitName!)
+        : _resultFor(entry, spec.unitName!);
     return _cell(value == null || value == 0 ? '-' : formatNumber(value));
   }
 
