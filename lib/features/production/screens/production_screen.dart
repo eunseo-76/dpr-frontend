@@ -862,7 +862,6 @@ class _ProductionScreenState extends State<ProductionScreen> {
           wrapInCard: false,
           title: cardTitle,
           units: _units,
-          sumAmounts: _groupBy == '업체별',
           footer: ProductionCardFooter(
             dailyByUnit: group.dailySumByUnit,
             cumulativeByUnit: group.cumulativeSumByUnit,
@@ -941,7 +940,6 @@ class _ProductionScreenState extends State<ProductionScreen> {
                     rowLabelHeader: rowLabelHeader,
                   );
                 },
-          sumAmounts: _groupBy == 'client',
           footer: ProductionCardFooter(
             dailyByUnit: group.dailySumByUnit,
             cumulativeByUnit: group.cumulativeSumByUnit,

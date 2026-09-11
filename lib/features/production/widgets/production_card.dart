@@ -26,7 +26,6 @@ class ProductionCard extends StatelessWidget {
   final ProductionCardFooter? footer;
   final VoidCallback? onEditTap;
   final bool wrapInCard;
-  final bool sumAmounts;
 
   const ProductionCard({
     super.key,
@@ -36,7 +35,6 @@ class ProductionCard extends StatelessWidget {
     this.footer,
     this.onEditTap,
     this.wrapInCard = true,
-    this.sumAmounts = false,
   });
 
   @override
@@ -84,13 +82,14 @@ class ProductionCard extends StatelessWidget {
     );
   }
 
-  // 공정별 뷰: 단위 하나만 잡히는 게 정상이라 첫 값만 사용 (여러 개면 데이터 이상)
-  // 업체별 뷰: 공정마다 기준단위가 다를 수 있어 여러 금액이 동시에 잡히는 게 정상이라 합산
+  // 카드 안에 unitId가 여러 개 섞여 있을 수 있다 (같은 공정이라도 업체마다
+  // 기준 단위가 다를 수 있음 — CLAUDE.md 10절 참고). 금액은 단위와 무관한
+  // 값이므로 항상 전부 합산한다.
   double? _extractAmount(Map<int, double>? amounts) {
     if (amounts == null) return null;
     final nonZero = amounts.values.where((v) => v != 0);
     if (nonZero.isEmpty) return null;
-    return sumAmounts ? nonZero.reduce((a, b) => a + b) : nonZero.first;
+    return nonZero.reduce((a, b) => a + b);
   }
 
   Widget _footerRow(String label, Map<int, double> values, {Map<int, double>? amounts}) {
