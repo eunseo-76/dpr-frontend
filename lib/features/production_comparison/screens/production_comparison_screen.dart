@@ -30,7 +30,7 @@ class ProductionComparisonScreen extends StatefulWidget {
 }
 
 class _ProductionComparisonScreenState extends State<ProductionComparisonScreen> {
-  static const _presetOrder = ['year', 'month', 'custom'];
+  static const _presetOrder = ['month', 'year', 'custom'];
 
   final _productionService = ProductionService();
   final _factoryMappingService = FactoryMappingService();
@@ -71,9 +71,9 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
     return m2.isNotEmpty ? m2.first.unitName : units.first.unitName;
   }
 
-  String _preset = 'year';
+  String _preset = 'month';
   DateTime _dateA = DateTime.now();
-  late DateTime _dateB = DateTime(_dateA.year - 1, _dateA.month, _dateA.day);
+  late DateTime _dateB = computePresetDateB(dateA: _dateA, preset: _preset);
 
   bool _isDataLoading = false;
   String? _dataError;
@@ -123,6 +123,9 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
   String _isoDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
+  String _monthStartIso(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-01';
+
   Future<void> _reloadComparisonData() async {
     final factoryId = _selectedFactoryId;
     if (factoryId == null) return;
@@ -137,12 +140,12 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
         _productionService.getProductionList(date: _isoDate(_dateB), periodType: 'DAY'),
         _productionService.getProductionOverview(
           factoryId: factoryId,
-          dateFrom: '${_dateA.year}-01-01',
+          dateFrom: _monthStartIso(_dateA),
           dateTo: _isoDate(_dateA),
         ),
         _productionService.getProductionOverview(
           factoryId: factoryId,
-          dateFrom: '${_dateB.year}-01-01',
+          dateFrom: _monthStartIso(_dateB),
           dateTo: _isoDate(_dateB),
         ),
       ]);
@@ -236,29 +239,28 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.white, Colors.grey[100]!],
+      // TODO: Scaffold+AppBar+헤더 그라데이션 패턴이 화면마다 복붙되어 있음.
+      // production_screen.dart 등과 함께 공용 컴포넌트로 추출 검토 (2026-09-14)
+      body: Column(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.white, Colors.grey[100]!],
+              ),
+            ),
+            child: Column(
+              children: [
+                SizedBox(height: MediaQuery.of(context).padding.top + kToolbarHeight),
+                if (!_isLoading && _error == null && _factories.isNotEmpty)
+                  _buildFilterCard(),
+              ],
+            ),
           ),
-        ),
-        child: Column(
-          children: [
-            SizedBox(height: MediaQuery.of(context).padding.top + kToolbarHeight),
-            if (_isLoading)
-              const Expanded(child: LoadingIndicator())
-            else if (_error != null)
-              Expanded(child: Center(child: Text('오류: $_error')))
-            else if (_factories.isEmpty)
-              const Expanded(child: Center(child: Text('배정된 공장이 없습니다')))
-            else ...[
-              _buildFilterCard(),
-              Expanded(child: _buildContentArea()),
-            ],
-          ],
-        ),
+          Expanded(child: _buildContentArea()),
+        ],
       ),
     );
   }
@@ -305,7 +307,7 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
           ),
           const SizedBox(height: 10),
           PillSelector(
-            labels: const ['전년 비교', '전월 비교', '직접 선택'],
+            labels: const ['전월 비교', '전년 비교', '직접 선택'],
             selectedIndex: _presetOrder.indexOf(_preset),
             onSelected: (i) => _onPresetSelected(_presetOrder[i]),
             padding: EdgeInsets.zero,
@@ -330,11 +332,17 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: _isDataLoading
+        child: _isLoading
             ? const LoadingIndicator()
-            : _dataError != null
-                ? Center(child: Text('오류: $_dataError'))
-                : _buildComparisonCard(),
+            : _error != null
+                ? Center(child: Text('오류: $_error'))
+                : _factories.isEmpty
+                    ? const Center(child: Text('배정된 공장이 없습니다'))
+                    : _isDataLoading
+                        ? const LoadingIndicator()
+                        : _dataError != null
+                            ? Center(child: Text('오류: $_dataError'))
+                            : _buildComparisonCard(),
       ),
     );
   }

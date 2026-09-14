@@ -9,10 +9,10 @@ class ComparisonDiff {
 }
 
 ComparisonDiff computeDiff(double? a, double? b) {
-  if (a == null || b == null || b == 0) {
+  if (a == null || b == null || a == 0) {
     return const ComparisonDiff('-', ComparisonDirection.unavailable);
   }
-  final percent = (a - b) / b * 100;
+  final percent = (b - a) / a * 100;
   if (percent > 0) {
     return ComparisonDiff(
       '▲${percent.toStringAsFixed(1)}%',

@@ -541,6 +541,8 @@ class _ProductionScreenState extends State<ProductionScreen> {
               elevation: 0,
               scrolledUnderElevation: 0,
             ),
+      // TODO: Scaffold+AppBar+헤더 그라데이션 패턴이 화면마다 복붙되어 있음.
+      // production_comparison_screen.dart 등과 함께 공용 컴포넌트로 추출 검토 (2026-09-14)
       body: Column(
         children: [
           Container(
@@ -655,12 +657,11 @@ class _ProductionScreenState extends State<ProductionScreen> {
                                   _selectedDate = _dateStr(_overviewRangeEnd!);
                                 }
                                 // 기간별보기로 갈 때마다, 방금 보던 날짜를 마지막 날로 하는
-                                // 최근 7일 범위로 다시 계산 (미래 날짜로 안 넘어가게)
+                                // 이번 달 1일~해당 날짜 범위로 다시 계산 (미래 날짜로 안 넘어가게)
                                 if (value == 'period') {
                                   final end = DateTime.parse(_selectedDate);
                                   _overviewRangeEnd = end;
-                                  _overviewRangeStart =
-                                      end.subtract(const Duration(days: 6));
+                                  _overviewRangeStart = DateTime(end.year, end.month, 1);
                                 }
                                 _viewMode = value;
                                 _category = 'read';

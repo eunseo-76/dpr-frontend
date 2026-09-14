@@ -8,8 +8,8 @@ class DivergingBarRow extends StatelessWidget {
   const DivergingBarRow({super.key, required this.processName, required this.diff});
 
   static const _cap = 100.0;
-  static const _upColor = Color(0xFF0CA30C);
-  static const _downColor = Color(0xFFD03B3B);
+  static const _upColor = Color(0xFFD03B3B);
+  static const _downColor = Color(0xFF3B3BD0);
 
   static const _nameWidth = 56.0;
   static const _gap = 8.0;
