@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 
-Future<DateTime?> showCalendarPicker(BuildContext context, DateTime initial) {
+Future<DateTime?> showCalendarPicker(
+  BuildContext context,
+  DateTime initial, {
+  bool Function(DateTime day)? enabledDayPredicate,
+}) {
   return showModalBottomSheet<DateTime>(
     context: context,
     isScrollControlled: true,
@@ -10,7 +14,10 @@ Future<DateTime?> showCalendarPicker(BuildContext context, DateTime initial) {
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (_) => _CalendarSheet(initial: initial),
+    builder: (_) => _CalendarSheet(
+      initial: initial,
+      enabledDayPredicate: enabledDayPredicate,
+    ),
   );
 }
 
@@ -32,7 +39,8 @@ Future<DateTimeRange?> showCalendarRangePicker(
 
 class _CalendarSheet extends StatefulWidget {
   final DateTime initial;
-  const _CalendarSheet({required this.initial});
+  final bool Function(DateTime day)? enabledDayPredicate;
+  const _CalendarSheet({required this.initial, this.enabledDayPredicate});
 
   @override
   State<_CalendarSheet> createState() => _CalendarSheetState();
@@ -103,6 +111,7 @@ class _CalendarSheetState extends State<_CalendarSheet> {
         lastDay: DateTime(2030),
         focusedDay: _focused,
         selectedDayPredicate: (day) => isSameDay(day, _selected),
+        enabledDayPredicate: widget.enabledDayPredicate,
         calendarFormat: CalendarFormat.month,
         availableCalendarFormats: const {CalendarFormat.month: ''},
         rowHeight: _rowHeight,
@@ -138,7 +147,7 @@ class _CalendarSheetState extends State<_CalendarSheet> {
           weekendTextStyle: const TextStyle(color: Colors.redAccent, fontSize: 14, decoration: TextDecoration.none),
           defaultTextStyle: const TextStyle(color: Colors.black87, fontSize: 14, decoration: TextDecoration.none),
           outsideTextStyle: TextStyle(color: Colors.grey[400], fontSize: 14, decoration: TextDecoration.none),
-          disabledTextStyle: const TextStyle(color: Colors.transparent, fontSize: 14, decoration: TextDecoration.none),
+          disabledTextStyle: TextStyle(color: Colors.grey[300], fontSize: 14, decoration: TextDecoration.none),
         ),
         daysOfWeekStyle: const DaysOfWeekStyle(
           weekdayStyle: TextStyle(fontSize: 12, color: Colors.black54, decoration: TextDecoration.none),
@@ -243,6 +252,15 @@ class _CalendarRangeSheetState extends State<_CalendarRangeSheet> {
   String _fmt(DateTime d) =>
       '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}';
 
+  // 서버가 dateFrom~dateTo 범위를 최대 31일(양 끝 포함)로 제한하므로, 시작일을
+  // 고른 뒤엔 그 기준으로 31일을 넘는 날짜를 아예 선택 못 하게 막는다.
+  bool _isSelectable(DateTime day) {
+    if (_rangeStart != null && _rangeEnd == null) {
+      return day.difference(_rangeStart!).inDays.abs() <= 30;
+    }
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
     final canConfirm = _rangeStart != null && _rangeEnd != null;
@@ -313,6 +331,7 @@ class _CalendarRangeSheetState extends State<_CalendarRangeSheet> {
       rangeStartDay: _rangeStart,
       rangeEndDay: _rangeEnd,
       rangeSelectionMode: RangeSelectionMode.toggledOn,
+      enabledDayPredicate: _isSelectable,
       onRangeSelected: (start, end, focused) {
         setState(() {
           _rangeStart = start;

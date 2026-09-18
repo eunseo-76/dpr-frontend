@@ -33,7 +33,7 @@ class ProductionOverviewTable extends StatelessWidget {
 
   // m2를 항상 맨 앞으로 — [공정별 실적 합계]/[업체별 실적 합계] 일별 표와 동일한
   // 우선순위 규칙(실적(m2) → 실적금액 → 나머지)을 기간별 표에도 맞추기 위함
-  // (2026-09-08 kenny공 결정). m2가 없는 공장/기간이면 기존 순서(pnl→lot) 그대로 유지.
+  // m2가 없는 공장/기간이면 기존 순서(pnl→lot) 그대로 유지.
   bool get _hasPriorityUnit =>
       unitColumns.any((u) => u.unitName.toUpperCase() == 'M2');
 

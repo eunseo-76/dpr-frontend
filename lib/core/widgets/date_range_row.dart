@@ -1,31 +1,37 @@
 import 'package:flutter/material.dart';
 
-class ComparisonDateRow extends StatelessWidget {
+class DateRangeRow extends StatelessWidget {
   static const dateAColor = Colors.blue;
   static const dateBColor = Colors.green;
 
-  final String dateALabel;
-  final String dateBLabel;
-  final VoidCallback onTapDateA;
-  final VoidCallback onTapDateB;
+  final String startLabel;
+  final String endLabel;
+  final VoidCallback onTapStart;
+  final VoidCallback onTapEnd;
+  final Color startDotColor;
+  final Color endDotColor;
+  final Widget separator;
 
-  const ComparisonDateRow({
+  const DateRangeRow({
     super.key,
-    required this.dateALabel,
-    required this.dateBLabel,
-    required this.onTapDateA,
-    required this.onTapDateB,
+    required this.startLabel,
+    required this.endLabel,
+    required this.onTapStart,
+    required this.onTapEnd,
+    this.startDotColor = dateAColor,
+    this.endDotColor = dateBColor,
+    this.separator = const Icon(Icons.compare_arrows_rounded, size: 16, color: Color(0xFF9E9E9E)),
   });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: _dateChip(dateALabel, dateAColor, onTapDateA)),
+        Expanded(child: _dateChip(startLabel, startDotColor, onTapStart)),
         const SizedBox(width: 8),
-        Icon(Icons.compare_arrows_rounded, size: 16, color: Colors.grey[500]),
+        separator,
         const SizedBox(width: 8),
-        Expanded(child: _dateChip(dateBLabel, dateBColor, onTapDateB)),
+        Expanded(child: _dateChip(endLabel, endDotColor, onTapEnd)),
       ],
     );
   }

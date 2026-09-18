@@ -24,12 +24,13 @@ class _MainScreenState extends State<MainScreen> {
 
   List<Widget> get _screens => [
     ProductionScreen(
+      isActive: _currentIndex == 0,
       onGoToSettings: _canManageSettings
           ? () => setState(() => _currentIndex = _canViewComparison ? 3 : 2)
           : null,
     ),
     HomeScreen(onTabChange: (index) => setState(() => _currentIndex = index)),
-    if (_canViewComparison) const ProductionComparisonScreen(),
+    if (_canViewComparison) ProductionComparisonScreen(isActive: _currentIndex == 2),
     if (_canManageSettings) const SettingsScreen(),
   ];
 
