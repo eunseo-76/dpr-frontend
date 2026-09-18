@@ -82,6 +82,10 @@ class _MainScreenState extends State<MainScreen> {
               offset: _navBarVisible ? Offset.zero : const Offset(0, 1.3),
               child: SafeArea(
                 top: false,
+                // 바깥 Positioned가 이미 bottom 인셋만큼 밀어올렸으니, 여기서
+                // 또 적용하면 이중으로 밀려 올라간다 (Android 15 엣지투엣지 강제 이후
+                // padding.bottom이 0이 아니게 되면서 드러난 문제, 2026-09-18).
+                bottom: false,
                 child: FloatingNavBar(
                   currentIndex: _currentIndex,
                   onTap: (index) => setState(() {
