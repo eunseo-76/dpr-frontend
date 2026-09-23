@@ -26,8 +26,8 @@ class ProcessComparisonTable extends StatelessWidget {
   static const _rowHeight = 36.0;
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
-  static const _upColor = Color(0xFF0CA30C);
-  static const _downColor = Color(0xFFD03B3B);
+  static const _upColor = Color(0xFFD03B3B);
+  static const _downColor = Color(0xFF3B3BD0);
 
   List<(String label, _MetricValues Function(ProcessMetricRow), _Formatter)> get _metricGroups => [
     ('실적($unitLabel)', (r) => (r.resultA, r.resultB), _formatResult),

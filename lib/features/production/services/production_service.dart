@@ -6,14 +6,25 @@ import 'package:fprs_frontend/features/production/models/production.dart';
 import 'package:fprs_frontend/features/production/models/production_overview.dart';
 import 'package:fprs_frontend/features/production/models/production_upsert_entry.dart';
 
+typedef ProductionListData = ({
+  List<Production> productions,
+  List<ProductionMonthlyCumulative> monthlyCumulative,
+});
+
 class ProductionService {
   final _client = ApiClient();
 
-  Future<
-      ({
-        List<Production> productions,
-        List<ProductionMonthlyCumulative> monthlyCumulative,
-      })> getProductionList({
+  ProductionListData _parseProductionListData(Map<String, dynamic> data) {
+    final productions = (data['productions'] as List)
+        .map((e) => Production.fromJson(e as Map<String, dynamic>))
+        .toList();
+    final monthlyCumulative = (data['monthlyCumulative'] as List)
+        .map((e) => ProductionMonthlyCumulative.fromJson(e as Map<String, dynamic>))
+        .toList();
+    return (productions: productions, monthlyCumulative: monthlyCumulative);
+  }
+
+  Future<ProductionListData> getProductionList({
     required String date,
     required String periodType,
   }) async {
@@ -24,16 +35,35 @@ class ProductionService {
 
     if (response.statusCode == 200) {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
-      final data = body['data'] as Map<String, dynamic>;
-      final productions = (data['productions'] as List)
-          .map((e) => Production.fromJson(e as Map<String, dynamic>))
-          .toList();
-      final monthlyCumulative = (data['monthlyCumulative'] as List)
-          .map((e) => ProductionMonthlyCumulative.fromJson(e as Map<String, dynamic>))
-          .toList();
-      return (productions: productions, monthlyCumulative: monthlyCumulative);
+      return _parseProductionListData(body['data'] as Map<String, dynamic>);
     }
     throw Exception('생산실적 조회 실패: ${response.statusCode}');
+  }
+
+  Future<ProductionListData> getProductionListForDateRange({
+    required String dateFrom,
+    required String dateTo,
+    int? clientId,
+    int? processId,
+    int? unitId,
+  }) async {
+    final response = await _client.get(
+      ApiConstants.production,
+      queryParams: {
+        'periodType': 'CUSTOM',
+        'dateFrom': dateFrom,
+        'dateTo': dateTo,
+        if (clientId != null) 'clientId': clientId.toString(),
+        if (processId != null) 'processId': processId.toString(),
+        if (unitId != null) 'unitId': unitId.toString(),
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      return _parseProductionListData(body['data'] as Map<String, dynamic>);
+    }
+    throw Exception(extractErrorMessage(response, '생산실적 조회 실패'));
   }
 
   Future<int> upsertProductions({

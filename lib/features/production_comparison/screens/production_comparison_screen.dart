@@ -3,9 +3,13 @@ import 'package:fprs_frontend/core/models/factory_summary.dart';
 import 'package:fprs_frontend/core/models/master_data_entity.dart';
 import 'package:fprs_frontend/core/services/master_data_service.dart';
 import 'package:fprs_frontend/core/widgets/calendar_picker.dart';
+import 'package:fprs_frontend/core/widgets/date_range_row.dart';
 import 'package:fprs_frontend/core/widgets/loading_indicator.dart';
 import 'package:fprs_frontend/core/widgets/pill_selector.dart';
 import 'package:fprs_frontend/core/widgets/segmented_toggle.dart';
+import 'package:fprs_frontend/core/widgets/simple_dropdown_button.dart';
+import 'package:fprs_frontend/core/widgets/wrench_refresh.dart';
+import 'package:fprs_frontend/core/utils/staleness.dart';
 import 'package:fprs_frontend/features/production/models/production.dart';
 import 'package:fprs_frontend/features/production/models/production_overview.dart';
 import 'package:fprs_frontend/features/production/services/production_service.dart';
@@ -13,24 +17,24 @@ import 'package:fprs_frontend/features/production_comparison/models/process_metr
 import 'package:fprs_frontend/features/production_comparison/utils/comparison_date_preset.dart';
 import 'package:fprs_frontend/features/production_comparison/utils/comparison_diff.dart';
 import 'package:fprs_frontend/features/production_comparison/utils/process_metric_grouping.dart';
-import 'package:fprs_frontend/features/production_comparison/widgets/comparison_date_row.dart';
 import 'package:fprs_frontend/features/production_comparison/widgets/diverging_bar_row.dart';
 import 'package:fprs_frontend/features/production_comparison/widgets/process_comparison_table.dart';
-import 'package:fprs_frontend/features/production_comparison/widgets/simple_dropdown_button.dart';
 import 'package:fprs_frontend/features/settings/models/factory_unit.dart';
 import 'package:fprs_frontend/features/settings/services/factory_mapping_service.dart';
 import 'package:fprs_frontend/features/utility/models/factory_process.dart';
 import 'package:flutter/material.dart';
 
 class ProductionComparisonScreen extends StatefulWidget {
-  const ProductionComparisonScreen({super.key});
+  final bool isActive;
+
+  const ProductionComparisonScreen({super.key, this.isActive = true});
 
   @override
   State<ProductionComparisonScreen> createState() => _ProductionComparisonScreenState();
 }
 
 class _ProductionComparisonScreenState extends State<ProductionComparisonScreen> {
-  static const _presetOrder = ['year', 'month', 'custom'];
+  static const _presetOrder = ['month', 'year', 'custom'];
 
   final _productionService = ProductionService();
   final _factoryMappingService = FactoryMappingService();
@@ -71,9 +75,9 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
     return m2.isNotEmpty ? m2.first.unitName : units.first.unitName;
   }
 
-  String _preset = 'year';
+  String _preset = 'month';
   DateTime _dateA = DateTime.now();
-  late DateTime _dateB = DateTime(_dateA.year - 1, _dateA.month, _dateA.day);
+  late DateTime _dateB = computePresetDateB(dateA: _dateA, preset: _preset);
 
   bool _isDataLoading = false;
   String? _dataError;
@@ -86,6 +90,50 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
   void initState() {
     super.initState();
     _loadFactories();
+  }
+
+  @override
+  void didUpdateWidget(covariant ProductionComparisonScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 탭이 다시 보이는 순간(IndexedStack이라 initState는 재실행 안 됨)에
+    // 공정/단위 매핑이 그새 바뀌었을 수 있어 다시 불러온다. 날짜/필터는 그대로 둔다.
+    if (!oldWidget.isActive && widget.isActive) {
+      _reloadMasterDataAndComparisonDataIfStale();
+    }
+  }
+
+  static const _autoRefreshThrottle = Duration(minutes: 3);
+  DateTime? _lastMasterDataFetchedAt;
+
+  // TODO: 지금은 단순 시간 기반 스로틀(3분)임. 나중엔 서버에서 버전/최종수정시각을
+  // 받아와 "바뀐 게 있는지 확인 후에만" 새로고침하는 방식으로 개선 (백엔드 지원 필요)
+  void _reloadMasterDataAndComparisonDataIfStale() {
+    if (!isStale(_lastMasterDataFetchedAt, _autoRefreshThrottle)) return;
+    _reloadMasterDataAndComparisonData();
+  }
+
+  // 공정/단위 매핑만 다시 불러오고, 선택된 날짜/공장/단위/프리셋은 그대로 둔 채
+  // 비교 데이터를 다시 계산한다. 전체를 새로 불러오는 _loadFactories()와 달리
+  // 이미 선택해둔 상태를 안 건드리는 게 목적이다.
+  Future<void> _reloadMasterDataAndComparisonData() async {
+    try {
+      final results = await Future.wait([
+        _factoryMappingService.getFactoryUnits(),
+        _factoryMappingService.getFactoryProcesses(),
+      ]);
+      setState(() {
+        _allFactoryUnits = results[0] as List<FactoryUnit>;
+        _allFactoryProcesses = results[1] as List<FactoryProcess>;
+        if (!_unitsForSelectedFactory.any((u) => u.unitName == _selectedUnit)) {
+          _selectedUnit = _defaultUnit(_unitsForSelectedFactory);
+        }
+        _lastMasterDataFetchedAt = DateTime.now();
+      });
+    } catch (e) {
+      setState(() => _dataError = e.toString());
+      return;
+    }
+    await _reloadComparisonData();
   }
 
   Future<void> _loadFactories() async {
@@ -123,6 +171,9 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
   String _isoDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
 
+  String _monthStartIso(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-01';
+
   Future<void> _reloadComparisonData() async {
     final factoryId = _selectedFactoryId;
     if (factoryId == null) return;
@@ -137,12 +188,12 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
         _productionService.getProductionList(date: _isoDate(_dateB), periodType: 'DAY'),
         _productionService.getProductionOverview(
           factoryId: factoryId,
-          dateFrom: '${_dateA.year}-01-01',
+          dateFrom: _monthStartIso(_dateA),
           dateTo: _isoDate(_dateA),
         ),
         _productionService.getProductionOverview(
           factoryId: factoryId,
-          dateFrom: '${_dateB.year}-01-01',
+          dateFrom: _monthStartIso(_dateB),
           dateTo: _isoDate(_dateB),
         ),
       ]);
@@ -236,29 +287,28 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.white, Colors.grey[100]!],
+      // TODO: Scaffold+AppBar+헤더 그라데이션 패턴이 화면마다 복붙되어 있음.
+      // production_screen.dart 등과 함께 공용 컴포넌트로 추출 검토 (2026-09-14)
+      body: Column(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.white, Colors.grey[100]!],
+              ),
+            ),
+            child: Column(
+              children: [
+                SizedBox(height: MediaQuery.of(context).padding.top + kToolbarHeight),
+                if (!_isLoading && _error == null && _factories.isNotEmpty)
+                  _buildFilterCard(),
+              ],
+            ),
           ),
-        ),
-        child: Column(
-          children: [
-            SizedBox(height: MediaQuery.of(context).padding.top + kToolbarHeight),
-            if (_isLoading)
-              const Expanded(child: LoadingIndicator())
-            else if (_error != null)
-              Expanded(child: Center(child: Text('오류: $_error')))
-            else if (_factories.isEmpty)
-              const Expanded(child: Center(child: Text('배정된 공장이 없습니다')))
-            else ...[
-              _buildFilterCard(),
-              Expanded(child: _buildContentArea()),
-            ],
-          ],
-        ),
+          Expanded(child: _buildContentArea()),
+        ],
       ),
     );
   }
@@ -297,15 +347,15 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
             ],
           ),
           const SizedBox(height: 10),
-          ComparisonDateRow(
-            dateALabel: _dateLabel(_dateA),
-            dateBLabel: _dateLabel(_dateB),
-            onTapDateA: _pickDateA,
-            onTapDateB: _pickDateB,
+          DateRangeRow(
+            startLabel: _dateLabel(_dateA),
+            endLabel: _dateLabel(_dateB),
+            onTapStart: _pickDateA,
+            onTapEnd: _pickDateB,
           ),
           const SizedBox(height: 10),
           PillSelector(
-            labels: const ['전년 비교', '전월 비교', '직접 선택'],
+            labels: const ['전월 비교', '전년 비교', '직접 선택'],
             selectedIndex: _presetOrder.indexOf(_preset),
             onSelected: (i) => _onPresetSelected(_presetOrder[i]),
             padding: EdgeInsets.zero,
@@ -330,11 +380,20 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: _isDataLoading
+        child: _isLoading
             ? const LoadingIndicator()
-            : _dataError != null
-                ? Center(child: Text('오류: $_dataError'))
-                : _buildComparisonCard(),
+            : _error != null
+                ? Center(child: Text('오류: $_error'))
+                : _factories.isEmpty
+                    ? const Center(child: Text('배정된 공장이 없습니다'))
+                    : _isDataLoading
+                        ? const LoadingIndicator()
+                        : _dataError != null
+                            ? Center(child: Text('오류: $_dataError'))
+                            : WrenchRefresh(
+                                onRefresh: _reloadMasterDataAndComparisonData,
+                                child: _buildComparisonCard(),
+                              ),
       ),
     );
   }

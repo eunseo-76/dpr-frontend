@@ -74,10 +74,6 @@ class ClientSummaryDisplayEntry {
 
 enum SummaryValueColumnKind { value, wip, amount }
 
-// 상세 바텀시트(공정별/업체별 실적 합계)의 열 구성 단일 기준. m2를 맨 앞으로 보내고
-// 그 실적 바로 뒤에 실적금액을 끼워 넣는 우선순위 규칙(2026-09-08 kenny공 결정)을
-// production_process_summary_sheet.dart / production_client_summary_sheet.dart가
-// 동일하게 따르도록 여기서 한 번만 만든다.
 class SummaryValueColumn {
   final SummaryValueColumnKind kind;
   final String? unitName;
@@ -194,8 +190,7 @@ List<ProcessSummaryDisplayEntry> buildProcessSummaryDisplay(
     return index == -1 ? unitOrder.length : index;
   }
 
-  // 기간 내내 실적이 0인 공정은 행 자체를 만들지 않는다 (일별보기와 동일한 원칙,
-  // 2026-09-08 kenny공 결정) — 그루핑 전에 걸러야 processId 자체가 그룹에 안 잡힌다.
+  // 기간 내내 실적이 0인 공정은 행 자체를 만들지 않기
   final resultEntries = entries.where((e) => e.result != 0).toList();
 
   final grouped = <int, List<ProcessSummaryEntry>>{};
@@ -303,9 +298,7 @@ List<ClientSummaryDisplayEntry> buildClientSummaryDisplay(
     return index == -1 ? unitOrder.length : index;
   }
 
-  // 기간 내내 실적이 0인 (업체, 공정) 조합은 행 자체를 만들지 않는다 (일별보기와
-  // 동일한 원칙, 2026-09-08 kenny공 결정) — buildOverviewPivotRows와 같은 필터를
-  // 그루핑 전에 적용해야 그 조합의 키 자체가 그룹에 안 잡힌다.
+  // 기간 내내 실적이 0인 (업체, 공정) 조합은 행 자체를 만들지 않음
   final resultRows = rows.where((r) => r.result != 0).toList();
 
   final grouped = <String, List<ProductionOverviewRow>>{};
@@ -359,11 +352,6 @@ List<ClientSummaryDisplayEntry> buildClientSummaryDisplay(
   });
 }
 
-// buildClientSummaryDisplay와 동일한 (업체, 공정) 그루핑이지만, 일별보기 전용이다.
-// ProductionOverviewRow(서버 집계용 DTO)엔 재공 필드가 없어서, 하루치 원본 리스트
-// (_productions, Production 모델)를 직접 그룹핑해 재공까지 함께 보여준다.
-// 기간별보기는 이 함수를 쓰지 않는다 — 여러 날짜의 재공을 더하는 게 재고 관점에서
-// 의미가 있는지 아직 정리되지 않았기 때문 (2026-07-27 kenny공 결정).
 List<ClientSummaryDisplayEntry> buildClientSummaryDisplayFromProductions(
   List<Production> productions, {
   required Map<int, String> clientNames,
