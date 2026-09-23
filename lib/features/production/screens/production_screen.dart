@@ -1233,11 +1233,13 @@ class _ProductionScreenState extends State<ProductionScreen> {
     final clientNames = {
       for (final c in _factoryClients) c.clientId: c.clientNickname ?? c.clientName,
     };
+    final unitNames = {for (final u in _units) u.id: u.name};
 
     final processGroups = groupPeriodDetailByProcess(
       _periodDailyProductions,
       dates,
       processNames: processNames,
+      unitNames: unitNames,
       showWip: _periodDailyShowWip,
     );
     final clientGroups = groupPeriodDetailByClient(
@@ -1245,6 +1247,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
       dates,
       clientNames: clientNames,
       processNames: processNames,
+      unitNames: unitNames,
       showWip: _periodDailyShowWip,
     );
 

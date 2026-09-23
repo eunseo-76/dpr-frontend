@@ -70,6 +70,7 @@ List<PeriodDetailProcessGroup> groupPeriodDetailByProcess(
   List<Production> productions,
   List<String> dates, {
   required Map<int, String> processNames,
+  required Map<int, String> unitNames,
   required bool showWip,
 }) {
   double? quantityOf(Production p) => showWip ? p.wipResult : p.result;
@@ -83,7 +84,8 @@ List<PeriodDetailProcessGroup> groupPeriodDetailByProcess(
   for (final p in matches) {
     final key = '${p.date}|${p.processId}';
     final quantity = quantityOf(p);
-    if (p.unitName.toUpperCase() == 'M2' && quantity != null) {
+    final unitName = unitNames[p.unitId] ?? p.unitName;
+    if (unitName.toUpperCase() == 'M2' && quantity != null) {
       m2ResultByKey[key] = (m2ResultByKey[key] ?? 0) + quantity;
     }
     final amount = amountOf(p);
@@ -117,6 +119,7 @@ List<PeriodDetailClientProcessGroup> groupPeriodDetailByClient(
   List<String> dates, {
   required Map<int, String> clientNames,
   required Map<int, String> processNames,
+  required Map<int, String> unitNames,
   required bool showWip,
 }) {
   double? quantityOf(Production p) => showWip ? p.wipResult : p.result;
@@ -130,7 +133,8 @@ List<PeriodDetailClientProcessGroup> groupPeriodDetailByClient(
   for (final p in matches) {
     final key = '${p.date}|${p.clientId}|${p.processId}';
     final quantity = quantityOf(p);
-    if (p.unitName.toUpperCase() == 'M2' && quantity != null) {
+    final unitName = unitNames[p.unitId] ?? p.unitName;
+    if (unitName.toUpperCase() == 'M2' && quantity != null) {
       m2ResultByKey[key] = (m2ResultByKey[key] ?? 0) + quantity;
     }
     final amount = amountOf(p);
