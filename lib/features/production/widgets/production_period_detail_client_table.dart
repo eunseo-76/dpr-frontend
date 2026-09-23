@@ -1,39 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:two_dimensional_scrollables/two_dimensional_scrollables.dart';
 import 'package:fprs_frontend/core/utils/label_store.dart';
 import 'package:fprs_frontend/core/utils/number_format.dart';
-import 'package:fprs_frontend/features/production/utils/production_period_daily_grouping.dart';
+import 'package:fprs_frontend/features/production/utils/production_period_detail_grouping.dart';
 
-// 기간별(일별) 표. 실적 모드: 공정|구분·교대|항목 + 날짜별 컬럼 + 합계(sticky-right).
-class ProductionPeriodDailyTable extends StatelessWidget {
-  final List<PeriodDailyRow> rows;
+class ProductionPeriodDetailClientTable extends StatelessWidget {
+  final List<PeriodDetailClientProcessGroup> groups;
   final List<String> dates;
   final bool showWip;
   final bool Function(DateTime day)? isHoliday;
 
-  const ProductionPeriodDailyTable({
+  const ProductionPeriodDetailClientTable({
     super.key,
-    required this.rows,
+    required this.groups,
     required this.dates,
     required this.showWip,
     this.isHoliday,
   });
 
-  static const _colProcessWidth = 48.0;
-  static const _colShiftWidth = 26.0;
-  static const _colAverageWidth = 40.0;
-  static const _colItemWidth = 34.0;
-  static const _dateColWidth = 56.0;
-  static const _fixedColWidth = 56.0;
+  static const _colClientWidth = 48.0;
+  static const _colProcessWidth = 56.0;
+  static const _colItemWidth = 36.0;
+  static const _dateColWidth = 52.0;
+  static const _colSumWidth = 56.0;
+  static const _colAverageWidth = 48.0;
   static const _rowHeight = 36.0;
   static const _headerRowHeight = 44.0;
+  static const _leftColCount = 3;
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
   static const _weekdayNames = ['월', '화', '수', '목', '금', '토', '일'];
+  static const _saturdayColor = Color(0xFF1565C0);
+  static const _sundayHolidayColor = Color(0xFFD32F2F);
 
-  int get _leftColCount => showWip ? 4 : 3;
+  List<PeriodDetailItemRow> get _rows =>
+      groups.expand((g) => g.items).toList();
+
   int get _columnCount => _leftColCount + dates.length;
-  int get _rowCount => 1 + rows.length;
+  int get _rowCount => 1 + _rows.length;
 
   @override
   Widget build(BuildContext context) {
@@ -65,25 +70,19 @@ class ProductionPeriodDailyTable extends StatelessWidget {
               },
             ),
           ),
-          if (!showWip) _buildFixedRight(),
+          _buildFixedRight(),
         ],
       ),
     );
   }
 
   TableSpan _buildColumnSpan(int column) {
-    final double width;
-    if (column == 0) {
-      width = _colProcessWidth;
-    } else if (column == 1) {
-      width = _colShiftWidth;
-    } else if (showWip && column == 2) {
-      width = _colAverageWidth;
-    } else if (column == _leftColCount - 1) {
-      width = _colItemWidth;
-    } else {
-      width = _dateColWidth;
-    }
+    final width = switch (column) {
+      0 => _colClientWidth,
+      1 => _colProcessWidth,
+      2 => _colItemWidth,
+      _ => _dateColWidth,
+    };
     return TableSpan(
       extent: FixedTableSpanExtent(width),
       foregroundDecoration: const TableSpanDecoration(
@@ -103,71 +102,62 @@ class ProductionPeriodDailyTable extends StatelessWidget {
     );
   }
 
-  // 공정 열은 같은 processId 전체(주+야, 실적+금액 행)를 하나로 병합, 구분/평균 열은
-  // 같은 (processId, shift) 안의 실적행+금액행 2개만 병합. 항목/날짜 열은 병합 없음.
   (int, int)? _cellMerge(TableVicinity vicinity) {
     if (vicinity.row == 0) return null;
-    final row = rows[vicinity.row - 1];
+    final groupIndex = (vicinity.row - 1) ~/ 2;
 
-    if (vicinity.column == 0) {
-      final start = rows.indexWhere((r) => r.processId == row.processId);
-      final span = rows.where((r) => r.processId == row.processId).length;
-      return (start + 1, span);
+    if (vicinity.column == 1) {
+      return (groupIndex * 2 + 1, 2);
     }
-    if (vicinity.column == 1 || (showWip && vicinity.column == 2)) {
-      final start = rows.indexWhere(
-          (r) => r.processId == row.processId && r.shift == row.shift);
-      final span = rows
-          .where((r) => r.processId == row.processId && r.shift == row.shift)
-          .length;
-      return (start + 1, span);
+    if (vicinity.column == 0) {
+      final clientGroupIndex = groups[groupIndex].clientGroupIndex;
+      var startGroup = groupIndex;
+      while (startGroup > 0 &&
+          groups[startGroup - 1].clientGroupIndex == clientGroupIndex) {
+        startGroup--;
+      }
+      var endGroup = groupIndex;
+      while (endGroup < groups.length - 1 &&
+          groups[endGroup + 1].clientGroupIndex == clientGroupIndex) {
+        endGroup++;
+      }
+      final groupSpan = endGroup - startGroup + 1;
+      return (startGroup * 2 + 1, groupSpan * 2);
     }
     return null;
   }
 
   Widget _buildCell(TableVicinity vicinity) {
-    final isHeader = vicinity.row == 0;
-    final column = vicinity.column;
+    if (vicinity.row == 0) return _headerCell(vicinity.column);
 
-    if (isHeader) return _headerCell(column);
+    final rowIndex = vicinity.row - 1;
+    final group = groups[rowIndex ~/ 2];
+    final item = _rows[rowIndex];
 
-    final row = rows[vicinity.row - 1];
-    if (column == 0) return _styledCell(row.processName, wrap: true);
-    if (column == 1) return _styledCell(row.shift);
-    if (showWip && column == 2) return _styledCell(_fmtAverage(row.average));
-    if (column == _leftColCount - 1) return _styledCell(row.itemLabel);
+    if (vicinity.column == 0) return _cell(group.clientName, wrap: true);
+    if (vicinity.column == 1) return _cell(group.processName, wrap: true);
+    if (vicinity.column == 2) return _cell(item.itemLabel);
 
-    final value = row.values[column - _leftColCount];
-    return _styledCell(_fmtValue(value, isAmount: row.itemLabel == '금액'));
+    final value = item.values[vicinity.column - _leftColCount];
+    return _cell(_fmtValue(value, isAmount: item.itemLabel == '금액'));
   }
 
   Widget _headerCell(int column) {
     if (column == 0) {
-      return _styledCell(
-          LabelStore.get('PRODUCTION_TABLE_HEADER_PROCESS', '공정'),
+      return _cell(LabelStore.get('PRODUCTION_TABLE_HEADER_CLIENT', '업체'),
           isHeader: true);
     }
     if (column == 1) {
-      return _styledCell(LabelStore.get('PRODUCTION_TABLE_HEADER_TYPE', '구분'),
+      return _cell(LabelStore.get('PRODUCTION_TABLE_HEADER_PROCESS', '공정'),
           isHeader: true);
     }
-    if (showWip && column == 2) {
-      return _styledCell(LabelStore.get('PRODUCTION_TABLE_HEADER_AVERAGE', '평균'),
+    if (column == 2) {
+      return _cell(LabelStore.get('PRODUCTION_TABLE_HEADER_ITEM', '항목'),
           isHeader: true);
     }
-    if (column == _leftColCount - 1) {
-      return _styledCell(LabelStore.get('PRODUCTION_TABLE_HEADER_ITEM', '항목'),
-          isHeader: true);
-    }
-    final date = dates[column - _leftColCount];
-    return _dateHeaderCell(date);
+    return _dateHeaderCell(dates[column - _leftColCount]);
   }
 
-  static const _saturdayColor = Color(0xFF1565C0);
-  static const _sundayHolidayColor = Color(0xFFD32F2F);
-
-  // 공휴일이 토요일과 겹치면 파랑(토요일)이 아니라 빨강(공휴일)이 우선한다 —
-  // 그래서 공휴일 여부를 요일 체크보다 먼저 확인한다.
   Color? _weekdayColor(DateTime d) {
     if (isHoliday?.call(d) ?? false) return _sundayHolidayColor;
     if (d.weekday == DateTime.sunday) return _sundayHolidayColor;
@@ -198,19 +188,46 @@ class ProductionPeriodDailyTable extends StatelessWidget {
 
   Widget _buildFixedRight() {
     return Container(
-      width: _fixedColWidth,
       decoration: const BoxDecoration(
         border: Border(left: BorderSide(color: _borderColor)),
       ),
+      child: Row(
+        children: [
+          if (!showWip)
+            _fixedColumn(
+              width: _colSumWidth,
+              headerLabel: LabelStore.get('PRODUCTION_TABLE_HEADER_SUM', '합계'),
+              valueOf: (item) => _fmtValue(item.total, isAmount: item.itemLabel == '금액'),
+            ),
+          _fixedColumn(
+            width: _colAverageWidth,
+            headerLabel: LabelStore.get('PRODUCTION_TABLE_HEADER_AVERAGE', '평균'),
+            valueOf: (item) => _fmtAverage(item.average, isAmount: item.itemLabel == '금액'),
+            hasRightBorder: false,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _fixedColumn({
+    required double width,
+    required String headerLabel,
+    required String Function(PeriodDetailItemRow item) valueOf,
+    bool hasRightBorder = true,
+  }) {
+    return Container(
+      width: width,
+      decoration: hasRightBorder
+          ? const BoxDecoration(
+              border: Border(right: BorderSide(color: _borderColor)),
+            )
+          : null,
       child: Column(
-        children: List.generate(_rowCount, (i) {
-          if (i == 0) {
-            return _fixedCell(LabelStore.get('PRODUCTION_TABLE_HEADER_SUM', '합계'),
-                isHeader: true, height: _headerRowHeight);
-          }
-          final row = rows[i - 1];
-          return _fixedCell(_fmtValue(row.total, isAmount: row.itemLabel == '금액'));
-        }),
+        children: [
+          _fixedCell(headerLabel, isHeader: true, height: _headerRowHeight),
+          ..._rows.map((item) => _fixedCell(valueOf(item))),
+        ],
       ),
     );
   }
@@ -236,7 +253,7 @@ class ProductionPeriodDailyTable extends StatelessWidget {
     );
   }
 
-  Widget _styledCell(String text, {bool isHeader = false, bool wrap = false}) {
+  Widget _cell(String text, {bool isHeader = false, bool wrap = false}) {
     return Container(
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -258,5 +275,10 @@ class ProductionPeriodDailyTable extends StatelessWidget {
     return isAmount ? formatManwon(v) : formatNumber(v);
   }
 
-  String _fmtAverage(double? v) => v == null ? '-' : v.toStringAsFixed(1);
+  static final _averageFormat = NumberFormat('#,##0.0');
+
+  String _fmtAverage(double? v, {required bool isAmount}) {
+    if (v == null) return '-';
+    return _averageFormat.format(isAmount ? v / 10000 : v);
+  }
 }

@@ -9,14 +9,12 @@ import 'package:fprs_frontend/core/utils/toast.dart';
 import 'package:fprs_frontend/core/utils/user_storage.dart';
 import 'package:fprs_frontend/features/auth/services/user_service.dart';
 import 'package:fprs_frontend/core/widgets/pill_selector.dart';
-import 'package:fprs_frontend/core/widgets/simple_dropdown_button.dart';
 import 'package:fprs_frontend/features/settings/models/factory_shift.dart';
 import 'package:fprs_frontend/features/settings/models/factory_unit.dart';
 import 'package:fprs_frontend/features/settings/services/factory_mapping_service.dart';
 import 'package:fprs_frontend/features/settings/services/factory_service.dart';
 import 'package:fprs_frontend/core/widgets/calendar_picker.dart';
 import 'package:fprs_frontend/core/widgets/date_navigator.dart';
-import 'package:fprs_frontend/core/widgets/date_range_row.dart';
 import 'package:fprs_frontend/core/widgets/segmented_toggle.dart';
 import 'package:fprs_frontend/features/client/models/factory_client.dart';
 import 'package:fprs_frontend/features/client/services/client_service.dart';
@@ -25,7 +23,7 @@ import 'package:fprs_frontend/features/production/models/production_overview.dar
 import 'package:fprs_frontend/features/production/services/production_service.dart';
 import 'package:fprs_frontend/features/production/utils/production_grouping.dart';
 import 'package:fprs_frontend/features/production/utils/production_overview_grouping.dart';
-import 'package:fprs_frontend/features/production/utils/production_period_daily_grouping.dart';
+import 'package:fprs_frontend/features/production/utils/production_period_detail_grouping.dart';
 import 'package:fprs_frontend/features/production/utils/production_period_grouping.dart';
 import 'package:fprs_frontend/features/production/utils/production_scaffold.dart';
 import 'package:fprs_frontend/core/widgets/section_card.dart';
@@ -36,7 +34,8 @@ import 'package:fprs_frontend/features/production/widgets/production_overview_su
 import 'package:fprs_frontend/features/production/widgets/production_process_summary_sheet.dart';
 import 'package:fprs_frontend/features/production/widgets/production_client_summary_sheet.dart';
 import 'package:fprs_frontend/features/production/widgets/production_overview_table.dart';
-import 'package:fprs_frontend/features/production/widgets/production_period_daily_table.dart';
+import 'package:fprs_frontend/features/production/widgets/production_period_detail_process_table.dart';
+import 'package:fprs_frontend/features/production/widgets/production_period_detail_client_table.dart';
 import 'package:fprs_frontend/features/production/widgets/production_period_table.dart';
 import 'package:fprs_frontend/features/unit/models/unit.dart';
 import 'package:fprs_frontend/features/unit/utils/unit_order.dart';
@@ -98,15 +97,21 @@ class _ProductionScreenState extends State<ProductionScreen> {
   bool _overviewLoading = false;
   String? _overviewError;
 
-  // 기간별(일별) 전용 — 업체/단위는 드롭다운으로 한 조합만 고정 선택(실적비교와 동일 원칙)
-  int? _periodDailyClientId;
-  int? _periodDailyUnitId;
-  bool _periodDailyShowWip = false;
-  // 시작/종료를 각각 독립적으로 고름(실적비교의 A/B 날짜 선택과 동일 패턴) — 기간별(누적)의
-  // 범위선택 캘린더(_overviewRangeStart/End)와 달리 시작일=종료일(하루)도 자연스럽게 가능함
+  // 기간별(요약) 전용 — _selectedDate(실적등록과 공유)와 완전히 분리된 자기만의 날짜/데이터.
+  // 공유했다면 실적등록에서 고른 날짜에 종속되어 "디폴트 오늘-1일"을 보장할 수 없었음.
+  String _daySummaryDate = DateTime.now()
+      .subtract(const Duration(days: 1))
+      .toIso8601String()
+      .substring(0, 10);
+  List<Production> _allDaySummaryProductions = [];
+  ProductionOverview? _daySummaryOverviewData;
+  bool _daySummaryLoading = false;
+  String? _daySummaryError;
+
   DateTime? _periodDailyRangeStart;
   DateTime? _periodDailyRangeEnd;
-  List<Production> _periodDailyProductions = [];
+  List<Production> _allPeriodDailyProductions = [];
+  bool _periodDailyShowWip = false;
   bool _periodDailyLoading = false;
   String? _periodDailyError;
 
@@ -137,6 +142,14 @@ class _ProductionScreenState extends State<ProductionScreen> {
 
   List<Production> get _productions =>
       _allProductions.where((p) => p.factoryId == _selectedFactoryId).toList();
+
+  List<Production> get _daySummaryProductions => _allDaySummaryProductions
+      .where((p) => p.factoryId == _selectedFactoryId)
+      .toList();
+
+  List<Production> get _periodDailyProductions => _allPeriodDailyProductions
+      .where((p) => p.factoryId == _selectedFactoryId)
+      .toList();
 
   List<ProductionMonthlyCumulative> get _monthlyCumulative => _allMonthlyCumulative
       .where((m) => m.factoryId == _selectedFactoryId)
@@ -288,35 +301,26 @@ class _ProductionScreenState extends State<ProductionScreen> {
     _loadOverviewOrPeriodDaily();
   }
 
-  void _navigateOverviewDay(int direction) {
-    setState(() => _selectedDate = _stepDateStr(_selectedDate, direction));
-    _loadProductions();
-    _loadOverview();
+  void _navigateDaySummary(int direction) {
+    setState(() => _daySummaryDate = _stepDateStr(_daySummaryDate, direction));
+    _loadDaySummary();
   }
 
-  Future<void> _onOverviewDayCalendarTap() async {
-    final picked = await _pickSingleDate(_selectedDate);
+  Future<void> _onDaySummaryCalendarTap() async {
+    final picked = await _pickSingleDate(_daySummaryDate);
     if (picked != null) {
-      setState(() => _selectedDate = picked);
-      _loadProductions();
-      _loadOverview();
+      setState(() => _daySummaryDate = picked);
+      _loadDaySummary();
     }
   }
 
   Future<void> _loadOverview() async {
     final factoryId = _selectedFactoryId;
     if (factoryId == null) return;
+    if (_overviewRangeStart == null || _overviewRangeEnd == null) return;
 
-    final String dateFrom;
-    final String dateTo;
-    if (_viewMode == 'day') {
-      dateFrom = _selectedDate;
-      dateTo = _selectedDate;
-    } else {
-      if (_overviewRangeStart == null || _overviewRangeEnd == null) return;
-      dateFrom = _dateStr(_overviewRangeStart!);
-      dateTo = _dateStr(_overviewRangeEnd!);
-    }
+    final dateFrom = _dateStr(_overviewRangeStart!);
+    final dateTo = _dateStr(_overviewRangeEnd!);
 
     setState(() {
       _overviewLoading = true;
@@ -336,16 +340,51 @@ class _ProductionScreenState extends State<ProductionScreen> {
     }
   }
 
-  Future<void> _loadOverviewOrPeriodDaily() =>
-      _viewMode == 'periodDaily' ? _loadPeriodDaily() : _loadOverview();
+  Future<void> _loadDaySummary() async {
+    final factoryId = _selectedFactoryId;
+    if (factoryId == null) return;
 
-  int? _defaultPeriodDailyClientId(List<FactoryClient> clients) =>
-      clients.isEmpty ? null : clients.first.clientId;
+    setState(() {
+      _daySummaryLoading = true;
+      _daySummaryError = null;
+    });
+    try {
+      final results = await Future.wait([
+        _productionService.getProductionOverview(
+          factoryId: factoryId,
+          dateFrom: _daySummaryDate,
+          dateTo: _daySummaryDate,
+        ),
+        _productionService.getProductionList(
+          date: _daySummaryDate,
+          periodType: 'DAY',
+        ),
+      ]);
+      final productionResult = results[1]
+          as ({
+            List<Production> productions,
+            List<ProductionMonthlyCumulative> monthlyCumulative,
+          });
+      setState(() {
+        _daySummaryOverviewData = results[0] as ProductionOverview;
+        _allDaySummaryProductions = productionResult.productions;
+      });
+    } catch (e) {
+      setState(() => _daySummaryError = e.toString());
+    } finally {
+      setState(() => _daySummaryLoading = false);
+    }
+  }
 
-  int? _defaultPeriodDailyUnitId(List<Unit> units) {
-    if (units.isEmpty) return null;
-    final m2 = units.where((u) => u.name.toUpperCase() == 'M2');
-    return m2.isNotEmpty ? m2.first.id : units.first.id;
+  Future<void> _loadOverviewOrPeriodDaily() {
+    switch (_viewMode) {
+      case 'day':
+        return _loadDaySummary();
+      case 'periodDaily':
+        return _loadPeriodDaily();
+      default:
+        return _loadOverview();
+    }
   }
 
   List<String> _dateRangeList(DateTime start, DateTime end) {
@@ -353,52 +392,38 @@ class _ProductionScreenState extends State<ProductionScreen> {
     return List.generate(days + 1, (i) => _dateStr(start.add(Duration(days: i))));
   }
 
-  // 시작일 캘린더를 열 때, 이미 종료일이 골라져 있으면 그 종료일 기준 앞으로 30일
-  // 안쪽만 선택 가능하게 막는다(서버 31일 제한, 양 끝 포함). 종료일이 없으면 제한 없음.
-  bool _isPeriodDailyStartSelectable(DateTime day) {
-    final end = _periodDailyRangeEnd;
-    if (end == null) return true;
-    final diff = day.difference(end).inDays;
-    return diff <= 0 && diff >= -30;
+  Future<void> _onPeriodDailyCalendarTap() async {
+    final initial = (_periodDailyRangeStart != null && _periodDailyRangeEnd != null)
+        ? DateTimeRange(start: _periodDailyRangeStart!, end: _periodDailyRangeEnd!)
+        : null;
+    final picked = await showCalendarRangePicker(context, initial);
+    if (picked != null) {
+      setState(() {
+        _periodDailyRangeStart = picked.start;
+        _periodDailyRangeEnd = picked.end;
+      });
+      _loadPeriodDaily();
+    }
   }
 
-  bool _isPeriodDailyEndSelectable(DateTime day) {
+  String _periodDailyDisplayLabel() {
+    if (_periodDailyRangeStart == null || _periodDailyRangeEnd == null) {
+      return '기간을 선택하세요';
+    }
+    String fmt(DateTime d) =>
+        '${d.year}.${d.month.toString().padLeft(2, '0')}.${d.day.toString().padLeft(2, '0')}';
+    return '${fmt(_periodDailyRangeStart!)} ~ ${fmt(_periodDailyRangeEnd!)}';
+  }
+
+  void _navigatePeriodDailyRange(int direction) {
     final start = _periodDailyRangeStart;
-    if (start == null) return true;
-    final diff = day.difference(start).inDays;
-    return diff >= 0 && diff <= 30;
-  }
+    final end = _periodDailyRangeEnd;
+    if (start == null || end == null) return;
 
-  Future<void> _pickPeriodDailyStart() async {
-    final picked = await showCalendarPicker(
-      context,
-      _periodDailyRangeStart ?? _periodDailyRangeEnd ?? DateTime.now(),
-      enabledDayPredicate: _isPeriodDailyStartSelectable,
-    );
-    if (picked == null) return;
+    final spanDays = end.difference(start).inDays + 1;
     setState(() {
-      _periodDailyRangeStart = picked;
-      final end = _periodDailyRangeEnd;
-      if (end != null && !_isPeriodDailyEndSelectable(end)) {
-        _periodDailyRangeEnd = null;
-      }
-    });
-    _loadPeriodDaily();
-  }
-
-  Future<void> _pickPeriodDailyEnd() async {
-    final picked = await showCalendarPicker(
-      context,
-      _periodDailyRangeEnd ?? _periodDailyRangeStart ?? DateTime.now(),
-      enabledDayPredicate: _isPeriodDailyEndSelectable,
-    );
-    if (picked == null) return;
-    setState(() {
-      _periodDailyRangeEnd = picked;
-      final start = _periodDailyRangeStart;
-      if (start != null && !_isPeriodDailyStartSelectable(start)) {
-        _periodDailyRangeStart = null;
-      }
+      _periodDailyRangeStart = start.add(Duration(days: direction * spanDays));
+      _periodDailyRangeEnd = end.add(Duration(days: direction * spanDays));
     });
     _loadPeriodDaily();
   }
@@ -408,13 +433,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
     final rangeEnd = _periodDailyRangeEnd;
     if (rangeStart == null || rangeEnd == null) return;
 
-    final clientId = _periodDailyClientId ?? _defaultPeriodDailyClientId(_factoryClients);
-    final unitId = _periodDailyUnitId ?? _defaultPeriodDailyUnitId(_units);
-    if (clientId == null) return;
-
     setState(() {
-      _periodDailyClientId = clientId;
-      _periodDailyUnitId = unitId;
       _periodDailyLoading = true;
       _periodDailyError = null;
     });
@@ -422,10 +441,8 @@ class _ProductionScreenState extends State<ProductionScreen> {
       final result = await _productionService.getProductionListForDateRange(
         dateFrom: _dateStr(rangeStart),
         dateTo: _dateStr(rangeEnd),
-        clientId: clientId,
-        unitId: unitId,
       );
-      setState(() => _periodDailyProductions = result.productions);
+      setState(() => _allPeriodDailyProductions = result.productions);
     } catch (e) {
       setState(() => _periodDailyError = e.toString());
     } finally {
@@ -522,10 +539,6 @@ class _ProductionScreenState extends State<ProductionScreen> {
     setState(() {
       _selectedFactoryIndex = index;
       _selectedCardIndex = 0;
-      // 공장이 바뀌면 이전 공장 기준으로 고른 업체/단위는 더 이상 안 맞을 수 있어
-      // 초기화 — _loadPeriodDaily()가 새 공장 기준 기본값으로 다시 채운다.
-      _periodDailyClientId = null;
-      _periodDailyUnitId = null;
     });
     _factoryService.getFactoryShift(_availableFactories[index].factoryId).then((shift) {
       if (mounted) setState(() => _factoryShift = shift);
@@ -752,7 +765,6 @@ class _ProductionScreenState extends State<ProductionScreen> {
                             onChanged: (value) {
                               _exitSelectionMode();
                               setState(() {
-                                // 기간별(누적)/기간별(일별)에서 넘어오는 거면 방금 보던 범위의 종료일로 이어줌
                                 if (_category == 'read' &&
                                     (_viewMode == 'period' || _viewMode == 'periodDaily') &&
                                     _overviewRangeEnd != null) {
@@ -794,28 +806,25 @@ class _ProductionScreenState extends State<ProductionScreen> {
                           const SizedBox(width: 6),
                           SegmentedToggle(
                             options: [
-                              LabelStore.get('PRODUCTION_MENU_TITLE_PERIOD_CUM', '기간별(누적)'),
-                              LabelStore.get('PRODUCTION_MENU_TITLE_PERIOD', '기간별(일별)'),
+                              LabelStore.get('PRODUCTION_MENU_TITLE_DAILY', '일일'),
+                              LabelStore.get('PRODUCTION_MENU_TITLE_PERIOD_SUMMARY', '기간별(요약)'),
+                              LabelStore.get('PRODUCTION_MENU_TITLE_PERIOD_DETAIL', '기간별(상세)'),
                             ],
-                            // 'day'(옛 일별보기)는 버튼에서 뺐을 뿐 코드는 그대로 둠 — 나중에 되살릴 수 있어서
-                            // 새 값과 절대 겹치지 않게 'periodDaily'로 새로 만듦
-                            values: const ['period', 'periodDaily'],
+                            values: const ['day', 'period', 'periodDaily'],
                             // 실적등록 모드일 땐 마찬가지로 빈 문자열을 줘서 무색으로 만듦
                             selected: _category == 'read' ? _viewMode : '',
                             activeColor: Colors.green, // 기존 일/전체보기 토글에 쓰던 색 그대로
                             onChanged: (value) {
                               _exitSelectionMode();
                               setState(() {
-                                // 기간별(누적)으로 가면, 방금 보던 날짜를 마지막 날로 하는
-                                // 이번 달 1일~해당 날짜 범위로 다시 계산.
                                 if (value == 'period') {
-                                  final end = DateTime.parse(_selectedDate);
-                                  _overviewRangeEnd = end;
-                                  _overviewRangeStart = DateTime(end.year, end.month, 1);
+                                  final today = DateTime.now();
+                                  final monthStart = DateTime(today.year, today.month, 1);
+                                  final yesterday = today.subtract(const Duration(days: 1));
+                                  _overviewRangeStart = monthStart;
+                                  _overviewRangeEnd =
+                                      yesterday.isBefore(monthStart) ? monthStart : yesterday;
                                 }
-                                // 기간별(일별)은 필터 카드 안의 시작/종료 칩으로 독립적으로
-                                // 고르는 방식이라 이미 골라둔 값이 있으면 그대로 유지하고,
-                                // 처음 들어오는 거면 오늘~오늘을 기본값으로 채워준다.
                                 if (value == 'periodDaily' &&
                                     _periodDailyRangeStart == null &&
                                     _periodDailyRangeEnd == null) {
@@ -834,31 +843,36 @@ class _ProductionScreenState extends State<ProductionScreen> {
                     ),
                   ),
                 ),
-                // 기간별(일별)은 날짜 선택이 필터 카드 안의 시작/종료 칩으로 옮겨가서
-                // 이 상단 네비게이터가 더 이상 필요 없음
-                if (!(_category == 'read' && _viewMode == 'periodDaily'))
-                  DateNavigator(
-                    label: _category == 'read'
-                        ? (_viewMode == 'day'
-                            ? _singleDateLabel(_selectedDate)
-                            : _overviewDisplayLabel())
-                        : _displayLabel(),
-                    onPrevious: _category == 'read'
-                        ? (_viewMode == 'day'
-                            ? () => _navigateOverviewDay(-1)
-                            : () => _navigateOverviewRange(-1))
-                        : () => _navigateDate(-1),
-                    onNext: _category == 'read'
-                        ? (_viewMode == 'day'
-                            ? () => _navigateOverviewDay(1)
-                            : () => _navigateOverviewRange(1))
-                        : () => _navigateDate(1),
-                    onCalendarTap: _category == 'read'
-                        ? (_viewMode == 'day'
-                            ? _onOverviewDayCalendarTap
-                            : _onOverviewCalendarTap)
-                        : _onCalendarTap,
-                  ),
+                DateNavigator(
+                  label: _category == 'read'
+                      ? (_viewMode == 'day'
+                          ? _singleDateLabel(_daySummaryDate)
+                          : _viewMode == 'periodDaily'
+                              ? _periodDailyDisplayLabel()
+                              : _overviewDisplayLabel())
+                      : _displayLabel(),
+                  onPrevious: _category == 'read'
+                      ? (_viewMode == 'day'
+                          ? () => _navigateDaySummary(-1)
+                          : _viewMode == 'periodDaily'
+                              ? () => _navigatePeriodDailyRange(-1)
+                              : () => _navigateOverviewRange(-1))
+                      : () => _navigateDate(-1),
+                  onNext: _category == 'read'
+                      ? (_viewMode == 'day'
+                          ? () => _navigateDaySummary(1)
+                          : _viewMode == 'periodDaily'
+                              ? () => _navigatePeriodDailyRange(1)
+                              : () => _navigateOverviewRange(1))
+                      : () => _navigateDate(1),
+                  onCalendarTap: _category == 'read'
+                      ? (_viewMode == 'day'
+                          ? _onDaySummaryCalendarTap
+                          : _viewMode == 'periodDaily'
+                              ? _onPeriodDailyCalendarTap
+                              : _onOverviewCalendarTap)
+                      : _onCalendarTap,
+                ),
               ],
             ),
           ),
@@ -1126,12 +1140,12 @@ class _ProductionScreenState extends State<ProductionScreen> {
 
   Widget _buildDayOverviewSection() {
     if (_availableFactories.isEmpty) return _buildNoFactoryState();
-    if (_overviewLoading) return const LoadingIndicator();
-    if (_overviewError != null) {
-      return Center(child: Text('오류: $_overviewError'));
+    if (_daySummaryLoading) return const LoadingIndicator();
+    if (_daySummaryError != null) {
+      return Center(child: Text('오류: $_daySummaryError'));
     }
 
-    final data = _overviewData;
+    final data = _daySummaryOverviewData;
     if (data == null || data.rows.isEmpty) {
       return Center(
         child: Text(
@@ -1153,7 +1167,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
     // 값 칸만 '-'로 표시한다 ([공정별 실적 합계]와 동일한 원칙 — 공장 설정(_units에
     // M2 매핑 여부)이 아니라 실제 데이터 존재 여부로 표시 여부를 정한다).
     final dayEntries = buildClientSummaryDisplayFromProductions(
-      _productions,
+      _daySummaryProductions,
       clientNames: clientNames,
       processNames: processNames,
       unitNames: unitNames,
@@ -1179,38 +1193,20 @@ class _ProductionScreenState extends State<ProductionScreen> {
     );
   }
 
-  // 기간별(일별) 전용 진입점. appbar(DateNavigator)는 기간별(누적)과 공유하지만,
-  // 본문은 업체/단위 드롭다운 + 실적/재공 토글(필터 카드) + 날짜별 컬럼 그리드로
-  // 완전히 별개 구성 ([[project_period_view_daily_columns]] v10 설계).
   Widget _buildPeriodDailySection() {
     if (_availableFactories.isEmpty) return _buildNoFactoryState();
-
-    final clients = _factoryClients;
-    final units = _units;
-    if (clients.isEmpty || units.isEmpty) return _buildEmptyState();
-
-    final selectedClient = clients.firstWhere(
-      (c) => c.clientId == _periodDailyClientId,
-      orElse: () => clients.first,
-    );
-    final selectedUnit = units.firstWhere(
-      (u) => u.id == _periodDailyUnitId,
-      orElse: () => units.first,
-    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(8, 16, 8, 80),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildPeriodDailyFilterCard(clients, units, selectedClient, selectedUnit),
-          const SizedBox(height: 12),
           if (_periodDailyRangeStart == null || _periodDailyRangeEnd == null)
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 40),
                 child: Text(
-                  '시작일과 종료일을 선택하세요',
+                  '상단 캘린더 아이콘을 눌러 기간을 선택하세요',
                   style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                 ),
               ),
@@ -1229,102 +1225,87 @@ class _ProductionScreenState extends State<ProductionScreen> {
     );
   }
 
-  String _periodDailyChipLabel(DateTime? d) {
-    if (d == null) return '날짜 선택';
-    return '${(d.year % 100).toString().padLeft(2, '0')}.'
-        '${d.month.toString().padLeft(2, '0')}.'
-        '${d.day.toString().padLeft(2, '0')}';
-  }
-
-  Widget _buildPeriodDailyFilterCard(
-    List<FactoryClient> clients,
-    List<Unit> units,
-    FactoryClient selectedClient,
-    Unit selectedUnit,
-  ) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              SimpleDropdownButton<FactoryClient>(
-                items: clients,
-                selectedItem: selectedClient,
-                labelOf: (c) => c.clientNickname ?? c.clientName,
-                onSelected: (c) {
-                  setState(() => _periodDailyClientId = c.clientId);
-                  _loadPeriodDaily();
-                },
-              ),
-              const SizedBox(width: 8),
-              SimpleDropdownButton<Unit>(
-                items: units,
-                selectedItem: selectedUnit,
-                labelOf: (u) => u.name,
-                onSelected: (u) {
-                  setState(() => _periodDailyUnitId = u.id);
-                  _loadPeriodDaily();
-                },
-              ),
-              const Spacer(),
-              SegmentedToggle(
-                options: const ['실적', '재공'],
-                values: const ['result', 'wip'],
-                selected: _periodDailyShowWip ? 'wip' : 'result',
-                activeColor: Colors.green,
-                onChanged: (value) => setState(() => _periodDailyShowWip = value == 'wip'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          DateRangeRow(
-            startLabel: _periodDailyChipLabel(_periodDailyRangeStart),
-            endLabel: _periodDailyChipLabel(_periodDailyRangeEnd),
-            onTapStart: _pickPeriodDailyStart,
-            onTapEnd: _pickPeriodDailyEnd,
-            startDotColor: Colors.grey,
-            endDotColor: Colors.grey,
-            separator: Text(
-              '~',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey[500]),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildPeriodDailyResultCard() {
     final dates = _dateRangeList(_periodDailyRangeStart!, _periodDailyRangeEnd!);
-    final rows = groupProductionsForPeriodDaily(
+    final processNames = {
+      for (final p in _factoryProcesses) p.processId: p.processNickname ?? p.processName,
+    };
+    final clientNames = {
+      for (final c in _factoryClients) c.clientId: c.clientNickname ?? c.clientName,
+    };
+
+    final processGroups = groupPeriodDetailByProcess(
       _periodDailyProductions,
-      _factoryProcesses,
       dates,
-      hasNightShift: _factoryShift?.hasNightShift ?? true,
+      processNames: processNames,
+      showWip: _periodDailyShowWip,
+    );
+    final clientGroups = groupPeriodDetailByClient(
+      _periodDailyProductions,
+      dates,
+      clientNames: clientNames,
+      processNames: processNames,
       showWip: _periodDailyShowWip,
     );
 
     return SectionCard(
       title: _availableFactories[_selectedFactoryIndex].factoryName,
-      child: rows.isEmpty
-          ? const Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
-              child: Center(child: Text('선택한 기간에 데이터가 없습니다')),
-            )
-          : ProductionPeriodDailyTable(
-              rows: rows,
-              dates: dates,
-              showWip: _periodDailyShowWip,
-              isHoliday: isKrHoliday,
+      titleTrailing: Align(
+        alignment: Alignment.centerRight,
+        child: SegmentedToggle(
+          options: const ['실적', '재공'],
+          values: const ['result', 'wip'],
+          selected: _periodDailyShowWip ? 'wip' : 'result',
+          activeColor: Colors.green,
+          onChanged: (value) => setState(() => _periodDailyShowWip = value == 'wip'),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: Text(
+              LabelStore.get('PRODUCTION_OVERVIEW_SUMMARY_TITLE_PROCESS', '[공정별 실적 합계]'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
             ),
+          ),
+          const SizedBox(height: 8),
+          processGroups.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(child: Text('선택한 기간에 데이터가 없습니다')),
+                )
+              : ProductionPeriodDetailProcessTable(
+                  groups: processGroups,
+                  dates: dates,
+                  showWip: _periodDailyShowWip,
+                  isHoliday: isKrHoliday,
+                ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: Text(
+              LabelStore.get('PRODUCTION_OVERVIEW_SUMMARY_TITLE_CLIENT', '[업체별 실적 합계]'),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 8),
+          clientGroups.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: Center(child: Text('선택한 기간에 데이터가 없습니다')),
+                )
+              : ProductionPeriodDetailClientTable(
+                  groups: clientGroups,
+                  dates: dates,
+                  showWip: _periodDailyShowWip,
+                  isHoliday: isKrHoliday,
+                ),
+        ],
+      ),
     );
   }
 
@@ -1398,7 +1379,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
     // 아직 의미가 정리되지 않아 기간별보기에는 노출하지 않는다.
     final summaryEntries = _viewMode == 'day'
         ? buildProcessSummaryDisplayFromProductions(
-            _productions,
+            _daySummaryProductions,
             processNames: processNames,
             unitNames: unitNames,
             unitOrder: unitOrder,
@@ -1411,7 +1392,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
           );
     final clientSummaryEntries = _viewMode == 'day'
         ? buildClientSummaryDisplayFromProductions(
-            _productions,
+            _daySummaryProductions,
             clientNames: clientNames,
             processNames: processNames,
             unitNames: unitNames,
