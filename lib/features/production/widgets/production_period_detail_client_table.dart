@@ -275,7 +275,7 @@ class ProductionPeriodDetailClientTable extends StatelessWidget {
     return isAmount ? formatManwon(v) : formatNumber(v);
   }
 
-  static final _averageFormat = NumberFormat('#,##0.0');
+  static final _averageFormat = NumberFormat('#,##0');
 
   String _fmtAverage(double? v, {required bool isAmount}) {
     if (v == null) return '-';
