@@ -50,19 +50,28 @@ double? _sumOf(List<double?> values) {
   return present.reduce((a, b) => a + b);
 }
 
-double? _averageOf(List<double?> values) {
-  final present = values.whereType<double>().toList();
-  if (present.isEmpty) return null;
-  final avg = present.reduce((a, b) => a + b) / present.length;
+double? _averageOf(List<double?> values, int operatingDayCount) {
+  final sum = _sumOf(values);
+  if (sum == null || operatingDayCount == 0) return null;
+  final avg = sum / operatingDayCount;
   return (avg * 10).round() / 10;
 }
 
-PeriodDetailItemRow _buildItemRow(String label, List<double?> values) {
+int _countOperatingDays(List<Production> matches, List<String> dates) {
+  final datesWithRecords = matches.map((p) => p.date).toSet();
+  return dates.where(datesWithRecords.contains).length;
+}
+
+PeriodDetailItemRow _buildItemRow(
+  String label,
+  List<double?> values,
+  int operatingDayCount,
+) {
   return PeriodDetailItemRow(
     itemLabel: label,
     values: values,
     total: _sumOf(values),
-    average: _averageOf(values),
+    average: _averageOf(values, operatingDayCount),
   );
 }
 
@@ -78,6 +87,7 @@ List<PeriodDetailProcessGroup> groupPeriodDetailByProcess(
 
   bool hasValue(Production p) => (quantityOf(p) ?? 0) != 0;
   final matches = productions.where(hasValue).toList();
+  final operatingDayCount = _countOperatingDays(matches, dates);
 
   final m2ResultByKey = <String, double>{};
   final amountByKey = <String, double>{};
@@ -107,8 +117,8 @@ List<PeriodDetailProcessGroup> groupPeriodDetailByProcess(
       processId: processId,
       processName: processName,
       items: [
-        _buildItemRow(showWip ? '재공' : '실적', resultValues),
-        _buildItemRow('금액', amountValues),
+        _buildItemRow(showWip ? '재공' : '실적', resultValues, operatingDayCount),
+        _buildItemRow('금액', amountValues, operatingDayCount),
       ],
     );
   }).toList();
@@ -127,6 +137,7 @@ List<PeriodDetailClientProcessGroup> groupPeriodDetailByClient(
 
   bool hasValue(Production p) => (quantityOf(p) ?? 0) != 0;
   final matches = productions.where(hasValue).toList();
+  final operatingDayCount = _countOperatingDays(matches, dates);
 
   final m2ResultByKey = <String, double>{};
   final amountByKey = <String, double>{};
@@ -180,8 +191,8 @@ List<PeriodDetailClientProcessGroup> groupPeriodDetailByClient(
       processName: processName,
       clientGroupIndex: clientGroupIdx,
       items: [
-        _buildItemRow(showWip ? '재공' : '실적', resultValues),
-        _buildItemRow('금액', amountValues),
+        _buildItemRow(showWip ? '재공' : '실적', resultValues, operatingDayCount),
+        _buildItemRow('금액', amountValues, operatingDayCount),
       ],
     ));
   }

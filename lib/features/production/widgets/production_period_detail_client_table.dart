@@ -30,6 +30,7 @@ class ProductionPeriodDetailClientTable extends StatelessWidget {
   static const _leftColCount = 3;
   static const _borderColor = Color(0xFFE0E0E0);
   static const _headerColor = Color(0xFFF5F5F5);
+  static final _sumColor = Colors.blue.withValues(alpha: 0.1);
   static const _weekdayNames = ['월', '화', '수', '목', '금', '토', '일'];
   static const _saturdayColor = Color(0xFF1565C0);
   static const _sundayHolidayColor = Color(0xFFD32F2F);
@@ -37,8 +38,12 @@ class ProductionPeriodDetailClientTable extends StatelessWidget {
   List<PeriodDetailItemRow> get _rows =>
       groups.expand((g) => g.items).toList();
 
-  int get _columnCount => _leftColCount + dates.length;
+  int get _sumColCount => showWip ? 0 : 1;
+  int get _columnCount => _leftColCount + dates.length + _sumColCount;
   int get _rowCount => 1 + _rows.length;
+
+  bool _isSumColumn(int column) =>
+      _sumColCount > 0 && column == _leftColCount + dates.length;
 
   @override
   Widget build(BuildContext context) {
@@ -81,6 +86,7 @@ class ProductionPeriodDetailClientTable extends StatelessWidget {
       0 => _colClientWidth,
       1 => _colProcessWidth,
       2 => _colItemWidth,
+      _ when _isSumColumn(column) => _colSumWidth,
       _ => _dateColWidth,
     };
     return TableSpan(
@@ -138,6 +144,11 @@ class ProductionPeriodDetailClientTable extends StatelessWidget {
     if (vicinity.column == 1) return _cell(group.processName, wrap: true);
     if (vicinity.column == 2) return _cell(item.itemLabel);
 
+    if (_isSumColumn(vicinity.column)) {
+      return _cell(_fmtValue(item.total, isAmount: item.itemLabel == '금액'),
+          background: _sumColor);
+    }
+
     final value = item.values[vicinity.column - _leftColCount];
     return _cell(_fmtValue(value, isAmount: item.itemLabel == '금액'));
   }
@@ -153,6 +164,10 @@ class ProductionPeriodDetailClientTable extends StatelessWidget {
     }
     if (column == 2) {
       return _cell(LabelStore.get('PRODUCTION_TABLE_HEADER_ITEM', '항목'),
+          isHeader: true);
+    }
+    if (_isSumColumn(column)) {
+      return _cell(LabelStore.get('PRODUCTION_PERIOD_DETAIL_HEADER_SUM', '합계'),
           isHeader: true);
     }
     return _dateHeaderCell(dates[column - _leftColCount]);
@@ -188,45 +203,16 @@ class ProductionPeriodDetailClientTable extends StatelessWidget {
 
   Widget _buildFixedRight() {
     return Container(
+      width: _colAverageWidth,
       decoration: const BoxDecoration(
         border: Border(left: BorderSide(color: _borderColor)),
       ),
-      child: Row(
-        children: [
-          if (!showWip)
-            _fixedColumn(
-              width: _colSumWidth,
-              headerLabel: LabelStore.get('PRODUCTION_TABLE_HEADER_SUM', '합계'),
-              valueOf: (item) => _fmtValue(item.total, isAmount: item.itemLabel == '금액'),
-            ),
-          _fixedColumn(
-            width: _colAverageWidth,
-            headerLabel: LabelStore.get('PRODUCTION_TABLE_HEADER_AVERAGE', '평균'),
-            valueOf: (item) => _fmtAverage(item.average, isAmount: item.itemLabel == '금액'),
-            hasRightBorder: false,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _fixedColumn({
-    required double width,
-    required String headerLabel,
-    required String Function(PeriodDetailItemRow item) valueOf,
-    bool hasRightBorder = true,
-  }) {
-    return Container(
-      width: width,
-      decoration: hasRightBorder
-          ? const BoxDecoration(
-              border: Border(right: BorderSide(color: _borderColor)),
-            )
-          : null,
       child: Column(
         children: [
-          _fixedCell(headerLabel, isHeader: true, height: _headerRowHeight),
-          ..._rows.map((item) => _fixedCell(valueOf(item))),
+          _fixedCell(LabelStore.get('PRODUCTION_TABLE_HEADER_AVERAGE', '평균'),
+              isHeader: true, height: _headerRowHeight),
+          ..._rows.map((item) => _fixedCell(
+              _fmtAverage(item.average, isAmount: item.itemLabel == '금액'))),
         ],
       ),
     );
@@ -238,7 +224,7 @@ class ProductionPeriodDetailClientTable extends StatelessWidget {
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
-        color: isHeader ? _headerColor : null,
+        color: _headerColor,
         border: const Border(bottom: BorderSide(color: _borderColor)),
       ),
       child: Text(
@@ -253,8 +239,14 @@ class ProductionPeriodDetailClientTable extends StatelessWidget {
     );
   }
 
-  Widget _cell(String text, {bool isHeader = false, bool wrap = false}) {
+  Widget _cell(
+    String text, {
+    bool isHeader = false,
+    bool wrap = false,
+    Color? background,
+  }) {
     return Container(
+      color: background,
       alignment: Alignment.center,
       padding: const EdgeInsets.symmetric(horizontal: 2),
       child: Text(
