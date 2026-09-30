@@ -4,6 +4,7 @@ import 'package:fprs_frontend/core/utils/label_store.dart';
 import 'package:fprs_frontend/core/utils/number_format.dart';
 import 'package:fprs_frontend/features/production/utils/production_overview_grouping.dart';
 import 'package:fprs_frontend/features/production/widgets/table_header_button.dart';
+import 'package:fprs_frontend/core/utils/summary_unit.dart';
 
 // [업체별 실적 합계] 일별보기 표. M2 컬럼만 기본으로 보여주고, PNL/LOT 등 나머지
 // 단위는 '업체' 헤더 버튼 → 상세 바텀시트에서 보여준다 ([공정별 실적 합계]와 동일한 원칙).
@@ -36,15 +37,15 @@ class ProductionM2DayTable extends StatelessWidget {
   int get _columnCount => 2 + _valueColCount;
   int get _rowCount => 1 + entries.length;
 
-  double? _m2Result(ClientSummaryDisplayEntry entry) {
+  double? _summaryResult(ClientSummaryDisplayEntry entry) {
     final match =
-        entry.unitResults.where((u) => u.unitName.toUpperCase() == 'M2');
+        entry.unitResults.where((u) => isUnitNamed(u.unitName, unitName));
     return match.isEmpty ? null : match.first.result;
   }
 
-  double? _m2Wip(ClientSummaryDisplayEntry entry) {
+  double? _summaryWip(ClientSummaryDisplayEntry entry) {
     final match =
-        entry.unitResults.where((u) => u.unitName.toUpperCase() == 'M2');
+        entry.unitResults.where((u) => isUnitNamed(u.unitName, unitName));
     return match.isEmpty ? null : match.first.wip;
   }
 
@@ -140,8 +141,8 @@ class ProductionM2DayTable extends StatelessWidget {
     final wipColumn = showAmount ? 4 : 3;
     if (column == 0) return _cell(entry.clientName);
     if (column == 1) return _cell(entry.processName);
-    if (column == 2) return _cell(_fmt(_m2Result(entry)));
-    if (column == wipColumn) return _cell(_fmt(_m2Wip(entry)));
+    if (column == 2) return _cell(_fmt(_summaryResult(entry)));
+    if (column == wipColumn) return _cell(_fmt(_summaryWip(entry)));
     return _cell(entry.totalAmount == null ? '-' : formatManwon(entry.totalAmount));
   }
 

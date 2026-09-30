@@ -4,12 +4,14 @@ import 'package:fprs_frontend/core/utils/label_store.dart';
 import 'package:fprs_frontend/core/utils/number_format.dart';
 import 'package:fprs_frontend/features/production/utils/production_overview_grouping.dart';
 import 'package:fprs_frontend/features/production/widgets/table_header_button.dart';
+import 'package:fprs_frontend/core/utils/summary_unit.dart';
 
 // [공정별 실적 합계] — ProductionM2DayTable(production_m2_day_table.dart)과 동일한
 // TableView 그리드로 그린다. 테두리색/헤더색/행높이/폰트 상수도 그쪽과 맞춰서 고정한다.
-// M2만 기본으로 보여주고, PNL/LOT 등 나머지 단위는 '공정' 헤더 버튼 → 상세 바텀시트에서 보여준다.
+// 요약 단위(공장별, 기본 M2)만 보여주고, PNL/LOT 등 나머지 단위는 '공정' 헤더 버튼 → 상세 바텀시트에서 보여준다.
 class ProductionOverviewSummary extends StatelessWidget {
   final List<ProcessSummaryDisplayEntry> entries;
+  final String summaryUnitName;
   final bool showAmount;
   // 일별보기에서만 true. 기간별보기는 재공 원본 데이터가 없어 항상 false.
   final bool showWip;
@@ -19,6 +21,7 @@ class ProductionOverviewSummary extends StatelessWidget {
   const ProductionOverviewSummary({
     super.key,
     required this.entries,
+    required this.summaryUnitName,
     required this.showAmount,
     required this.showWip,
     this.onProcessHeaderTap,
@@ -33,25 +36,23 @@ class ProductionOverviewSummary extends StatelessWidget {
   int get _columnCount => 2 + (showWip ? 1 : 0) + (showAmount ? 1 : 0);
   int get _rowCount => 1 + entries.length;
 
-  double? _m2Result(ProcessSummaryDisplayEntry entry) {
+  double? _summaryResult(ProcessSummaryDisplayEntry entry) {
     final match =
-        entry.unitResults.where((u) => u.unitName.toUpperCase() == 'M2');
+        entry.unitResults.where((u) => isUnitNamed(u.unitName, summaryUnitName));
     return match.isEmpty ? null : match.first.result;
   }
 
-  double? _m2Wip(ProcessSummaryDisplayEntry entry) {
+  double? _summaryWip(ProcessSummaryDisplayEntry entry) {
     final match =
-        entry.unitResults.where((u) => u.unitName.toUpperCase() == 'M2');
+        entry.unitResults.where((u) => isUnitNamed(u.unitName, summaryUnitName));
     return match.isEmpty ? null : match.first.wip;
   }
 
-  // 헤더에 붙일 단위 표기. DB에 저장된 실제 대소문자(예: 'm2')를 그대로 따르고,
-  // 데이터가 하나도 없을 때만 'm2'로 표시한다 — 'M2' 하드코딩을 피하기 위함.
-  String get _m2Label {
+  String get _summaryUnitLabel {
     final match = entries
         .expand((e) => e.unitResults)
-        .where((u) => u.unitName.toUpperCase() == 'M2');
-    return match.isEmpty ? 'm2' : match.first.unitName;
+        .where((u) => isUnitNamed(u.unitName, summaryUnitName));
+    return match.isEmpty ? summaryUnitName : match.first.unitName;
   }
 
   @override
@@ -117,9 +118,9 @@ class ProductionOverviewSummary extends StatelessWidget {
       final valueLabel = LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE', '실적');
       final wipLabel = LabelStore.get('PRODUCTION_TABLE_HEADER_WIP', '재공');
       final headers = [
-        '$valueLabel($_m2Label)',
+        '$valueLabel($_summaryUnitLabel)',
         if (showAmount) LabelStore.get('PRODUCTION_TABLE_HEADER_VALUE_AMOUNT', '실적금액'),
-        if (showWip) '$wipLabel($_m2Label)',
+        if (showWip) '$wipLabel($_summaryUnitLabel)',
       ];
       return _cell(headers[column - 1], isHeader: true);
     }
@@ -128,7 +129,7 @@ class ProductionOverviewSummary extends StatelessWidget {
     if (column == 0) return _cell(entry.processName);
 
     if (column == 1) {
-      final value = _m2Result(entry);
+      final value = _summaryResult(entry);
       return _cell(value == null || value == 0 ? '-' : formatNumber(value));
     }
 
@@ -138,7 +139,7 @@ class ProductionOverviewSummary extends StatelessWidget {
       );
     }
 
-    final value = _m2Wip(entry);
+    final value = _summaryWip(entry);
     return _cell(value == null || value == 0 ? '-' : formatNumber(value));
   }
 

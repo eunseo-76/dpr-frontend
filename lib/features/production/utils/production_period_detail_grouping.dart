@@ -1,4 +1,5 @@
 import 'package:fprs_frontend/features/production/models/production.dart';
+import 'package:fprs_frontend/core/utils/summary_unit.dart';
 
 class PeriodDetailItemRow {
   final String itemLabel;
@@ -80,6 +81,7 @@ List<PeriodDetailProcessGroup> groupPeriodDetailByProcess(
   List<String> dates, {
   required Map<int, String> processNames,
   required Map<int, String> unitNames,
+  required String summaryUnitName,
   required bool showWip,
 }) {
   double? quantityOf(Production p) => showWip ? p.wipResult : p.result;
@@ -89,14 +91,14 @@ List<PeriodDetailProcessGroup> groupPeriodDetailByProcess(
   final matches = productions.where(hasValue).toList();
   final operatingDayCount = _countOperatingDays(matches, dates);
 
-  final m2ResultByKey = <String, double>{};
+  final summaryResultByKey = <String, double>{};
   final amountByKey = <String, double>{};
   for (final p in matches) {
     final key = '${p.date}|${p.processId}';
     final quantity = quantityOf(p);
     final unitName = unitNames[p.unitId] ?? p.unitName;
-    if (unitName.toUpperCase() == 'M2' && quantity != null) {
-      m2ResultByKey[key] = (m2ResultByKey[key] ?? 0) + quantity;
+    if (isUnitNamed(unitName, summaryUnitName) && quantity != null) {
+      summaryResultByKey[key] = (summaryResultByKey[key] ?? 0) + quantity;
     }
     final amount = amountOf(p);
     if (amount != null) {
@@ -107,7 +109,7 @@ List<PeriodDetailProcessGroup> groupPeriodDetailByProcess(
   final processIds = matches.map((p) => p.processId).toSet().toList()..sort();
 
   return processIds.map((processId) {
-    final resultValues = dates.map((d) => m2ResultByKey['$d|$processId']).toList();
+    final resultValues = dates.map((d) => summaryResultByKey['$d|$processId']).toList();
     final amountValues = dates.map((d) => amountByKey['$d|$processId']).toList();
 
     final processName = processNames[processId] ??
@@ -130,6 +132,7 @@ List<PeriodDetailClientProcessGroup> groupPeriodDetailByClient(
   required Map<int, String> clientNames,
   required Map<int, String> processNames,
   required Map<int, String> unitNames,
+  required String summaryUnitName,
   required bool showWip,
 }) {
   double? quantityOf(Production p) => showWip ? p.wipResult : p.result;
@@ -139,14 +142,14 @@ List<PeriodDetailClientProcessGroup> groupPeriodDetailByClient(
   final matches = productions.where(hasValue).toList();
   final operatingDayCount = _countOperatingDays(matches, dates);
 
-  final m2ResultByKey = <String, double>{};
+  final summaryResultByKey = <String, double>{};
   final amountByKey = <String, double>{};
   for (final p in matches) {
     final key = '${p.date}|${p.clientId}|${p.processId}';
     final quantity = quantityOf(p);
     final unitName = unitNames[p.unitId] ?? p.unitName;
-    if (unitName.toUpperCase() == 'M2' && quantity != null) {
-      m2ResultByKey[key] = (m2ResultByKey[key] ?? 0) + quantity;
+    if (isUnitNamed(unitName, summaryUnitName) && quantity != null) {
+      summaryResultByKey[key] = (summaryResultByKey[key] ?? 0) + quantity;
     }
     final amount = amountOf(p);
     if (amount != null) {
@@ -170,7 +173,7 @@ List<PeriodDetailClientProcessGroup> groupPeriodDetailByClient(
 
   for (final (clientId, processId) in sortedPairs) {
     final resultValues =
-        dates.map((d) => m2ResultByKey['$d|$clientId|$processId']).toList();
+        dates.map((d) => summaryResultByKey['$d|$clientId|$processId']).toList();
     final amountValues =
         dates.map((d) => amountByKey['$d|$clientId|$processId']).toList();
 

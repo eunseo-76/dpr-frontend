@@ -48,6 +48,7 @@ import 'package:fprs_frontend/core/widgets/wrench_refresh.dart';
 import 'package:fprs_frontend/core/widgets/folder_tab_selector.dart';
 import 'package:fprs_frontend/core/utils/label_store.dart';
 import 'package:flutter/material.dart';
+import 'package:fprs_frontend/core/utils/summary_unit.dart';
 
 class ProductionScreen extends StatefulWidget {
   final VoidCallback? onGoToSettings;
@@ -162,10 +163,19 @@ class _ProductionScreenState extends State<ProductionScreen> {
       _factoryClients.isNotEmpty &&
       _units.isNotEmpty;
 
-  // 일별보기(테스트 기간)에서 M2 단위만 보여주기 위한 unit 탐색
-  Unit? get _m2Unit {
-    final matches = _units.where((u) => u.name.toUpperCase() == 'M2');
+  String get _summaryUnitName => summaryUnitNameFor(_selectedFactoryId);
+
+  Unit? get _summaryUnit {
+    final matches = _units.where((u) => isUnitNamed(u.name, _summaryUnitName));
     return matches.isEmpty ? null : matches.first;
+  }
+
+  List<String> get _unitNamesSummaryFirst {
+    final names = _units.map((u) => u.name).toList();
+    return [
+      ...names.where((n) => isUnitNamed(n, _summaryUnitName)),
+      ...names.where((n) => !isUnitNamed(n, _summaryUnitName)),
+    ];
   }
 
   static const _periodTypeMap = {
@@ -1163,9 +1173,6 @@ class _ProductionScreenState extends State<ProductionScreen> {
     };
     final unitNames = {for (final u in _units) u.id: u.name};
     final unitOrder = _units.map((u) => u.id).toList();
-    // (업체, 공정) 조합 전체를 대상으로 하고, M2 데이터가 없는 조합은 표 안에서
-    // 값 칸만 '-'로 표시한다 ([공정별 실적 합계]와 동일한 원칙 — 공장 설정(_units에
-    // M2 매핑 여부)이 아니라 실제 데이터 존재 여부로 표시 여부를 정한다).
     final dayEntries = buildClientSummaryDisplayFromProductions(
       _daySummaryProductions,
       clientNames: clientNames,
@@ -1173,20 +1180,17 @@ class _ProductionScreenState extends State<ProductionScreen> {
       unitNames: unitNames,
       unitOrder: unitOrder,
     );
-    // _units(공장 설정)에 M2가 없어도, 실제 데이터에 M2 행이 있으면 그 표기(대소문자
-    // 포함)를 그대로 따른다. 둘 다 없을 때만 'm2'로 표시 — DB에 저장된 단위명은
-    // 소문자 'm2'이므로 대문자 하드코딩을 피한다.
-    final m2Matches = dayEntries
+    final summaryMatches = dayEntries
         .expand((e) => e.unitResults)
-        .where((u) => u.unitName.toUpperCase() == 'M2');
-    final m2Label =
-        _m2Unit?.name ?? (m2Matches.isEmpty ? 'm2' : m2Matches.first.unitName);
+        .where((u) => isUnitNamed(u.unitName, _summaryUnitName));
+    final summaryUnitLabel = _summaryUnit?.name ??
+        (summaryMatches.isEmpty ? _summaryUnitName : summaryMatches.first.unitName);
 
     return _buildOverviewView(
       data,
       tableBuilder: (onClientHeaderTap) => ProductionM2DayTable(
         entries: dayEntries,
-        unitName: m2Label,
+        unitName: summaryUnitLabel,
         showAmount: _showAmount,
         onClientHeaderTap: onClientHeaderTap,
       ),
@@ -1240,6 +1244,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
       dates,
       processNames: processNames,
       unitNames: unitNames,
+      summaryUnitName: _summaryUnitName,
       showWip: _periodDailyShowWip,
     );
     final clientGroups = groupPeriodDetailByClient(
@@ -1248,6 +1253,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
       clientNames: clientNames,
       processNames: processNames,
       unitNames: unitNames,
+      summaryUnitName: _summaryUnitName,
       showWip: _periodDailyShowWip,
     );
 
@@ -1359,6 +1365,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
       tableBuilder: (onClientHeaderTap) => ProductionOverviewTable(
         rows: pivotData.rows,
         unitColumns: pivotData.unitColumns,
+        summaryUnitName: _summaryUnitName,
         showAmount: _showAmount,
         onClientHeaderTap: onClientHeaderTap,
       ),
@@ -1416,7 +1423,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
               entries: summaryEntries,
               showAmount: _showAmount,
               showWip: _viewMode == 'day',
-              unitNames: _units.map((u) => u.name).toList(),
+              unitNames: _unitNamesSummaryFirst,
             );
     final onClientHeaderTap = clientSummaryEntries.isEmpty
         ? null
@@ -1426,7 +1433,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
               entries: clientSummaryEntries,
               showAmount: _showAmount,
               showWip: _viewMode == 'day',
-              unitNames: _units.map((u) => u.name).toList(),
+              unitNames: _unitNamesSummaryFirst,
             );
 
     final revenueAmounts =
@@ -1462,6 +1469,7 @@ class _ProductionScreenState extends State<ProductionScreen> {
             const SizedBox(height: 8),
             ProductionOverviewSummary(
               entries: summaryEntries,
+              summaryUnitName: _summaryUnitName,
               showAmount: _showAmount,
               showWip: _viewMode == 'day',
               onProcessHeaderTap: onProcessHeaderTap,

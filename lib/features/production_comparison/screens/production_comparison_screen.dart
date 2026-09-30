@@ -23,6 +23,7 @@ import 'package:fprs_frontend/features/settings/models/factory_unit.dart';
 import 'package:fprs_frontend/features/settings/services/factory_mapping_service.dart';
 import 'package:fprs_frontend/features/utility/models/factory_process.dart';
 import 'package:flutter/material.dart';
+import 'package:fprs_frontend/core/utils/summary_unit.dart';
 
 class ProductionComparisonScreen extends StatefulWidget {
   final bool isActive;
@@ -70,9 +71,11 @@ class _ProductionComparisonScreenState extends State<ProductionComparisonScreen>
 
   String? _defaultUnit(List<FactoryUnit> units) {
     if (units.isEmpty) return null;
-    final m2 = units.where((u) =>
-        u.unitName.toUpperCase() == 'M2' || u.unitNickname?.toUpperCase() == 'M2');
-    return m2.isNotEmpty ? m2.first.unitName : units.first.unitName;
+    final summaryUnitName = summaryUnitNameFor(_selectedFactoryId);
+    final matches = units.where((u) =>
+        isUnitNamed(u.unitName, summaryUnitName) ||
+        isUnitNamed(u.unitNickname ?? '', summaryUnitName));
+    return matches.isNotEmpty ? matches.first.unitName : units.first.unitName;
   }
 
   String _preset = 'month';

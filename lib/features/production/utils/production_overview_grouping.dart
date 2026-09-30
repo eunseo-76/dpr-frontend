@@ -90,17 +90,13 @@ List<SummaryValueColumn> buildSummaryValueColumns(
   required bool showAmount,
   required bool showWip,
 }) {
-  final ordered = [
-    ...unitNames.where((u) => u.toUpperCase() == 'M2'),
-    ...unitNames.where((u) => u.toUpperCase() != 'M2'),
-  ];
   final columns = <SummaryValueColumn>[];
-  for (var i = 0; i < ordered.length; i++) {
-    columns.add(SummaryValueColumn.value(ordered[i]));
+  for (var i = 0; i < unitNames.length; i++) {
+    columns.add(SummaryValueColumn.value(unitNames[i]));
     if (i == 0 && showAmount) columns.add(const SummaryValueColumn.amount());
-    if (showWip) columns.add(SummaryValueColumn.wip(ordered[i]));
+    if (showWip) columns.add(SummaryValueColumn.wip(unitNames[i]));
   }
-  if (ordered.isEmpty && showAmount) columns.add(const SummaryValueColumn.amount());
+  if (unitNames.isEmpty && showAmount) columns.add(const SummaryValueColumn.amount());
   return columns;
 }
 

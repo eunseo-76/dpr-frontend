@@ -4,10 +4,12 @@ import 'package:fprs_frontend/core/utils/label_store.dart';
 import 'package:fprs_frontend/core/utils/number_format.dart';
 import 'package:fprs_frontend/features/production/utils/production_overview_grouping.dart';
 import 'package:fprs_frontend/features/production/widgets/table_header_button.dart';
+import 'package:fprs_frontend/core/utils/summary_unit.dart';
 
 class ProductionOverviewTable extends StatelessWidget {
   final List<OverviewPivotRow> rows;
   final List<OverviewUnitColumn> unitColumns;
+  final String summaryUnitName;
   final bool showAmount;
   // '업체' 헤더 셀의 버튼을 탭했을 때 호출된다.
   final VoidCallback? onClientHeaderTap;
@@ -16,6 +18,7 @@ class ProductionOverviewTable extends StatelessWidget {
     super.key,
     required this.rows,
     required this.unitColumns,
+    required this.summaryUnitName,
     required this.showAmount,
     this.onClientHeaderTap,
   });
@@ -31,21 +34,18 @@ class ProductionOverviewTable extends StatelessWidget {
   int get _columnCount => 2 + _valueColCount;
   int get _rowCount => 1 + rows.length;
 
-  // m2를 항상 맨 앞으로 — [공정별 실적 합계]/[업체별 실적 합계] 일별 표와 동일한
-  // 우선순위 규칙(실적(m2) → 실적금액 → 나머지)을 기간별 표에도 맞추기 위함
-  // m2가 없는 공장/기간이면 기존 순서(pnl→lot) 그대로 유지.
   bool get _hasPriorityUnit =>
-      unitColumns.any((u) => u.unitName.toUpperCase() == 'M2');
+      unitColumns.any((u) => isUnitNamed(u.unitName, summaryUnitName));
 
   List<OverviewUnitColumn> get _orderedUnitColumns {
     final priority =
-        unitColumns.where((u) => u.unitName.toUpperCase() == 'M2').toList();
+        unitColumns.where((u) => isUnitNamed(u.unitName, summaryUnitName)).toList();
     final rest =
-        unitColumns.where((u) => u.unitName.toUpperCase() != 'M2').toList();
+        unitColumns.where((u) => !isUnitNamed(u.unitName, summaryUnitName)).toList();
     return [...priority, ...rest];
   }
 
-  // 실적금액이 표에서 몇 번째 열에 오는지. m2가 있으면 그 바로 다음(2번째 value 열),
+  // 실적금액이 표에서 몇 번째 열에 오는지. 요약 단위가 있으면 그 바로 다음(2번째 value 열),
   // 없으면 기존처럼 모든 단위 열 뒤(맨 끝)에 붙는다.
   int? get _amountColumn {
     if (!showAmount) return null;
